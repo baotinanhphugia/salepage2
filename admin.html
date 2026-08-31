@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Quản Trị - Phú Gia Diamond</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-main: #0a0a0d;
+  --bg-card: #131318;
+  --bg-card-hover: #181820;
+  --bg-input: #0c0c10;
+  --gold-primary: #d6ad45;
+  --gold-light: #ffd875;
+  --gold-dark: #9a7620;
+  --gold-gradient: linear-gradient(135deg, #ffd875 0%, #d6ad45 50%, #9a7620 100%);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-dim: #6b7280;
+  --border-color: rgba(214, 173, 69, 0.22);
+  --border-focus: rgba(214, 173, 69, 0.65);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning: #f59e0b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wrap { max-width: 1240px; margin: auto; padding: 24px 20px; }
+
+/* ================= MÀN HÌNH ĐĂNG NHẬP / ĐỔI MẬT KHẨU ================= */
+#loginSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+  padding: 20px;
+  animation: fadeIn 0.4s ease;
+}
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 40px 32px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  position: relative;
+  overflow: hidden;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--gold-gradient);
+}
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.login-logo {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  margin: 0 auto 16px;
+  display: block;
+  object-fit: cover;
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 0 25px rgba(214, 173, 69, 0.35);
+}
+.login-title {
+  font-size: 23px;
+  font-weight: 900;
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+}
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* Auth Mode Tabs */
+.auth-switch {
+  display: flex;
+  background: #09090c;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 22px;
+  border: 1px solid #22222e;
+}
+.auth-switch-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.auth-switch-btn.active {
+  background: var(--gold-gradient);
+  color: #0b0b0d;
+  font-weight: 800;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-primary);
+  margin-bottom: 7px;
+}
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-wrapper input {
+  width: 100%;
+  padding: 13px 16px;
+  padding-right: 44px;
+  border-radius: 12px;
+  border: 1px solid #282834;
+  background: var(--bg-input);
+  color: #fff;
+  font-size: 14.5px;
+  transition: all 0.2s;
+}
+.input-wrapper input:focus {
+  outline: none;
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px rgba(214, 173, 69, 0.15);
+}
+.toggle-eye {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toggle-eye:hover { color: #fff; }
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--gold-gradient);
+  color: #0b0b0d;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.login-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+  box-shadow: 0 4px 16px rgba(214, 173, 69, 0.3);
+}
+
+/* ================= DASHBOARD ================= */
+#dashboardSection {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.brandLogo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1.5px solid var(--gold-primary);
+}
+.logo {
+  font-size: 21px;
+  font-weight: 900;
+  color: var(--gold-primary);
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.user-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34d399;
+}
+
+/* Quick Bar */
+.quick-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.quick-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Cards & Form */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 18px;
+}
+.card h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+label {
+  font-size: 13px;
+  color: var(--gold-primary);
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+input, textarea, select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #2d2d38;
+  background: var(--bg-input);
+  color: #fff;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--gold-primary);
+}
+textarea { min-height: 88px; resize: vertical; }
+
+/* BẢNG QUẢN LÝ GIÁ TRỰC QUAN (PRICE EDITOR TABLE) */
+.price-editor-box {
+  background: #09090d;
+  border: 1px solid #282836;
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 14px;
+  overflow-x: auto;
+}
+.price-editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+}
+.price-editor-table th {
+  background: #15151e;
+  color: var(--gold-light);
+  font-weight: 700;
+  padding: 10px 8px;
+  font-size: 13px;
+  border-bottom: 2px solid #2b2b3d;
+  text-align: left;
+  white-space: nowrap;
+}
+.price-editor-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #1f1f2b;
+}
+.price-editor-table input, .price-editor-table select {
+  padding: 8px 10px;
+  font-size: 13.5px;
+  border-radius: 8px;
+  background: #0f0f14;
+  border: 1px solid #2d2d3d;
+}
+.price-editor-table input:focus, .price-editor-table select:focus {
+  border-color: var(--gold-primary);
+  background: #14141c;
+}
+.btn-del-row {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-del-row:hover { background: rgba(239, 68, 68, 0.3); color: #fff; }
+
+.table-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 18px;
+  background: var(--gold-gradient);
+  color: #111;
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+button:hover { opacity: 0.92; transform: translateY(-1px); }
+button:active { transform: translateY(0); }
+.btn2 {
+  background: #1e1e26;
+  color: #e5e7eb;
+  border: 1px solid #353544;
+}
+.btn2:hover { background: #282834; border-color: #48485c; }
+.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+.btn-danger:hover { background: rgba(239, 68, 68, 0.25); color: #fff; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.tab {
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #16161d;
+  color: var(--text-muted);
+  border: 1px solid #282834;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tab:hover { background: #22222d; color: #fff; }
+.tab.active {
+  background: var(--gold-gradient);
+  color: #0d0d10;
+  font-weight: 800;
+  border-color: transparent;
+}
+.tab-guide {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+.tab-guide:hover { background: rgba(59, 130, 246, 0.22); }
+.tab-guide.active {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: #fff;
+}
+
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+/* Status */
+.status {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin: 14px 0;
+  font-size: 14px;
+  font-weight: 500;
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+.status.ok {
+  background: var(--success-bg);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #a7f3d0;
+}
+.status.err {
+  background: var(--danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+/* Orders Table */
+.table-container {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid #282834;
+}
+table { width: 100%; border-collapse: collapse; background: #0f0f13; }
+th, td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #22222e;
+  text-align: left;
+  font-size: 13px;
+}
+th { background: #171720; color: var(--gold-primary); font-weight: 700; white-space: nowrap; }
+tr:hover td { background: rgba(255, 255, 255, 0.02); }
+.badge-tw {
+  background: rgba(236, 72, 153, 0.15);
+  color: #f472b6;
+  border: 1px solid rgba(236, 72, 153, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11.5px;
+  display: inline-block;
+}
+.badge-vn {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11.5px;
+  display: inline-block;
+}
+.small { font-size: 13px; color: var(--text-muted); }
+
+/* Guide */
+.guide-box {
+  background: #0c0c10;
+  border: 1px solid #23232f;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.guide-step:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--gold-gradient);
+  color: #111;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.step-content h3 { font-size: 15px; color: #fff; font-weight: 700; margin-bottom: 4px; }
+.step-content p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+.code-inline {
+  background: #1c1c24;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--gold-light);
+  border: 1px solid #333342;
+}
+
+@media(max-width: 840px) {
+  .grid, .grid3 { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 6px; }
+  .tab { flex-shrink: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================= MÀN HÌNH ĐĂNG NHẬP / ĐỔI MẬT KHẨU ================= -->
+<section id="loginSection">
+  <div class="login-card">
+    <div class="login-header">
+      <img class="login-logo" src="images/logo-phu-gia.jpeg" alt="Phú Gia Diamond" onerror="this.src='avatar1.svg'">
+      <h1 class="login-title">PHÚ GIA DIAMOND</h1>
+      <p class="login-subtitle">Bảng điều khiển Quản trị Hệ thống</p>
+    </div>
+
+    <!-- Chuyển đổi giữa Đăng nhập và Đổi mật khẩu -->
+    <div class="auth-switch">
+      <button type="button" class="auth-switch-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')">🔐 Đăng nhập</button>
+      <button type="button" class="auth-switch-btn" id="tabChangePassBtn" onclick="switchAuthTab('changepass')">🔄 Đổi mật khẩu</button>
+    </div>
+
+    <div id="loginStatus" class="status"></div>
+
+    <!-- FORM 1: ĐĂNG NHẬP -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="inputUsername">👤 Tên đăng nhập</label>
+        <div class="input-wrapper">
+          <input id="inputUsername" placeholder="Nhập tài khoản quản trị" required autocomplete="username">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="inputPassword">🔑 Mật khẩu</label>
+        <div class="input-wrapper">
+          <input id="inputPassword" type="password" placeholder="Nhập mật khẩu quản trị" required autocomplete="current-password">
+          <button type="button" class="toggle-eye" onclick="togglePasswordVisibility('inputPassword')" title="Ẩn/Hiện mật khẩu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" id="loginBtn" class="login-btn">
+        <span>🔐 ĐĂNG NHẬP QUẢN TRỊ</span>
+      </button>
+    </form>
+
+    <!-- FORM 2: ĐỔI MẬT KHẨU TRỰC TIẾP -->
+    <form id="changePassForm" style="display:none;" onsubmit="handleChangePassword(event)">
+      <div class="form-group">
+        <label for="cpUsername">👤 Tên đăng nhập</label>
+        <div class="input-wrapper">
+          <input id="cpUsername" placeholder="Tên đăng nhập hiện tại" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="cpOldPassword">🔑 Mật khẩu hiện tại (Cũ)</label>
+        <div class="input-wrapper">
+          <input id="cpOldPassword" type="password" placeholder="Nhập mật khẩu cũ để xác thực" required>
+          <button type="button" class="toggle-eye" onclick="togglePasswordVisibility('cpOldPassword')" title="Ẩn/Hiện mật khẩu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="cpNewPassword">🔒 Mật khẩu mới</label>
+        <div class="input-wrapper">
+          <input id="cpNewPassword" type="password" placeholder="Nhập mật khẩu mới" required minlength="4">
+          <button type="button" class="toggle-eye" onclick="togglePasswordVisibility('cpNewPassword')" title="Ẩn/Hiện mật khẩu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="cpConfirmPassword">🔒 Xác nhận mật khẩu mới</label>
+        <div class="input-wrapper">
+          <input id="cpConfirmPassword" type="password" placeholder="Nhập lại mật khẩu mới" required minlength="4">
+        </div>
+      </div>
+
+      <button type="submit" id="cpBtn" class="login-btn">
+        <span>💾 CẬP NHẬT MẬT KHẨU MỚI</span>
+      </button>
+    </form>
+  </div>
+</section>
+
+<!-- ================= MÀN HÌNH DASHBOARD SAU ĐĂNG NHẬP ================= -->
+<div id="dashboardSection" class="wrap">
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <img class="brandLogo" src="images/logo-phu-gia.jpeg" alt="Phú Gia Diamond" onerror="this.src='avatar1.svg'">
+      <div>
+        <div class="logo">PHÚ GIA DIAMOND ADMIN</div>
+        <div class="small">Quản lý Bảng giá 2 Quốc gia (Việt Nam & Đài Loan), Đơn hàng & Cấu hình bảo mật.</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="user-badge" id="currentUserBadge">🟢 Quản trị viên</div>
+      <button class="btn-danger" onclick="handleLogout()" title="Đăng xuất khỏi hệ thống">🚪 Đăng xuất</button>
+    </div>
+  </header>
+
+  <!-- Quick Bar -->
+  <div class="quick-bar">
+    <div class="small">
+      <strong>Đồng bộ:</strong> Bảng giá được đồng bộ 2 chiều với 2 Sheet <b>BangGia_VN</b> & <b>BangGia_TW</b>.
+    </div>
+    <div class="quick-btns">
+      <button class="btn2" onclick="loadConfig()">🔄 Tải lại cấu hình</button>
+      <button class="btn2" onclick="loadOrders()">📦 Xem đơn hàng</button>
+      <button class="btn2" onclick="openLanding('index.html')">🇻🇳 Trang Việt Nam</button>
+      <button class="btn2" onclick="openLanding('taiwan.html')">🇹🇼 Trang Đài Loan</button>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <!-- Tabs Navigation -->
+  <nav class="tabs">
+    <button class="tab active" onclick="showTab('productVN')">🇻🇳 Bảng giá Việt Nam (VNĐ)</button>
+    <button class="tab" onclick="showTab('productTW')">🇹🇼 Bảng giá Đài Loan (NT$)</button>
+    <button class="tab" onclick="showTab('shop')">🏪 Shop & Chuyển khoản</button>
+    <button class="tab" onclick="showTab('security')">🔔 Telegram & Gmail</button>
+    <button class="tab" onclick="showTab('orders')">📦 Quản lý Đơn hàng</button>
+    <button class="tab tab-guide" onclick="showTab('guide')">📖 Hướng dẫn sử dụng</button>
+  </nav>
+
+  <form id="configForm">
+    <!-- TAB 1: VIỆT NAM -->
+    <section id="productVN" class="panel active card">
+      <h2>🇻🇳 Bảng giá & Tồn kho Việt Nam (VNĐ)</h2>
+      <p class="small">Dành riêng cho thị trường Việt Nam (Lưu trực tiếp tại Sheet <b>BangGia_VN</b>).</p><br>
+      <div class="grid">
+        <div><label>Tên sản phẩm (VN)</label><input name="productNameVN" value="Bông nụ bạc S925 kim cương Moissanite cao cấp full kiểm định GRA"></div>
+        <div><label>Tên shop</label><input name="shopName" value="Phú Gia Diamond"></div>
+        <div><label>Giá bán mặc định (VNĐ)</label><input name="salePriceVN" value="459999"></div>
+        <div><label>Giá gốc mặc định (VNĐ)</label><input name="oldPriceVN" value="647895"></div>
+        <div><label>Text giảm giá (VN)</label><input name="discountTextVN" value="Flash Sale"></div>
+        <div><label>Flash sale (phút)</label><input name="flashMinutes" value="14"></div>
+        <div><label>Đã bán (VN)</label><input name="soldCountVN" value="1238"></div>
+        <div><label>Còn hàng tổng (VN)</label><input name="stockLeftVN" value="17"></div>
+      </div>
+      <br>
+      <label>Mô tả ngắn (VN)</label>
+      <textarea name="shortDescriptionVN">Bạc thật S925, Moissanite sáng đẹp, full kiểm định GRA, tặng hộp cao cấp.</textarea>
+      <br><br>
+
+      <!-- BẢNG NHẬP LIỆU GIÁ TRỰC QUAN VIỆT NAM -->
+      <label style="font-size:15px; color:var(--gold-light); margin-bottom:4px;">📊 Bảng quản lý Từng Size & Tồn kho Việt Nam (VNĐ)</label>
+      <p class="small" style="margin-bottom:8px;">Nhập giá và tồn kho trực tiếp vào từng dòng (hoặc sửa trực tiếp trên Google Sheet <b>BangGia_VN</b>):</p>
+      
+      <div class="price-editor-box">
+        <table class="price-editor-table" id="tableVN">
+          <thead>
+            <tr>
+              <th style="width:130px;">Phân loại</th>
+              <th style="width:110px;">Size đá</th>
+              <th style="width:110px;">Mã SKU</th>
+              <th style="width:110px;">Tồn kho</th>
+              <th>Giá gốc (VNĐ)</th>
+              <th>Giá bán ưu đãi (VNĐ)</th>
+              <th style="width:60px; text-align:center;">Xóa</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyVN"></tbody>
+        </table>
+
+        <div class="table-toolbar">
+          <button type="button" class="btn2" onclick="addPriceRow('tbodyVN', {type:'1 Đôi', size:'5mm', code:'MS05*2', stock:'50', oldPrice:'647895', salePrice:'459999'}, false)">➕ Thêm dòng Size mới</button>
+          <button type="button" class="btn2" onclick="resetDefaultPrices('tbodyVN', false)">🔄 Nạp bảng giá mặc định VN</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ĐÀI LOAN -->
+    <section id="productTW" class="panel card">
+      <h2>🇹🇼 Bảng giá & Tồn kho Đài Loan (NT$)</h2>
+      <p class="small">Dành riêng cho thị trường Đài Loan (Lưu trực tiếp tại Sheet <b>BangGia_TW</b>).</p><br>
+      <div class="grid">
+        <div><label>Tên sản phẩm (Đài Loan)</label><input name="productNameTW" value="Bông nụ bạc S925 Moissanite cao cấp - giao tại Đài Loan"></div>
+        <div><label>Đơn vị tiền tệ</label><input value="NT$ (Tân Đài Tệ)" readonly style="color:#aaa"></div>
+        <div><label>Giá bán mặc định (NT$)</label><input name="salePriceTW" value="599"></div>
+        <div><label>Giá gốc mặc định (NT$)</label><input name="oldPriceTW" value="899"></div>
+        <div><label>Text giảm giá (Đài Loan)</label><input name="discountTextTW" value="Flash Sale"></div>
+        <div><label>Đã bán (Đài Loan)</label><input name="soldCountTW" value="865"></div>
+        <div><label>Còn hàng tổng tại Đài Loan</label><input name="stockLeftTW" value="23"></div>
+      </div>
+      <br>
+      <label>Mô tả ngắn (Đài Loan)</label>
+      <textarea name="shortDescriptionTW">Bạc thật S925, Moissanite sáng đẹp, full kiểm định GRA quốc tế, hỗ trợ giao tận tay tại Đài Loan.</textarea>
+      <br><br>
+
+      <!-- BẢNG NHẬP LIỆU GIÁ TRỰC QUAN ĐÀI LOAN -->
+      <label style="font-size:15px; color:var(--gold-light); margin-bottom:4px;">📊 Bảng quản lý Từng Size & Tồn kho Đài Loan (NT$)</label>
+      <p class="small" style="margin-bottom:8px;">Nhập giá và tồn kho trực tiếp vào từng dòng (hoặc sửa trực tiếp trên Google Sheet <b>BangGia_TW</b>):</p>
+      
+      <div class="price-editor-box">
+        <table class="price-editor-table" id="tableTW">
+          <thead>
+            <tr>
+              <th style="width:130px;">Phân loại</th>
+              <th style="width:110px;">Size đá</th>
+              <th style="width:110px;">Mã SKU</th>
+              <th style="width:110px;">Tồn kho</th>
+              <th>Giá gốc (NT$)</th>
+              <th>Giá bán ưu đãi (NT$)</th>
+              <th style="width:60px; text-align:center;">Xóa</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyTW"></tbody>
+        </table>
+
+        <div class="table-toolbar">
+          <button type="button" class="btn2" onclick="addPriceRow('tbodyTW', {type:'1 Đôi', size:'5mm', code:'MS05*2', stock:'50', oldPrice:'899', salePrice:'599'}, true)">➕ Thêm dòng Size mới (TW)</button>
+          <button type="button" class="btn2" onclick="resetDefaultPrices('tbodyTW', true)">🔄 Nạp bảng giá mặc định TW</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SHOP & CHUYỂN KHOẢN -->
+    <section id="shop" class="panel card">
+      <h2>🏪 Thông tin Shop & Chuyển khoản</h2><br>
+      <div class="grid">
+        <div><label>Ngân hàng</label><input name="bankName" placeholder="VD: MB Bank"></div>
+        <div><label>Số tài khoản</label><input name="bankAccount" placeholder="VD: 0398138678"></div>
+        <div><label>Chủ tài khoản</label><input name="bankOwner" placeholder="VD: ANH PHU GIA DIAMOND"></div>
+        <div><label>Nội dung chuyển khoản</label><input name="bankContent" value="PGD + Số điện thoại"></div>
+      </div>
+      <br>
+      <div class="grid">
+        <div><label>Địa chỉ shop</label><input name="shopAddress" placeholder="Hưng Yên, Việt Nam"></div>
+        <div><label>Hotline</label><input name="hotline" placeholder="0398138678"></div>
+        <div><label>Zalo</label><input name="zalo" placeholder="0398138678"></div>
+        <div><label>Google Maps shop link</label><input name="shopMap" placeholder="https://maps.google.com/..."></div>
+      </div>
+      <br>
+      <div>
+        <label>🎯 Meta (Facebook) Pixel ID (VD: 123456789012345)</label>
+        <input name="facebookPixelId" placeholder="Dán mã Pixel ID tại đây để tự động kích hoạt tracking trên Landing Page">
+      </div>
+    </section>
+
+    <!-- TAB 4: TELEGRAM & GMAIL -->
+    <section id="security" class="panel card">
+      <h2>🔔 Thông báo Telegram & Gmail</h2>
+      <p class="small">Thông tin được bảo mật và lưu an toàn trong Script Properties.</p><br>
+      <div class="grid">
+        <div><label>Telegram Bot Token</label><input name="telegramBotToken" placeholder="VD: 1234567890:AAH..."></div>
+        <div><label>Telegram Chat ID</label><input name="telegramChatId" placeholder="VD: -10012345678"></div>
+        <div><label>Email nhận đơn (Gmail)</label><input name="adminEmail" placeholder="phugiacod@gmail.com"></div>
+      </div>
+    </section>
+
+    <!-- ACTION BUTTON -->
+    <div class="card" style="text-align: right;">
+      <button type="submit" style="padding: 14px 30px; font-size: 15px;">💾 LƯU TOÀN BỘ CẤU HÌNH & BẢNG GIÁ VÀO GOOGLE SHEETS</button>
+    </div>
+  </form>
+
+  <!-- TAB 5: ĐƠN HÀNG -->
+  <section id="orders" class="panel card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <div>
+        <h2>📦 Danh sách Đơn hàng Mới</h2>
+        <p class="small">Dữ liệu đơn hàng đồng bộ trực tiếp từ Google Sheets (Việt Nam & Đài Loan).</p>
+      </div>
+      <button class="btn2" onclick="loadOrders()">🔄 Làm mới danh sách</button>
+    </div>
+    <div class="table-container">
+      <table id="ordersTable">
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Mã đơn</th>
+            <th>Thị trường</th>
+            <th>Khách</th>
+            <th>SĐT</th>
+            <th>Địa chỉ</th>
+            <th>Phân loại</th>
+            <th>Size</th>
+            <th>SL</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="11" style="text-align:center; padding:24px; color:#888;">Chưa tải danh sách đơn hàng. Nhấn "Làm mới danh sách" để xem.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 6: HƯỚNG DẪN CHI TIẾT (USER GUIDE) -->
+  <section id="guide" class="panel card">
+    <h2>📖 Hướng Dẫn Sử Dụng & Quản Lý Kho Dễ Dàng</h2>
+    <p class="small">Tài liệu hướng dẫn vận hành hệ thống Phú Gia Diamond COD V7.</p><br>
+
+    <div class="guide-box">
+      <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Cách quản lý Bảng giá & Tồn kho trực quan (Không cần đụng JSON)</h3>
+          <p>
+            - <b>Cách 1 (Ngay trên Admin):</b> Bạn chỉ cần vào tab <b>🇻🇳 Bảng giá Việt Nam</b> hoặc <b>🇹🇼 Bảng giá Đài Loan</b> &rarr; Sửa trực tiếp số tiền hoặc số lượng tồn kho trong các ô của bảng &rarr; Bấm <b>LƯU TOÀN BỘ CẤU HÌNH</b>.<br>
+            - <b>Cách 2 (Trực tiếp trên Google Sheet):</b> Mở file Google Sheet của bạn &rarr; Mở trang tính <b>BangGia_VN</b> hoặc <b>BangGia_TW</b> &rarr; Gõ số sửa như Excel bình thường. Hệ thống tự động đọc và đồng bộ ngay lập tức!
+          </p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Cơ chế Trừ tồn kho tự động</h3>
+          <p>
+            - Mỗi khi khách đặt hàng thành công tại web Việt Nam hoặc Đài Loan, hệ thống sẽ tự động tìm đúng dòng Size và Phân loại khách mua trong Sheet <b>BangGia_VN</b> hoặc <b>BangGia_TW</b> và <b>trừ đi số lượng khách mua</b>.<br>
+            - Số lượng tồn kho còn lại sẽ được hiển thị ngay trong tin nhắn báo đơn Telegram.
+          </p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Cài đặt thông báo Đơn hàng về Telegram</h3>
+          <p>
+            1. Mở Telegram, tìm bot <code class="code-inline">@BotFather</code> &rarr; Gửi lệnh <code class="code-inline">/newbot</code> để lấy <b>Bot Token</b>.<br>
+            2. Tìm bot <code class="code-inline">@userinfobot</code> để lấy <b>Chat ID</b> của bạn.<br>
+            3. Dán Token và Chat ID vào Tab <b>🔔 Telegram & Gmail</b> rồi Lưu. Khi có đơn mới từ VN hoặc TW, Telegram sẽ báo chuông ngay lập tức.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+// Endpoint Google Apps Script được cấu hình ngầm nội bộ
+const APP_ENDPOINT = "https://script.google.com/macros/s/AKfycbyvJ9KtpHmEkLHcHkj3-RElwQq262jD8EpZ_AvxDbBbSwoMtNnnIgbAlqQE71k60BAjvw/exec";
+
+let currentAuthUsername = "";
+let currentAuthPassword = "";
+
+// BẢNG GIÁ MẪU MẶC ĐỊNH
+const DEFAULT_PRICES_VN = [
+  {"type":"1 Chiếc","size":"4mm","code":"MS04","stock":"106","oldPrice":"295000","salePrice":"229999"},
+  {"type":"1 Chiếc","size":"4.5mm","code":"MS04.5","stock":"2","oldPrice":"315000","salePrice":"249000"},
+  {"type":"1 Chiếc","size":"5mm","code":"MS05","stock":"105","oldPrice":"332000","salePrice":"259000"},
+  {"type":"1 Chiếc","size":"6mm","code":"MS06","stock":"50","oldPrice":"444000","salePrice":"305999"},
+  {"type":"1 Chiếc","size":"6.8mm","code":"MS06.8","stock":"31","oldPrice":"556000","salePrice":"369000"},
+  {"type":"1 Chiếc","size":"7.5mm","code":"MS07.5","stock":"41","oldPrice":"700000","salePrice":"409999"},
+  {"type":"1 Đôi","size":"4mm","code":"MS04*2","stock":"56","oldPrice":"600303","salePrice":"399999"},
+  {"type":"1 Đôi","size":"4.5mm","code":"MS04.5*2","stock":"3","oldPrice":"616216","salePrice":"439999"},
+  {"type":"1 Đôi","size":"5mm","code":"MS05*2","stock":"46","oldPrice":"647895","salePrice":"459999"},
+  {"type":"1 Đôi","size":"6mm","code":"MS06*2","stock":"25","oldPrice":"804872","salePrice":"549999"},
+  {"type":"1 Đôi","size":"6.8mm","code":"MS06.8*2","stock":"6","oldPrice":"953721","salePrice":"659999"},
+  {"type":"1 Đôi","size":"7.5mm","code":"MS07.5*2","stock":"111","oldPrice":"1204000","salePrice":"759999"}
+];
+
+const DEFAULT_PRICES_TW = [
+  {"type":"1 Đôi","size":"4mm","code":"MS04*2","stock":"56","oldPrice":"1590","salePrice":"1114"},
+  {"type":"1 Đôi","size":"4.5mm","code":"MS04.5*2","stock":"12","oldPrice":"1690","salePrice":"1175"},
+  {"type":"1 Đôi","size":"5mm","code":"MS05*2","stock":"46","oldPrice":"1990","salePrice":"1406"},
+  {"type":"1 Đôi","size":"6mm","code":"MS06*2","stock":"25","oldPrice":"2350","salePrice":"1652"},
+  {"type":"1 Đôi","size":"7mm","code":"MS07*2","stock":"18","oldPrice":"3390","salePrice":"2403"},
+  {"type":"1 Đôi","size":"7.5mm","code":"MS07.5*2","stock":"111","oldPrice":"3990","salePrice":"2804"}
+];
+
+// Hiển thị thông báo trạng thái
+function showStatus(text, ok = true, target = "#status") {
+  const box = $(target);
+  if (!box) return;
+  box.style.display = "block";
+  box.className = "status " + (ok ? "ok" : "err");
+  box.innerHTML = (ok ? "✅ " : "⚠️ ") + text;
+}
+
+function clearStatus(target = "#status") {
+  const box = $(target);
+  if (box) box.style.display = "none";
+}
+
+// Ẩn/Hiện mật khẩu
+function togglePasswordVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.type = input.type === "password" ? "text" : "password";
+  }
+}
+
+// Chuyển đổi Tab Đăng nhập <-> Đổi mật khẩu
+function switchAuthTab(mode) {
+  clearStatus("#loginStatus");
+  const loginForm = $("#loginForm");
+  const cpForm = $("#changePassForm");
+  const tabLogin = $("#tabLoginBtn");
+  const tabCp = $("#tabChangePassBtn");
+
+  if (mode === "login") {
+    loginForm.style.display = "block";
+    cpForm.style.display = "none";
+    tabLogin.classList.add("active");
+    tabCp.classList.remove("active");
+  } else {
+    loginForm.style.display = "none";
+    cpForm.style.display = "block";
+    tabLogin.classList.remove("active");
+    tabCp.classList.add("active");
+    $("#cpUsername").value = $("#inputUsername").value.trim();
+  }
+}
+
+// Chuyển đổi View Đăng nhập <-> Dashboard
+function setAuthView(isAuthenticated) {
+  const loginSection = $("#loginSection");
+  const dashboardSection = $("#dashboardSection");
+
+  if (isAuthenticated) {
+    loginSection.style.display = "none";
+    dashboardSection.style.display = "block";
+    $("#currentUserBadge").textContent = "🟢 " + (currentAuthUsername || "Admin");
+  } else {
+    loginSection.style.display = "flex";
+    dashboardSection.style.display = "none";
+    $("#inputPassword").value = "";
+    switchAuthTab("login");
+  }
+}
+
+// ================= RENDER VÀ QUẢN LÝ BẢNG GIÁ TRỰC QUAN =================
+function createPriceRowHtml(item = {}, isTW = false) {
+  const type = item.type || (isTW ? "1 Đôi" : "1 Đôi");
+  const size = item.size || "5mm";
+  const code = item.code || "";
+  const stock = item.stock !== undefined ? item.stock : "50";
+  const oldPrice = item.oldPrice !== undefined ? item.oldPrice : "";
+  const salePrice = item.salePrice !== undefined ? item.salePrice : "";
+
+  const typeOptions = isTW 
+    ? `<option value="1 Đôi" selected>1 Đôi</option>`
+    : `<option value="1 Đôi" ${type === "1 Đôi" ? "selected" : ""}>1 Đôi</option>
+       <option value="1 Chiếc" ${type === "1 Chiếc" ? "selected" : ""}>1 Chiếc</option>`;
+
+  return `
+    <tr>
+      <td><select class="row-type">${typeOptions}</select></td>
+      <td><input class="row-size" value="${size}" placeholder="VD: 5mm"></td>
+      <td><input class="row-code" value="${code}" placeholder="VD: MS05"></td>
+      <td><input class="row-stock" type="number" value="${stock}" style="color:#6ee7b7; font-weight:700;"></td>
+      <td><input class="row-old-price" value="${oldPrice}" placeholder="VD: 647895"></td>
+      <td><input class="row-sale-price" value="${salePrice}" placeholder="VD: 459999" style="color:#fca5a5; font-weight:700;"></td>
+      <td style="text-align:center;"><button type="button" class="btn-del-row" onclick="removePriceRow(this)">❌</button></td>
+    </tr>
+  `;
+}
+
+function renderPriceEditorTable(tbodyId, dataList = [], isTW = false) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  const list = Array.isArray(dataList) && dataList.length ? dataList : (isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN);
+  list.forEach(item => {
+    tbody.insertAdjacentHTML("beforeend", createPriceRowHtml(item, isTW));
+  });
+}
+
+function addPriceRow(tbodyId, defaultItem, isTW = false) {
+  const tbody = document.getElementById(tbodyId);
+  if (tbody) {
+    tbody.insertAdjacentHTML("beforeend", createPriceRowHtml(defaultItem, isTW));
+  }
+}
+
+function removePriceRow(btn) {
+  const tr = btn.closest("tr");
+  if (tr) tr.remove();
+}
+
+function resetDefaultPrices(tbodyId, isTW = false) {
+  if (confirm("Khôi phục lại bảng giá mẫu mặc định?")) {
+    renderPriceEditorTable(tbodyId, isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN, isTW);
+  }
+}
+
+function getPriceTableData(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return [];
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+  return rows.map(tr => ({
+    type: tr.querySelector(".row-type")?.value.trim() || "",
+    size: tr.querySelector(".row-size")?.value.trim() || "",
+    code: tr.querySelector(".row-code")?.value.trim() || "",
+    stock: tr.querySelector(".row-stock")?.value.trim() || "0",
+    oldPrice: tr.querySelector(".row-old-price")?.value.trim() || "",
+    salePrice: tr.querySelector(".row-sale-price")?.value.trim() || ""
+  })).filter(item => item.size || item.salePrice);
+}
+
+// Xử lý Đăng nhập
+async function handleLogin(event) {
+  if (event) event.preventDefault();
+  
+  const username = $("#inputUsername").value.trim();
+  const password = $("#inputPassword").value.trim();
+  const btn = $("#loginBtn");
+
+  if (!username) {
+    showStatus("Vui lòng nhập Tên đăng nhập.", false, "#loginStatus");
+    return;
+  }
+  if (!password) {
+    showStatus("Vui lòng nhập Mật khẩu.", false, "#loginStatus");
+    return;
+  }
+
+  try {
+    btn.disabled = true;
+    btn.innerHTML = "<span>⏳ ĐANG XÁC THỰC...</span>";
+    clearStatus("#loginStatus");
+
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "adminConfig", username: username, password: password })
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      throw new Error(data.error || "Tài khoản hoặc mật khẩu không chính xác!");
+    }
+
+    currentAuthUsername = username;
+    currentAuthPassword = password;
+    sessionStorage.setItem("PGD_AUTH_USER", username);
+    sessionStorage.setItem("PGD_AUTH_PASS", password);
+
+    setAuthView(true);
+    fillForm(data.config);
+    showStatus("Đăng nhập thành công! Đã đồng bộ dữ liệu hệ thống.", true);
+
+  } catch (err) {
+    showStatus(err.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", false, "#loginStatus");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "<span>🔐 ĐĂNG NHẬP QUẢN TRỊ</span>";
+  }
+}
+
+// Xử lý Đổi mật khẩu trực tiếp
+async function handleChangePassword(event) {
+  if (event) event.preventDefault();
+
+  const username = $("#cpUsername").value.trim();
+  const oldPass = $("#cpOldPassword").value.trim();
+  const newPass = $("#cpNewPassword").value.trim();
+  const confirmPass = $("#cpConfirmPassword").value.trim();
+  const btn = $("#cpBtn");
+
+  if (!username || !oldPass || !newPass || !confirmPass) {
+    showStatus("Vui lòng điền đầy đủ tất cả các trường.", false, "#loginStatus");
+    return;
+  }
+  if (newPass !== confirmPass) {
+    showStatus("Mật khẩu mới và xác nhận mật khẩu không trùng khớp!", false, "#loginStatus");
+    return;
+  }
+  if (newPass.length < 4) {
+    showStatus("Mật khẩu mới phải có ít nhất 4 ký tự.", false, "#loginStatus");
+    return;
+  }
+
+  try {
+    btn.disabled = true;
+    btn.innerHTML = "<span>⏳ ĐANG XỬ LÝ...</span>";
+    clearStatus("#loginStatus");
+
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "changePassword",
+        username: username,
+        currentPassword: oldPass,
+        newPassword: newPass
+      })
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      throw new Error(data.error || "Không thể đổi mật khẩu!");
+    }
+
+    showStatus("Đổi mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.", true, "#loginStatus");
+    
+    // Reset form và chuyển về tab đăng nhập
+    $("#cpOldPassword").value = "";
+    $("#cpNewPassword").value = "";
+    $("#cpConfirmPassword").value = "";
+    $("#inputUsername").value = username;
+    $("#inputPassword").value = "";
+    
+    setTimeout(() => {
+      switchAuthTab("login");
+    }, 1200);
+
+  } catch (err) {
+    showStatus(err.message || "Lỗi đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu cũ.", false, "#loginStatus");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "<span>💾 CẬP NHẬT MẬT KHẨU MỚI</span>";
+  }
+}
+
+// Xử lý Đăng xuất
+function handleLogout() {
+  if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi trang quản trị?")) {
+    currentAuthUsername = "";
+    currentAuthPassword = "";
+    sessionStorage.removeItem("PGD_AUTH_USER");
+    sessionStorage.removeItem("PGD_AUTH_PASS");
+    setAuthView(false);
+    clearStatus("#loginStatus");
+  }
+}
+
+// Tab Switching
+function showTab(id) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add("active");
+  }
+  const targetPanel = document.getElementById(id);
+  if (targetPanel) targetPanel.classList.add("active");
+}
+
+function showTabFromCode(id) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  
+  const tabBtn = Array.from(document.querySelectorAll(".tab")).find(t => t.getAttribute("onclick")?.includes(id));
+  if (tabBtn) tabBtn.classList.add("active");
+  const targetPanel = document.getElementById(id);
+  if (targetPanel) targetPanel.classList.add("active");
+}
+
+function authPayload(extra = {}) {
+  if (!currentAuthPassword) throw new Error("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!");
+  return {
+    username: currentAuthUsername,
+    password: currentAuthPassword,
+    ...extra
+  };
+}
+
+function formToObject() {
+  const data = Object.fromEntries(new FormData($("#configForm")).entries());
+  // Đóng gói dữ liệu từ 2 bảng trực quan thành JSON
+  data.priceTableVN = JSON.stringify(getPriceTableData("tbodyVN"));
+  data.priceTableTW = JSON.stringify(getPriceTableData("tbodyTW"));
+  return data;
+}
+
+function fillForm(config) {
+  if (!config) return;
+
+  // Tự động ánh xạ fallback nếu Sheet cũ chứa các key đơn lẻ
+  if (!config.productNameVN && config.productName) config.productNameVN = config.productName;
+  if (!config.salePriceVN && config.salePrice) config.salePriceVN = config.salePrice;
+  if (!config.oldPriceVN && config.oldPrice) config.oldPriceVN = config.oldPrice;
+  if (!config.discountTextVN && config.discountText) config.discountTextVN = config.discountText;
+  if (!config.soldCountVN && config.soldCount) config.soldCountVN = config.soldCount;
+  if (!config.stockLeftVN && config.stockLeft) config.stockLeftVN = config.stockLeft;
+  if (!config.shortDescriptionVN && config.shortDescription) config.shortDescriptionVN = config.shortDescription;
+
+  Object.entries(config).forEach(([k, v]) => {
+    const el = document.querySelector(`[name="${k}"]`);
+    if (el) {
+      el.value = v !== undefined && v !== null ? v : "";
+    }
+  });
+
+  // Render 2 bảng trực quan
+  const parseTable = (raw, isTW) => {
+    if (!raw) return isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN;
+    if (Array.isArray(raw)) return raw;
+    try {
+      const p = JSON.parse(raw);
+      return Array.isArray(p) ? p : (isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN);
+    } catch(e) {
+      return isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN;
+    }
+  };
+
+  renderPriceEditorTable("tbodyVN", parseTable(config.priceTableVN || config.priceTable, false), false);
+  renderPriceEditorTable("tbodyTW", parseTable(config.priceTableTW, true), true);
+
+  if (config.currentAdminUsername) {
+    $("#currentUserBadge").textContent = "🟢 " + config.currentAdminUsername;
+  }
+}
+
+// Tải cấu hình từ Sheet
+async function loadConfig() {
+  try {
+    const payload = authPayload({ action: "adminConfig" });
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Không tải được cấu hình");
+    fillForm(data.config);
+    showStatus("Đã tải cấu hình và bảng giá 2 quốc gia thành công từ Google Sheets.");
+  } catch (e) {
+    showStatus(e.message, false);
+  }
+}
+
+// Lưu cấu hình
+$("#configForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    const configData = formToObject();
+    const payload = authPayload({
+      action: "saveConfig",
+      config: configData
+    });
+    
+    showStatus("Đang lưu cấu hình và bảng giá lên Google Sheets...");
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Lưu thất bại!");
+
+    showStatus("Đã lưu toàn bộ cấu hình & Bảng giá vào Google Sheets thành công.");
+  } catch (err) {
+    showStatus(err.message, false);
+  }
+});
+
+// Tải danh sách đơn hàng
+async function loadOrders() {
+  try {
+    showStatus("Đang tải danh sách đơn hàng...");
+    const payload = authPayload({ action: "orders" });
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Không tải được danh sách đơn hàng!");
+    
+    const tbody = $("#ordersTable tbody");
+    tbody.innerHTML = "";
+    
+    if (!data.orders || data.orders.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='11' style='text-align:center; padding:24px; color:#888;'>Chưa có đơn hàng nào.</td></tr>";
+    } else {
+      data.orders.forEach(o => {
+        const tr = document.createElement("tr");
+        const isTW = (o.market && o.market.includes("Đài Loan")) || String(o.price || "").includes("NT$");
+        const badgeHtml = isTW ? "<span class='badge-tw'>🇹🇼 Đài Loan</span>" : "<span class='badge-vn'>🇻🇳 Việt Nam</span>";
+        
+        const phoneHtml = o.phone ? `<a href="tel:${o.phone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;">${o.phone}</a>` : "";
+        const priceHtml = `<strong style="color:#f87171;">${o.price || "Chưa có"}</strong>`;
+
+        const cols = [
+          o.createdAt,
+          `<span style="font-family:'JetBrains Mono',monospace; font-size:12px;">${o.orderId}</span>`,
+          badgeHtml,
+          `<strong style="color:#fff;">${o.name || "Khách ẩn danh"}</strong>`,
+          phoneHtml,
+          o.address || "Chưa nhập",
+          o.variant || "1 Đôi",
+          o.size || "5mm",
+          o.quantity || "1",
+          priceHtml,
+          `<span style="background:rgba(16,185,129,0.15); color:#6ee7b7; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">${o.status || "Mới"}</span>`
+        ];
+        cols.forEach(val => {
+          const td = document.createElement("td");
+          td.innerHTML = val;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    showTabFromCode("orders");
+    showStatus(`Đã tải xong danh sách đơn hàng (${data.orders ? data.orders.length : 0} đơn gần nhất).`);
+  } catch (e) {
+    showStatus(e.message, false);
+  }
+}
+
+function openLanding(page = "index.html") {
+  window.open(page, "_blank");
+}
+
+// Khởi chạy khi load trang
+window.addEventListener("DOMContentLoaded", () => {
+  // Render bảng mặc định sẵn
+  renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN, false);
+  renderPriceEditorTable("tbodyTW", DEFAULT_PRICES_TW, true);
+
+  const savedUser = sessionStorage.getItem("PGD_AUTH_USER");
+  const savedPass = sessionStorage.getItem("PGD_AUTH_PASS");
+  
+  if (savedUser && savedPass) {
+    $("#inputUsername").value = savedUser;
+    $("#inputPassword").value = savedPass;
+    handleLogin();
+  } else {
+    setAuthView(false);
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Phú Gia Diamond - Bông tai Moissanite</title>
+
+<!-- Meta Pixel Base Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+
+let currentPixelId = "";
+function initMetaPixel(pixelId){
+  const cleanId = String(pixelId || "").trim();
+  if(!cleanId || cleanId === "YOUR_PIXEL_ID" || cleanId === currentPixelId) return;
+  currentPixelId = cleanId;
+  fbq('init', cleanId);
+  fbq('track', 'PageView');
+  console.log("🎯 Meta Pixel Initialized:", cleanId);
+}
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel Base Code -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111;max-width:480px;margin:auto}
+img{width:100%;display:block}
+a{text-decoration:none;color:inherit}
+.top{position:sticky;top:0;z-index:50;height:46px;background:#ffffffee;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #eee}
+.circle{width:32px;height:32px;border-radius:50%;background:#777;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold}
+.hero{background:#fff}
+.banner{background:linear-gradient(90deg,#ff3b5f,#2dd4bf,#ffd447);display:flex;color:#fff;font-weight:900}
+.banner div{flex:1;padding:10px;text-align:center}
+.flash{background:#ffd447;color:#111}
+.priceBox{background:#fff;padding:14px 16px}
+.price{font-size:32px;color:#e60033;font-weight:900}
+.old{text-decoration:line-through;color:#999;margin-left:8px}
+.sale{background:#e60033;color:#fff;border-radius:6px;padding:7px 12px;margin-left:8px;font-weight:bold}
+.title{font-size:22px;font-weight:900;line-height:1.35;margin-top:8px}
+.meta{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:15px}
+.star{color:#f6a800;font-size:22px}
+.row{background:#fff;margin-top:8px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
+.tag{background:#fff1e6;color:#9a4b1f;font-weight:bold}
+.protect{background:#eef0f4;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:13px}
+.protect span{padding:11px 6px;text-align:center}
+.sec{background:#fff;margin-top:8px;padding:16px}
+.sec h2{font-size:22px;margin-bottom:12px}
+.policy{border-radius:16px;overflow:hidden;margin:14px 0;background:#062b79;color:#fff}
+.policy h3{background:#1724ff;font-size:26px;text-align:center;padding:14px}
+.policy p{padding:9px 18px;font-size:17px}
+.deal{border-radius:16px;overflow:hidden;margin:14px 0;background:#fff200}
+.deal h3{background:red;color:#fff;font-size:28px;text-align:center;padding:14px}
+.deal p{font-size:22px;font-weight:900;padding:10px 18px;color:#f00}
+.shop{display:flex;gap:12px;align-items:center}
+.logo{width:72px;height:72px;border-radius:50%;background:#050505;overflow:hidden;flex:0 0 72px}
+.logo img{width:100%;height:100%;object-fit:cover}
+.shopStats{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;margin-top:14px;color:#777}
+.shopStats b{display:block;color:#111;font-size:18px}
+.review{border-top:1px solid #ddd;padding:16px 0}
+.reviewHead{display:flex;gap:10px;align-items:center}
+.avatar{width:44px;height:44px;border-radius:50%;background:#ddd}
+.ok{color:#16a34a;font-size:14px}
+.reviewImgs{display:flex;gap:8px;margin-top:10px}
+.reviewImgs img{width:74px;height:74px;object-fit:cover;border-radius:6px}
+.orderBlock{background:linear-gradient(#b8f1f2,#354444);padding:0 14px 24px}
+.count{background:#062b79;color:#fff;padding:15px;display:flex;align-items:center;justify-content:space-between}
+.count b{font-size:23px}
+.count span{background:#fff;color:red;padding:8px 10px;font-weight:900;margin-left:4px}
+.orderTitle{background:#008b00;color:#fff;text-align:center;font-size:23px;font-weight:900;padding:14px;margin:0 55px 14px}
+form{display:grid;gap:10px}
+input,select,textarea{width:100%;padding:15px;border:1px solid #bbb;border-radius:10px;font-size:16px;background:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.options{background:#fff;border-radius:10px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:15px}
+.radioBox{background:#fff;border-radius:10px;padding:12px;display:grid;gap:10px}
+button{border:0;background:#e60000;color:#fff;border-radius:999px;padding:17px;font-size:22px;font-weight:900;margin:8px 45px 0}
+.bottom{position:sticky;bottom:0;background:#fff;display:grid;grid-template-columns:1fr 1fr 1.2fr 1.2fr;gap:6px;padding:8px;border-top:1px solid #ddd;z-index:99}
+.bottom a,.bottom button{margin:0;border-radius:6px;font-size:15px;padding:0 8px;text-align:center;min-height:54px;display:flex;align-items:center;justify-content:center;line-height:1.2}
+.bottom .cart,.bottom .buy{font-size:16px}
+.bottom .buy{background:#e60033;color:#fff;font-weight:900}
+.bottom .cart{border:2px solid #e60033;color:#e60033;background:#fff;font-weight:900}
+.note{font-size:13px;color:#fff;text-align:center;margin-top:8px}
+
+/* Popup seeding giống TikTok Shop */
+.live-toast{
+  position:fixed;
+  top:58px;
+  left:12px;
+  z-index:120;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:310px;
+  max-width:calc(100vw - 24px);
+  background:#ffffff;
+  border:1px solid #ddd;
+  border-radius:999px;
+  padding:7px 12px 7px 7px;
+  box-shadow:0 6px 18px rgba(0,0,0,.12);
+  transform:translateX(-120%);
+  opacity:0;
+  transition:.45s ease;
+}
+.live-toast.show{transform:translateX(0);opacity:1}
+.live-toast img{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  object-fit:cover;
+}
+.live-toast b{display:block;font-size:14px}
+.live-toast span{display:block;font-size:12px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+.live-toast small{display:block;font-size:11px;color:#666}
+
+
+/* ===== TikTok Shop COD Pro Upgrade ===== */
+.live-bar{
+  background:#fff;
+  margin-top:8px;
+  padding:10px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-size:14px;
+  border-bottom:1px solid #eee;
+}
+.live-pill{
+  background:#fff4f6;
+  color:#e60033;
+  border:1px solid #ffd0d9;
+  border-radius:999px;
+  padding:6px 10px;
+  font-weight:800;
+}
+.stock-box{
+  background:#fff;
+  margin-top:8px;
+  padding:15px 16px;
+}
+.stock-title{
+  display:flex;
+  justify-content:space-between;
+  font-weight:800;
+  margin-bottom:8px;
+}
+.stock-track{
+  height:12px;
+  background:#ffe1e8;
+  border-radius:999px;
+  overflow:hidden;
+}
+.stock-fill{
+  height:100%;
+  width:71%;
+  background:linear-gradient(90deg,#ff003c,#ff7a00);
+  border-radius:999px;
+  animation:stockPulse 1.2s infinite;
+}
+@keyframes stockPulse{
+  0%,100%{filter:brightness(1)}
+  50%{filter:brightness(1.25)}
+}
+.urgent-note{
+  color:#e60033;
+  font-size:13px;
+  margin-top:8px;
+  font-weight:700;
+}
+.floating-viewers{
+  position:fixed;
+  right:10px;
+  top:110px;
+  z-index:110;
+  background:#111;
+  color:#fff;
+  padding:8px 10px;
+  border-radius:999px;
+  font-size:12px;
+  box-shadow:0 6px 18px rgba(0,0,0,.25);
+  opacity:.92;
+}
+.shake-buy{
+  animation:buyShake 1.4s infinite;
+}
+@keyframes buyShake{
+  0%,100%{transform:translateX(0) scale(1)}
+  10%{transform:translateX(-2px) scale(1.02)}
+  20%{transform:translateX(2px) scale(1.02)}
+  30%{transform:translateX(-2px) scale(1.02)}
+  40%{transform:translateX(2px) scale(1.02)}
+  50%{transform:translateX(0) scale(1)}
+}
+.map-link{
+  color:#fff;
+  background:#0f766e;
+  border-radius:8px;
+  padding:8px 10px;
+  display:none;
+  text-align:center;
+  font-size:13px;
+}
+.select-loading{
+  opacity:.7;
+}
+.price-table-wrap{
+  overflow:auto;
+  border:1px solid #eee;
+  border-radius:10px;
+}
+.price-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:430px;
+  font-size:14px;
+}
+.price-table th,.price-table td{
+  padding:10px 8px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+}
+.price-table th{
+  background:#fff1e6;
+  color:#9a4b1f;
+}
+.price-table tr:last-child td{
+  border-bottom:0;
+}
+.price-table .sale-price{
+  color:#e60033;
+  font-weight:900;
+}
+.price-table .old-price{
+  color:#888;
+  text-decoration:line-through;
+  font-size:13px;
+}
+.price-hint{
+  color:#e60033;
+  font-weight:800;
+  text-align:center;
+  margin-top:6px;
+}
+.risk-reversal-card{
+  background:#ffffff;
+  border:2px solid #16a34a;
+  border-radius:12px;
+  padding:14px 16px;
+  margin:14px 0;
+  box-shadow:0 4px 14px rgba(22,163,74,0.15);
+}
+.rr-title{
+  color:#15803d;
+  font-size:16px;
+  font-weight:900;
+  text-align:center;
+  margin-bottom:10px;
+  letter-spacing:0.3px;
+}
+.rr-list{
+  display:grid;
+  gap:10px;
+}
+.rr-item{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  font-size:14px;
+  line-height:1.45;
+  color:#1f2937;
+}
+.rr-icon{
+  font-size:20px;
+  line-height:1;
+  flex-shrink:0;
+}
+.rr-item b{
+  color:#111827;
+}
+
+/* ===== GỢI Ý CHỌN SIZE ĐÁ ===== */
+.size-guide-card{
+  background:linear-gradient(135deg, #fffbf0, #fff7e6);
+  border:1.5px solid #ffd591;
+  border-radius:12px;
+  padding:14px;
+  margin-top:14px;
+}
+.sg-title{
+  color:#d46b08;
+  font-size:15px;
+  font-weight:900;
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.sg-item{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:8px 0;
+  border-bottom:1px dashed #ffe7ba;
+  font-size:13.5px;
+}
+.sg-item:last-child{
+  border-bottom:0;
+  padding-bottom:0;
+}
+.sg-tag{
+  background:#fff;
+  border:1px solid #d46b08;
+  color:#d46b08;
+  padding:3px 8px;
+  border-radius:6px;
+  font-weight:800;
+  font-size:12.5px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.sg-tag.hot{
+  background:#e60033;
+  border-color:#e60033;
+  color:#fff;
+}
+.sg-desc{
+  color:#434343;
+  line-height:1.35;
+}
+
+/* ===== MODAL POPUP ĐẶT HÀNG THÀNH CÔNG ===== */
+.order-success-modal{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+  padding:16px;
+  box-sizing:border-box;
+}
+.order-success-modal.show{
+  display:flex;
+}
+.osm-backdrop{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(6px);
+  animation:osmFadeIn .25s ease-out;
+}
+.osm-card{
+  position:relative;
+  background:#ffffff;
+  border-radius:20px;
+  max-width:440px;
+  width:100%;
+  padding:24px 20px;
+  box-sizing:border-box;
+  text-align:center;
+  box-shadow:0 25px 60px rgba(0,0,0,0.35);
+  animation:osmScaleUp .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index:2;
+  max-height:90vh;
+  overflow-y:auto;
+}
+@keyframes osmFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes osmScaleUp{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+
+.osm-close{
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#f3f4f6;
+  border:none;
+  font-size:16px;
+  font-weight:bold;
+  color:#666;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .2s;
+}
+.osm-close:hover{
+  background:#e5e7eb;
+  color:#111;
+}
+.osm-icon-wrap{
+  position:relative;
+  width:72px;
+  height:72px;
+  margin:0 auto 12px;
+}
+.osm-icon-circle{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:linear-gradient(135deg, #10b981, #059669);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:38px;
+  font-weight:900;
+  box-shadow:0 10px 25px rgba(16,185,129,0.4);
+  animation:osmPulse 1.5s infinite;
+}
+@keyframes osmPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.06);box-shadow:0 14px 30px rgba(16,185,129,0.55)}
+}
+.osm-sparkles{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  font-size:22px;
+  animation:osmRotate 2s infinite ease-in-out;
+}
+@keyframes osmRotate{
+  0%,100%{transform:rotate(0deg) scale(1)}
+  50%{transform:rotate(20deg) scale(1.2)}
+}
+.osm-badge{
+  display:inline-block;
+  background:#ecfdf5;
+  color:#059669;
+  font-weight:900;
+  font-size:13px;
+  padding:4px 12px;
+  border-radius:20px;
+  margin-bottom:6px;
+  letter-spacing:0.5px;
+}
+.osm-title{
+  margin:0 0 6px;
+  font-size:20px;
+  font-weight:900;
+  color:#111827;
+}
+.osm-sub{
+  margin:0 0 16px;
+  font-size:13.5px;
+  color:#6b7280;
+  line-height:1.45;
+}
+.osm-details{
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:12px 14px;
+  margin-bottom:14px;
+  text-align:left;
+  font-size:13px;
+  color:#374151;
+}
+.osm-row{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  border-bottom:1px dashed #e5e7eb;
+}
+.osm-row:last-child{
+  border-bottom:none;
+}
+.osm-row b{
+  color:#111827;
+  text-align:right;
+  max-width:60%;
+}
+.osm-row.total{
+  font-size:14.5px;
+  color:#dc2626;
+  font-weight:900;
+}
+.osm-row.total b{
+  color:#dc2626;
+  font-size:16px;
+}
+.osm-promise{
+  background:#fffbeb;
+  border:1px solid #fde68a;
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:16px;
+  font-size:12px;
+  color:#92400e;
+  text-align:left;
+  line-height:1.45;
+}
+.osm-promise div{
+  margin-bottom:4px;
+}
+.osm-promise div:last-child{margin-bottom:0}
+.osm-actions{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.osm-btn-confirm{
+  background:linear-gradient(135deg, #e60033, #ff1a4b);
+  color:#fff;
+  font-weight:900;
+  font-size:15px;
+  border:none;
+  border-radius:12px;
+  padding:14px;
+  cursor:pointer;
+  box-shadow:0 6px 20px rgba(230,0,51,0.35);
+  transition:all .2s;
+}
+.osm-btn-confirm:hover{
+  transform:translateY(-1px);
+  box-shadow:0 8px 24px rgba(230,0,51,0.45);
+}
+.osm-btn-call{
+  background:#f3f4f6;
+  color:#374151;
+  font-weight:700;
+  font-size:13.5px;
+  border-radius:10px;
+  padding:10px;
+  text-decoration:none;
+  display:inline-block;
+  transition:all .2s;
+  text-align:center;
+}
+.osm-btn-call:hover{
+  background:#e5e7eb;
+}
+</style>
+</head>
+<body>
+
+
+<div class="floating-viewers">👀 <b id="viewerCount">38</b> người đang xem</div>
+
+<div class="live-toast" id="liveToast">
+  <img id="toastAvatar" src="images/avatar1.png" alt="">
+  <div>
+    <b id="toastName">Nguyễn Hồng Anh</b>
+    <span id="toastText">Đã mua 1 đôi 5mm + Freeship</span>
+    <small id="toastTime">5 phút trước</small>
+  </div>
+</div>
+
+
+<div class="top">
+  <div class="circle">‹</div>
+  <div></div>
+  <div style="display:flex;gap:8px"><div class="circle">↗</div><div class="circle">🛒</div><div class="circle">…</div></div>
+</div>
+
+<section class="hero">
+  <img src="images/anh-mau.png" alt="Bông tai Moissanite">
+  <div class="banner">
+    <div>EXTRA<br>Voucher 20%</div>
+    <div>XTRA<br>Freeship*</div>
+    <div class="flash">⚡ Flash Sale<br><b id="miniTimer">00:14:59</b></div>
+  </div>
+</section>
+
+<section class="priceBox">
+  <div><span class="price">459.999đ</span><span class="old">647.895đ</span><span class="sale">Flash Sale</span></div>
+  <div class="title">Bông nụ bạc S925 kim cương Moissanite cao cấp full kiểm định GRA</div>
+  <div class="meta"><span class="star">★</span><b>4.9/5</b><span>(mẫu hiển thị)</span><span>|</span><span>Đã bán 1.2K+</span></div>
+</section>
+
+<div class="row tag">🏆 Sản phẩm nổi bật • Bông tai Moissanite bán chạy</div>
+<div class="protect"><span>💳 Thanh toán bảo mật</span><span>🔁 Đổi trả dễ dàng</span><span>🛡 Hỗ trợ nhanh</span></div>
+<div class="live-bar">
+  <span class="live-pill">🔥 Đã bán <b id="soldCount">1.238</b> đơn</span>
+  <span class="live-pill">⚡ <b id="leadCount">27</b> khách vừa để lại SĐT</span>
+</div>
+<div class="stock-box">
+  <div class="stock-title"><span>Ưu đãi hôm nay</span><span style="color:#e60033">Còn <b id="stockLeft">17</b> sản phẩm</span></div>
+  <div class="stock-track"><div class="stock-fill" id="stockFill"></div></div>
+  <div class="urgent-note">Nhanh tay đặt hàng để giữ giá Flash Sale + Freeship</div>
+</div>
+
+<div class="row"><b>Chọn các tuỳ chọn</b><span style="color:red">Kích cỡ đá &gt;</span></div>
+<div class="row"><b>Hình thức thanh toán</b><span><b style="background:#4b7d35;color:white;padding:4px 10px">COD</b> Thanh toán khi nhận hàng</span></div>
+<div class="row"><b>Vận chuyển</b><span><del style="color:#aaa">40.000đ</del> <b>Miễn phí</b></span></div>
+<div class="row"><b>Chính sách đổi trả</b><span>Kiểm tra hàng trước khi thanh toán</span></div>
+
+<section class="sec">
+  <h2>Bảng giá theo size</h2>
+  <div class="price-table-wrap">
+    <table class="price-table">
+      <thead><tr><th>Phân loại</th><th>Size</th><th>Mã</th><th>Giá KM</th><th>Giá gốc</th></tr></thead>
+      <tbody id="priceTableBody"></tbody>
+    </table>
+  </div>
+  <div class="price-hint">Chọn phân loại và size ở form đặt hàng để hệ thống tự tính giá.</div>
+
+  <!-- KHỐI GỢI Ý CHỌN SIZE ĐÁ -->
+  <div class="size-guide-card">
+    <div class="sg-title">💡 GỢI Ý CHỌN SIZE ĐÁ PHÙ HỢP:</div>
+    <div class="sg-item">
+      <span class="sg-tag">4.5mm - 5mm</span>
+      <span class="sg-desc">Nhẹ nhàng, thanh lịch công sở, đeo hàng ngày.</span>
+    </div>
+    <div class="sg-item">
+      <span class="sg-tag hot">6mm - 6.8mm 🔥</span>
+      <span class="sg-desc"><b>Sang trọng</b>, chuẩn size kim cương 1 Carat được chuộng nhất.</span>
+    </div>
+    <div class="sg-item">
+      <span class="sg-tag">7.5mm</span>
+      <span class="sg-desc"><b>Đẳng cấp</b>, lấp lánh nổi bật cho các buổi tiệc tùng.</span>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="deal">
+    <h3>✨ ƯU ĐÃI ĐẶC BIỆT ✨</h3>
+    <p>🎁 Mua 1 đôi tặng hộp cao cấp</p>
+    <p>🎁 Miễn phí ship hôm nay</p>
+    <p>🎁 Full giấy kiểm định GRA</p>
+  </div>
+
+  <div class="policy">
+    <h3>CHÍNH SÁCH BÁN HÀNG</h3>
+    <p>✅ Được kiểm tra hàng trước khi thanh toán</p>
+    <p>✅ Cam kết bạc thật S925</p>
+    <p>✅ Bảo hành đánh bóng, làm sáng sản phẩm</p>
+    <p>✅ Hỗ trợ tư vấn chọn size phù hợp</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="shop">
+    <div class="logo"><img src="images/logo-phu-gia.jpeg" alt="Phú Gia Diamond"></div>
+    <div>
+      <h2 style="margin:0">Phú Gia Diamond</h2>
+      <span style="background:#b7f7c1;padding:4px 8px;border-radius:4px">★ 4.9</span>
+    </div>
+  </div>
+  <div class="shopStats">
+    <div><b>50+</b>Mặt hàng</div>
+    <div><b>1.2K+</b>Đã bán</div>
+    <div><b>99%</b>Phản hồi</div>
+    <div><b>24h</b>Xử lý</div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2>Giới thiệu sản phẩm này</h2>
+  <img src="images/57-giac-cat.jpg" alt="">
+  <img src="images/anh-chinh.jpg" alt="">
+  <img src="images/anh-chup.png" alt="">
+  <img src="images/kich-thuoc.png" alt="">
+  <img src="images/thong-so.png" alt="">
+</section>
+
+<section class="sec">
+  <h2>Đánh giá của khách hàng</h2>
+  <p><b>4.9/5</b> <span class="star">★★★★★</span> <span style="color:#666">(khách gửi ảnh thực tế)</span></p>
+
+  <div class="review">
+    <div class="reviewHead"><div class="avatar"></div><div><b>N**n H**g</b><br><span class="ok">✅ Đã nhận hàng</span></div></div>
+    <div class="star">★★★★★</div>
+    <p>Sản phẩm sáng đẹp, đeo lên tai rất sang, shop đóng gói kỹ.</p>
+    <div class="reviewImgs"><img src="images/review1.jpg"><img src="images/review2.jpg"></div>
+  </div>
+
+  <div class="review">
+    <div class="reviewHead"><div class="avatar"></div><div><b>T**i A**h</b><br><span class="ok">✅ Đã nhận hàng</span></div></div>
+    <div class="star">★★★★★</div>
+    <p>Đá bắt sáng tốt, có hộp và giấy kiểm định như mô tả.</p>
+    <div class="reviewImgs"><img src="images/review3.jpg"><img src="images/review4.jpg"></div>
+  </div>
+
+  <div class="review">
+    <div class="reviewHead"><div class="avatar"></div><div><b>H**n M**i</b><br><span class="ok">✅ Đã nhận hàng</span></div></div>
+    <div class="star">★★★★★</div>
+    <p>Mình chọn size 5mm, nhỏ xinh, đi làm hằng ngày rất hợp.</p>
+    <div class="reviewImgs"><img src="images/review5.jpg"><img src="images/review6.jpg"></div>
+  </div>
+</section>
+
+<section class="orderBlock" id="order">
+  <div class="count"><b>⚡ Flash Sale</b><div><span id="d">00</span><span id="h">00</span><span id="m">14</span><span id="s">59</span></div></div>
+  <div style="background:white;padding:14px 16px"><span class="old">647.895đ</span> <span class="sale">Flash Sale</span> <span class="price">459.999đ</span></div>
+  <div style="background:#fff200;text-align:center;font-size:20px;font-weight:900;padding:12px">MUA HÀNG NGAY HÔM NAY ĐỂ NHẬN ƯU ĐÃI</div>
+
+  <!-- KHỐI CAM KẾT 3 KHÔNG TRIỆT TIÊU RỦI RO -->
+  <div class="risk-reversal-card">
+    <div class="rr-title">🛡️ CAM KẾT 3 KHÔNG - AN TÂM TUYỆT ĐỐI</div>
+    <div class="rr-list">
+      <div class="rr-item">
+        <span class="rr-icon">📦</span>
+        <div><b>Được mở hàng kiểm tra:</b> Quý khách được soi đá, thử bút trước khi thanh toán.</div>
+      </div>
+      <div class="rr-item">
+        <span class="rr-icon">📜</span>
+        <div><b>Đền gấp 10 lần:</b> Nếu phát hiện đá nhân tạo CZ hoặc bạc không đúng chuẩn S925.</div>
+      </div>
+      <div class="rr-item">
+        <span class="rr-icon">🔄</span>
+        <div><b>Bảo hành trọn đời:</b> Miễn phí đánh sáng trọn đời + 1 đổi 1 trong 30 ngày nếu có lỗi.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="orderTitle">THÔNG TIN ĐẶT HÀNG</div>
+
+  <form id="orderForm">
+    <input type="hidden" name="price" value="459999">
+    <div class="grid2">
+      <input name="name" placeholder="Họ và tên" required>
+      <input name="phone" placeholder="Số điện thoại" required>
+    </div>
+    <select name="province" id="provinceSelect" style="width:100%;padding:14px;border:1.5px solid #bbb;border-radius:10px;font-size:15px;font-weight:bold;background:#fff;color:#111;" required>
+      <option value="">📍 Chọn Tỉnh / Thành phố</option>
+      <option value="Hà Nội" selected>Hà Nội 🔥</option>
+      <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh 🔥</option>
+      <option value="Hưng Yên">Hưng Yên</option>
+      <option value="Bắc Ninh">Bắc Ninh</option>
+      <option value="Hải Phòng">Hải Phòng</option>
+      <option value="Đà Nẵng">Đà Nẵng</option>
+      <option value="Bình Dương">Bình Dương</option>
+      <option value="Đồng Nai">Đồng Nai</option>
+      <option value="Hải Dương">Hải Dương</option>
+      <option value="Quảng Ninh">Quảng Ninh</option>
+      <option value="Thái Bình">Thái Bình</option>
+      <option value="Nam Định">Nam Định</option>
+      <option value="Hà Nam">Hà Nam</option>
+      <option value="Ninh Bình">Ninh Bình</option>
+      <option value="Thanh Hóa">Thanh Hóa</option>
+      <option value="Nghệ An">Nghệ An</option>
+      <option value="Hà Tĩnh">Hà Tĩnh</option>
+      <option value="Quảng Bình">Quảng Bình</option>
+      <option value="Quảng Trị">Quảng Trị</option>
+      <option value="Thừa Thiên Huế">Thừa Thiên Huế</option>
+      <option value="Quảng Nam">Quảng Nam</option>
+      <option value="Quảng Ngãi">Quảng Ngãi</option>
+      <option value="Bình Định">Bình Định</option>
+      <option value="Phú Yên">Phú Yên</option>
+      <option value="Khánh Hòa">Khánh Hòa</option>
+      <option value="Ninh Thuận">Ninh Thuận</option>
+      <option value="Bình Thuận">Bình Thuận</option>
+      <option value="Kon Tum">Kon Tum</option>
+      <option value="Gia Lai">Gia Lai</option>
+      <option value="Đắk Lắk">Đắk Lắk</option>
+      <option value="Đắk Nông">Đắk Nông</option>
+      <option value="Lâm Đồng">Lâm Đồng</option>
+      <option value="Bình Phước">Bình Phước</option>
+      <option value="Tây Ninh">Tây Ninh</option>
+      <option value="Bà Rịa - Vũng Tàu">Bà Rịa - Vũng Tàu</option>
+      <option value="Long An">Long An</option>
+      <option value="Tiền Giang">Tiền Giang</option>
+      <option value="Bến Tre">Bến Tre</option>
+      <option value="Trà Vinh">Trà Vinh</option>
+      <option value="Vĩnh Long">Vĩnh Long</option>
+      <option value="Đồng Tháp">Đồng Tháp</option>
+      <option value="An Giang">An Giang</option>
+      <option value="Kiên Giang">Kiên Giang</option>
+      <option value="Cần Thơ">Cần Thơ</option>
+      <option value="Hậu Giang">Hậu Giang</option>
+      <option value="Sóc Trăng">Sóc Trăng</option>
+      <option value="Bạc Liêu">Bạc Liêu</option>
+      <option value="Cà Mau">Cà Mau</option>
+      <option value="Vĩnh Phúc">Vĩnh Phúc</option>
+      <option value="Phú Thọ">Phú Thọ</option>
+      <option value="Bắc Giang">Bắc Giang</option>
+      <option value="Thái Nguyên">Thái Nguyên</option>
+      <option value="Tuyên Quang">Tuyên Quang</option>
+      <option value="Lạng Sơn">Lạng Sơn</option>
+      <option value="Cao Bằng">Cao Bằng</option>
+      <option value="Bắc Kạn">Bắc Kạn</option>
+      <option value="Hà Giang">Hà Giang</option>
+      <option value="Lào Cai">Lào Cai</option>
+      <option value="Yên Bái">Yên Bái</option>
+      <option value="Sơn La">Sơn La</option>
+      <option value="Hòa Bình">Hòa Bình</option>
+      <option value="Điện Biên">Điện Biên</option>
+      <option value="Lai Châu">Lai Châu</option>
+    </select>
+    <textarea name="address" placeholder="🏠 Số nhà, tên đường, thôn/xóm, phường/xã, quận/huyện..." rows="2" required></textarea>
+    <div class="grid2">
+      <select name="variant" id="variantSelect" required>
+        <option value="1 Đôi">1 Đôi</option>
+        <option value="1 Chiếc">1 Chiếc</option>
+      </select>
+      <select name="size" id="sizeSelect" required>
+        <option value="">Chọn size đá</option>
+        <option>4mm</option><option>4.5mm</option><option>5mm</option>
+        <option>6mm</option><option>6.8mm</option><option>7.5mm</option>
+      </select>
+    </div>
+    <input id="selectedPriceText" value="Giá: 459.999đ" readonly>
+    <input type="hidden" name="giftBox" value="Có hộp cao cấp">
+    <input type="hidden" name="gra" value="Có giấy GRA">
+    <input type="hidden" name="warranty" value="Bảo hành sáng bóng">
+    <div class="options">
+      <label><input type="checkbox" name="call" value="Gọi xác nhận"> Gọi trước khi giao</label>
+    </div>
+    <div class="grid2">
+      <select name="quantity" required><option value="1">Số lượng: 1</option><option value="2">Số lượng: 2</option><option value="3">Số lượng: 3</option></select>
+      <select name="payment"><option>Thanh toán COD</option></select>
+    </div>
+    <div class="radioBox">
+      <label><input type="radio" name="combo" value="Mua theo bảng giá size + Freeship" checked> 💥 Mua theo bảng giá size + Freeship</label>
+      <label><input type="radio" name="combo" value="Cần shop tư vấn thêm"> 🎁 Cần shop tư vấn thêm trước khi giao</label>
+    </div>
+    <textarea name="note" placeholder="Ghi chú thêm"></textarea>
+    <a id="mapLink" class="map-link" href="#" target="_blank">📍 Mở địa chỉ trên Google Maps</a>
+    <button id="btnSubmit" class="shake-buy">ĐẶT MUA NGAY</button>
+    <div id="msg" class="note"></div>
+  </form>
+</section>
+
+<div class="bottom">
+  <a>🏪<br>Cửa hàng</a>
+  <a>💬<br>Trò chuyện</a>
+  <a class="cart" href="#order">Thêm vào<br>Giỏ hàng</a>
+  <a class="buy shake-buy" href="#order">Mua Ngay</a>
+</div>
+
+<!-- POPUP XÁC NHẬN ĐẶT HÀNG THÀNH CÔNG -->
+<div id="orderSuccessModal" class="order-success-modal">
+  <div class="osm-backdrop" onclick="closeOrderSuccessModal()"></div>
+  <div class="osm-card">
+    <button type="button" class="osm-close" onclick="closeOrderSuccessModal()">✕</button>
+    <div class="osm-icon-wrap">
+      <div class="osm-icon-circle">✓</div>
+      <div class="osm-sparkles">✨</div>
+    </div>
+    <div class="osm-badge">🎉 ĐẶT HÀNG THÀNH CÔNG!</div>
+    <h3 class="osm-title">Cảm ơn bạn đã tin tưởng lựa chọn</h3>
+    <p class="osm-sub">Đơn hàng của bạn đã được tiếp nhận và chuyển đến bộ phận đóng gói.</p>
+    
+    <div class="osm-details" id="osmDetails"></div>
+
+    <div class="osm-promise">
+      <div>📦 <b>Giao hàng toàn quốc:</b> Được mở hộp kiểm tra & thử bút soi đá trước khi thanh toán.</div>
+      <div>🛡️ <b>Bảo hành chính hãng:</b> Đổi trả 1-1 trong 30 ngày, bảo hành làm sáng bạc trọn đời.</div>
+    </div>
+
+    <div class="osm-actions">
+      <button type="button" class="osm-btn-confirm" onclick="closeOrderSuccessModal()">XÁC NHẬN & ĐÓNG</button>
+      <a href="tel:0398138678" class="osm-btn-call">📞 Hotline hỗ trợ: 0398.138.678</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbyvJ9KtpHmEkLHcHkj3-RElwQq262jD8EpZ_AvxDbBbSwoMtNnnIgbAlqQE71k60BAjvw/exec";
+const DEFAULT_PRICE_TABLE = [
+  {type:"1 Chiếc",size:"4mm",code:"MS04",stock:"106",oldPrice:"295000",salePrice:"229999"},
+  {type:"1 Chiếc",size:"4.5mm",code:"MS04.5",stock:"2",oldPrice:"315000",salePrice:"249000"},
+  {type:"1 Chiếc",size:"5mm",code:"MS05",stock:"105",oldPrice:"332000",salePrice:"259000"},
+  {type:"1 Chiếc",size:"6mm",code:"MS06",stock:"50",oldPrice:"444000",salePrice:"305999"},
+  {type:"1 Chiếc",size:"6.8mm",code:"MS06.8",stock:"31",oldPrice:"556000",salePrice:""},
+  {type:"1 Chiếc",size:"7.5mm",code:"MS07.5",stock:"41",oldPrice:"700000",salePrice:"409999"},
+  {type:"1 Đôi",size:"4mm",code:"MS04*2",stock:"56",oldPrice:"600303",salePrice:"399999"},
+  {type:"1 Đôi",size:"4.5mm",code:"MS04.5*2",stock:"3",oldPrice:"616216",salePrice:"439999"},
+  {type:"1 Đôi",size:"5mm",code:"MS05*2",stock:"46",oldPrice:"647895",salePrice:"459999"},
+  {type:"1 Đôi",size:"6mm",code:"MS06*2",stock:"25",oldPrice:"804872",salePrice:"549999"},
+  {type:"1 Đôi",size:"6.8mm",code:"MS06.8*2",stock:"6",oldPrice:"953721",salePrice:"659999"},
+  {type:"1 Đôi",size:"7.5mm",code:"MS07.5*2",stock:"111",oldPrice:"1204000",salePrice:"759999"}
+];
+let priceTable = [...DEFAULT_PRICE_TABLE];
+
+function money(value){
+  const n = Number(String(value || "").replace(/\D/g,""));
+  return n ? n.toLocaleString("vi-VN") + "đ" : "Liên hệ";
+}
+
+function parsePriceTable(value){
+  if(!value) return [...DEFAULT_PRICE_TABLE];
+  if(Array.isArray(value)) return value;
+  try{
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [...DEFAULT_PRICE_TABLE];
+  }catch(e){
+    return [...DEFAULT_PRICE_TABLE];
+  }
+}
+
+function renderPriceTable(){
+  const tbody = document.getElementById("priceTableBody");
+  if(!tbody) return;
+  tbody.innerHTML = "";
+  priceTable.forEach(item=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${item.type || ""}</td><td>${item.size || ""}</td><td>${item.code || ""}</td><td class="sale-price">${money(item.salePrice || item.oldPrice)}</td><td class="old-price">${money(item.oldPrice)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function syncSizeOptions(){
+  const sizeSelect = document.getElementById("sizeSelect");
+  if(!sizeSelect) return;
+  const selected = sizeSelect.value || "5mm";
+  const sizes = [...new Set(priceTable.map(i=>i.size).filter(Boolean))];
+  sizeSelect.innerHTML = '<option value="">Chọn size đá</option>';
+  sizes.forEach(size=>{
+    const opt = document.createElement("option");
+    opt.value = size;
+    opt.textContent = size;
+    if(size === selected) opt.selected = true;
+    sizeSelect.appendChild(opt);
+  });
+  if(!sizeSelect.value && sizes.includes("5mm")) sizeSelect.value = "5mm";
+}
+
+function setDisplayedPrices(sale, old){
+  document.querySelectorAll(".price").forEach(el=>el.innerText = money(sale));
+  document.querySelectorAll(".old").forEach(el=>el.innerText = money(old));
+  document.querySelectorAll('[name="price"]').forEach(el=>el.value = String(sale || "").replace(/\D/g,""));
+  const selectedPrice = document.getElementById("selectedPriceText");
+  if(selectedPrice) selectedPrice.value = "Giá: " + money(sale);
+}
+
+function updateSelectedPrice(){
+  const variant = document.getElementById("variantSelect")?.value || "1 Đôi";
+  const size = document.getElementById("sizeSelect")?.value || "5mm";
+  const item = priceTable.find(i=>i.type === variant && i.size === size) || priceTable.find(i=>i.type === "1 Đôi" && i.size === "5mm") || priceTable[0];
+  if(!item) return;
+  const sale = item.salePrice || item.oldPrice;
+  setDisplayedPrices(sale, item.oldPrice);
+  const stock = document.getElementById("stockLeft");
+  if(stock && item.stock) stock.innerText = item.stock;
+}
+
+function initPricing(){
+  renderPriceTable();
+  syncSizeOptions();
+  updateSelectedPrice();
+  document.getElementById("variantSelect")?.addEventListener("change", updateSelectedPrice);
+  document.getElementById("sizeSelect")?.addEventListener("change", updateSelectedPrice);
+}
+
+let remain = 14*60+59;
+function tick(){
+  remain = Math.max(0, remain-1);
+  const h = Math.floor(remain/3600);
+  const m = Math.floor((remain%3600)/60);
+  const s = remain%60;
+  document.getElementById("h").innerText = String(h).padStart(2,"0");
+  document.getElementById("m").innerText = String(m).padStart(2,"0");
+  document.getElementById("s").innerText = String(s).padStart(2,"0");
+  document.getElementById("miniTimer").innerText = `00:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+setInterval(tick,1000); tick();
+
+document.getElementById("orderForm").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const btn = document.getElementById("btnSubmit");
+  const msg = document.getElementById("msg");
+  btn.disabled = true;
+  btn.innerText = "ĐANG GỬI ĐƠN...";
+  const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd.entries());
+  data.product = "Bông nụ bạc S925 kim cương Moissanite cao cấp";
+  data.price = data.price || document.querySelector('[name="price"]')?.value || "459999";
+  data.source = location.href;
+
+  try{
+    await fetch(API_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});
+    isOrderSubmitted = true;
+    msg.style.color = "#a7f3d0";
+    msg.innerText = "✅ Đặt hàng thành công! Shop sẽ liên hệ gửi hàng sớm nhất.";
+    
+    // Hiển thị Popup xác nhận đặt hàng thành công
+    showOrderSuccessModal(data);
+
+    // Bắn sự kiện Purchase & Lead cho Meta Pixel
+    if(window.fbq && currentPixelId){
+      const orderVal = Number(String(data.price || "459999").replace(/\D/g,"")) || 459999;
+      fbq('track', 'Purchase', {
+        content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
+        content_category: data.variant || '1 Đôi',
+        value: orderVal,
+        currency: 'VND'
+      });
+      fbq('track', 'Lead', {
+        content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
+        value: orderVal,
+        currency: 'VND'
+      });
+      console.log("🎯 Meta Pixel Event: Purchase & Lead fired (" + orderVal + " VND)");
+    }
+
+    e.target.reset();
+    syncSizeOptions();
+    updateSelectedPrice();
+    btn.innerText = "ĐÃ GỬI THÀNH CÔNG";
+  }catch(err){
+    msg.innerText = "Lỗi gửi đơn. Vui lòng thử lại.";
+    btn.innerText = "ĐẶT MUA NGAY";
+  }
+
+  btn.disabled = false;
+});
+
+function showOrderSuccessModal(orderData){
+  const modal = document.getElementById("orderSuccessModal");
+  if(!modal) return;
+  const details = document.getElementById("osmDetails");
+  if(details){
+    const priceFormatted = Number(String(orderData.price || 0).replace(/\D/g,"")).toLocaleString("vi-VN") + "đ";
+    const now = new Date();
+    const timeStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
+    const code = "PGD-VN-" + timeStr;
+    const fullAddr = [orderData.address, orderData.province].filter(Boolean).join(", ");
+    
+    details.innerHTML = `
+      <div class="osm-row"><span style="color:#6b7280">Mã đơn:</span><b>${code}</b></div>
+      <div class="osm-row"><span style="color:#6b7280">Người nhận:</span><b>${orderData.name || ""}</b></div>
+      <div class="osm-row"><span style="color:#6b7280">Số điện thoại:</span><b>${orderData.phone || ""}</b></div>
+      <div class="osm-row"><span style="color:#6b7280">Địa chỉ:</span><b>${fullAddr}</b></div>
+      <div class="osm-row"><span style="color:#6b7280">Sản phẩm:</span><b>${orderData.variant || "1 Đôi"} (Size ${orderData.size || "5mm"})</b></div>
+      <div class="osm-row total"><span>Tổng tiền COD:</span><b>${priceFormatted}</b></div>
+    `;
+  }
+  modal.classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeOrderSuccessModal(){
+  const modal = document.getElementById("orderSuccessModal");
+  if(modal){
+    modal.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+}
+
+const toastData = [
+  {name:"Nguyễn Hồng Anh", text:"Đã mua 1 đôi 5mm + Freeship", time:"5 phút trước", avatar:"images/avatar1.png"},
+  {name:"Trần Thanh Mai", text:"Đã đặt bông tai 6mm + hộp cao cấp", time:"8 phút trước", avatar:"images/avatar2.png"},
+  {name:"Lê Thu Trang", text:"Đã mua combo 2 đôi + kiểm định GRA", time:"12 phút trước", avatar:"images/avatar3.png"},
+  {name:"Phạm Ngọc Linh", text:"Vừa để lại số điện thoại tư vấn", time:"15 phút trước", avatar:"images/avatar4.png"},
+  {name:"Thuỳ Dương", text:"Đã mua size 7.5mm làm quà tặng", time:"20 phút trước", avatar:"images/avatar5.png"},
+  {name:"Nguyễn Anh Tuấn", text:"Đã đặt size 5mm làm quà tặng", time:"22 phút trước", avatar:"images/avatar6.png"},
+  {name:"Trần Đức Minh", text:"Đã mua 1 đôi tặng vợ, thanh toán COD", time:"28 phút trước", avatar:"images/avatar7.png"}
+];
+
+let toastIndex = 0;
+function showLiveToast(){
+  const t = toastData[toastIndex % toastData.length];
+  document.getElementById("toastAvatar").src = t.avatar;
+  document.getElementById("toastName").innerText = t.name;
+  document.getElementById("toastText").innerText = t.text;
+  document.getElementById("toastTime").innerText = t.time;
+  const box = document.getElementById("liveToast");
+  box.classList.add("show");
+  setTimeout(()=>box.classList.remove("show"), 4500);
+  toastIndex++;
+}
+setTimeout(showLiveToast, 1200);
+setInterval(showLiveToast, 9000);
+
+
+/* ===== COD Pro simulated live counters ===== */
+let soldBase = 1238;
+let leadBase = 27;
+
+function updateLiveCounters(){
+  const viewer = 28 + Math.floor(Math.random()*42);
+  document.getElementById("viewerCount").innerText = viewer;
+
+  if(Math.random() > .62){
+    soldBase += 1;
+    document.getElementById("soldCount").innerText = soldBase.toLocaleString("vi-VN");
+  }
+
+  if(Math.random() > .74){
+    leadBase += 1;
+    document.getElementById("leadCount").innerText = leadBase;
+  }
+}
+setInterval(updateLiveCounters, 4500);
+updateLiveCounters();
+
+/* ===== Vietnam Address Helpers & Maps Link ===== */
+const provinceSelectEl = document.getElementById("provinceSelect");
+const addressEl = document.querySelector('[name="address"]');
+const mapLinkEl = document.getElementById("mapLink");
+
+function updateMapLink(){
+  const fullAddress = [
+    addressEl ? addressEl.value : "",
+    provinceSelectEl ? provinceSelectEl.value : ""
+  ].filter(Boolean).join(", ");
+  if(fullAddress.length > 5 && mapLinkEl){
+    mapLinkEl.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(fullAddress);
+    mapLinkEl.style.display = "block";
+  } else if(mapLinkEl) {
+    mapLinkEl.style.display = "none";
+  }
+}
+
+provinceSelectEl?.addEventListener("change", updateMapLink);
+addressEl?.addEventListener("input", updateMapLink);
+
+
+
+/* ===== Load cấu hình từ Admin Google Sheet ===== */
+async function loadSiteConfig(){
+  if(!API_URL || API_URL.includes("DÁN_LINK")) return;
+
+  try{
+    const res = await fetch(API_URL + "?action=config&market=VN");
+    const cfg = await res.json();
+    if(!cfg || !cfg.ok) return;
+
+    const c = cfg.config || {};
+
+    const setText = (selector, value) => {
+      if(value === undefined || value === null || value === "") return;
+      document.querySelectorAll(selector).forEach(el => el.innerText = value);
+    };
+
+    if(c.productName){
+      document.title = c.productName;
+      const titleEl = document.querySelector(".title");
+      if(titleEl) titleEl.innerText = c.productName;
+    }
+
+    if(c.salePrice){
+      setDisplayedPrices(c.salePrice, c.oldPrice || "");
+    }
+
+    if(c.discountText){
+      document.querySelectorAll(".sale").forEach(el=>{
+        el.innerText = c.discountText;
+      });
+    }
+
+    if(c.stockLeft){
+      const stock = document.getElementById("stockLeft");
+      if(stock) stock.innerText = c.stockLeft;
+    }
+
+    if(c.priceTable){
+      priceTable = parsePriceTable(c.priceTable);
+      renderPriceTable();
+      syncSizeOptions();
+      updateSelectedPrice();
+    }
+
+    if(c.soldCount){
+      const sold = document.getElementById("soldCount");
+      if(sold) sold.innerText = Number(c.soldCount).toLocaleString("vi-VN");
+    }
+
+    if(c.shopName){
+      document.querySelectorAll("h2").forEach(h=>{
+        if(h.innerText.includes("Phú Gia Diamond")) h.innerText = c.shopName;
+      });
+    }
+
+    if(c.facebookPixelId){
+      initMetaPixel(c.facebookPixelId);
+    }
+
+  }catch(e){
+    console.log("Không tải được cấu hình admin", e);
+  }
+}
+
+/* ===== TRACKING SỰ KIỆN INITIATE CHECKOUT ===== */
+let hasTrackedCheckout = false;
+function trackInitiateCheckout(triggerSource){
+  if(hasTrackedCheckout) return;
+  hasTrackedCheckout = true;
+  const currentPrice = Number(String(document.querySelector('[name="price"]')?.value || "459999").replace(/\D/g,"")) || 459999;
+  if(window.fbq && currentPixelId){
+    fbq('track', 'InitiateCheckout', {
+      content_name: 'Bông nụ bạc S925 kim cương Moissanite',
+      value: currentPrice,
+      currency: 'VND'
+    });
+    console.log("🎯 Meta Pixel Event: InitiateCheckout (" + triggerSource + ")");
+  }
+}
+
+document.querySelectorAll('.buy, .cart, a[href="#order"]').forEach(el=>{
+  el.addEventListener('click', ()=>trackInitiateCheckout('Click Buy/Cart Button'));
+});
+
+const orderSection = document.getElementById('order');
+if(orderSection && 'IntersectionObserver' in window){
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        trackInitiateCheckout('Scroll into Order Form');
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.2 });
+  observer.observe(orderSection);
+}
+
+/* ===== CƠ CHẾ BẮT LEAD RƠI RỚT (ABANDONMENT RECOVERY) ===== */
+let leadCaptureTimer = null;
+let lastCapturedPhone = "";
+let isOrderSubmitted = false;
+
+function tryCaptureAbandonedLead(){
+  if(isOrderSubmitted) return;
+  const phoneInput = document.querySelector('input[name="phone"]');
+  const nameInput = document.querySelector('input[name="name"]');
+  const addressInput = document.querySelector('textarea[name="address"]');
+  const provinceSelect = document.getElementById("provinceSelect");
+  const variantSelect = document.getElementById("variantSelect");
+  const sizeSelect = document.getElementById("sizeSelect");
+
+  if(!phoneInput) return;
+  const rawPhone = String(phoneInput.value || "").replace(/\D/g, "");
+  const vnPhoneRegex = /^(0[3|5|7|8|9]|84[3|5|7|8|9])[0-9]{8}$/;
+
+  if(!vnPhoneRegex.test(rawPhone) || rawPhone === lastCapturedPhone) return;
+
+  const leadPayload = {
+    action: "abandonedLead",
+    market: "VN",
+    phone: rawPhone,
+    name: nameInput ? nameInput.value.trim() : "",
+    address: addressInput ? addressInput.value.trim() : "",
+    province: provinceSelect ? provinceSelect.value : "",
+    variant: variantSelect ? variantSelect.value : "1 Đôi",
+    size: sizeSelect ? sizeSelect.value : "5mm",
+    product: document.querySelector('.title')?.innerText || "Bông nụ bạc S925 kim cương Moissanite",
+    source: location.href
+  };
+
+  lastCapturedPhone = rawPhone;
+  console.log("⚡ Auto-saving abandoned lead to Sheet:", rawPhone);
+
+  fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(leadPayload)
+  }).catch(e => console.log("Lead capture err", e));
+}
+
+const phoneEl = document.querySelector('input[name="phone"]');
+if(phoneEl){
+  phoneEl.addEventListener("input", ()=>{
+    clearTimeout(leadCaptureTimer);
+    leadCaptureTimer = setTimeout(tryCaptureAbandonedLead, 3000);
+  });
+  phoneEl.addEventListener("blur", ()=>{
+    clearTimeout(leadCaptureTimer);
+    leadCaptureTimer = setTimeout(tryCaptureAbandonedLead, 800);
+  });
+}
+
+initPricing();
+window.addEventListener("load", loadSiteConfig);
+
+</script>
+</body>
+</html>
+
