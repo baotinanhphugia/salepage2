@@ -801,42 +801,71 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     </div>
   </section>
 
-  <!-- TAB 6: HƯỚNG DẪN CHI TIẾT (USER GUIDE) -->
+  <!-- TAB 5: HƯỚNG DẪN CHI TIẾT (USER GUIDE) -->
   <section id="guide" class="panel card">
-    <h2>📖 Hướng Dẫn Sử Dụng & Quản Lý Kho Dễ Dàng</h2>
-    <p class="small">Tài liệu hướng dẫn vận hành hệ thống Phú Gia Diamond COD V7.</p><br>
+    <h2>📖 Cẩm Nang Hướng Dẫn Vận Hành Hệ Thống Bán Hàng Việt Nam (COD)</h2>
+    <p class="small">Tài liệu chi tiết hướng dẫn quản lý bảng giá 12 size, xử lý đơn hàng 63 tỉnh thành, thông tin ngân hàng và cài đặt chuông báo Telegram.</p><br>
 
     <div class="guide-box">
+      <!-- BƯỚC 1 -->
       <div class="guide-step">
         <div class="step-num">1</div>
         <div class="step-content">
-          <h3>Cách quản lý Bảng giá & Tồn kho trực quan (Không cần đụng JSON)</h3>
+          <h4>💎 Quản Lý Bảng Giá & Tồn Kho 12 Size (VNĐ)</h4>
           <p>
-            - <b>Cách 1 (Ngay trên Admin):</b> Bạn chỉ cần vào tab <b>🇻🇳 Bảng giá Việt Nam</b> hoặc <b>🇹🇼 Bảng giá Đài Loan</b> &rarr; Sửa trực tiếp số tiền hoặc số lượng tồn kho trong các ô của bảng &rarr; Bấm <b>LƯU TOÀN BỘ CẤU HÌNH</b>.<br>
-            - <b>Cách 2 (Trực tiếp trên Google Sheet):</b> Mở file Google Sheet của bạn &rarr; Mở trang tính <b>BangGia_VN</b> hoặc <b>BangGia_TW</b> &rarr; Gõ số sửa như Excel bình thường. Hệ thống tự động đọc và đồng bộ ngay lập tức!
+            • <b>Cách chỉnh sửa:</b> Vào Tab <b>🇻🇳 Bảng giá Sản phẩm (VNĐ)</b> &rarr; Bạn có thể sửa trực tiếp Tên sản phẩm, Giá bán ưu đãi, Giá gốc và Tồn kho cho toàn bộ 12 size (cả <b>1 Chiếc</b> và <b>1 Đôi</b> từ <code>4mm</code> đến <code>7.5mm</code>).<br>
+            • <b>Lưu dữ liệu:</b> Sau khi chỉnh sửa xong, cuộn xuống dưới bấm nút <b>💾 LƯU TOÀN BỘ CẤU HÌNH VÀO GOOGLE SHEETS</b>. Landing Page sẽ tự động cập nhật giá mới ngay lập tức!<br>
+            • <b>Cơ chế trừ kho:</b> Mỗi khi khách đặt hàng thành công, hệ thống tự động tìm đúng phân loại và size khách chọn để <b>trừ tồn kho</b> tương ứng.
           </p>
         </div>
       </div>
 
+      <!-- BƯỚC 2 -->
       <div class="guide-step">
         <div class="step-num">2</div>
         <div class="step-content">
-          <h3>Cơ chế Trừ tồn kho tự động</h3>
+          <h4>💳 Cài Đặt Thông Tin Ngân Hàng & Thanh Toán Chuyển Khoản (VietQR)</h4>
           <p>
-            - Mỗi khi khách đặt hàng thành công tại web Việt Nam hoặc Đài Loan, hệ thống sẽ tự động tìm đúng dòng Size và Phân loại khách mua trong Sheet <b>BangGia_VN</b> hoặc <b>BangGia_TW</b> và <b>trừ đi số lượng khách mua</b>.<br>
-            - Số lượng tồn kho còn lại sẽ được hiển thị ngay trong tin nhắn báo đơn Telegram.
+            • Vào Tab <b>🏪 Shop & Chuyển khoản</b> &rarr; Điền Tên Ngân hàng (VD: MB Bank, Vietcombank), Số tài khoản, Tên chủ tài khoản và Cú pháp chuyển khoản.<br>
+            • Khách hàng có thể quét mã VietQR hoặc chuyển khoản trực tiếp theo thông tin đã cấu hình.
           </p>
         </div>
       </div>
 
+      <!-- BƯỚC 3 -->
       <div class="guide-step">
         <div class="step-num">3</div>
         <div class="step-content">
-          <h3>Cài đặt thông báo Đơn hàng về Telegram</h3>
+          <h4>🔔 Cài Đặt Chuông Báo Đơn Hàng Qua Telegram & Gmail (Miễn phí 100%)</h4>
           <p>
-            1. Mở Telegram, tìm bot <code class="code-inline">@BotFather</code> &rarr; Gửi lệnh <code class="code-inline">/newbot</code> để lấy <b>Bot Token</b>.<br>
-            2. Tìm bot <code class="code-inline">@userinfobot</code> để lấy <b>Chat ID</b> của bạn.<br>
-            3. Dán Token và Chat ID vào Tab <b>🔔 Telegram & Gmail</b> rồi Lưu. Khi có đơn mới từ VN hoặc TW, Telegram sẽ báo chuông ngay lập tức.
+            • <b>Bước 3.1:</b> Mở ứng dụng Telegram, tìm kiếm bot <code>@BotFather</code> &rarr; Gửi tin nhắn <code>/newbot</code> &rarr; Đặt tên cho bot và copy mã <b>Bot Token</b> (dạng: <code>1234567890:AAH...</code>).<br>
+            • <b>Bước 3.2:</b> Tìm bot <code>@userinfobot</code> &rarr; Bấm <code>/start</code> để lấy <b>Chat ID</b> cá nhân của bạn (hoặc tạo nhóm chat chung rồi add bot vào để lấy Chat ID nhóm).<br>
+            • <b>Bước 3.3:</b> Dán <b>Bot Token</b> và <b>Chat ID</b> vào Tab <b>🔔 Telegram & Gmail</b> rồi bấm <b>Lưu</b>. Mỗi khi có khách đặt đơn mới tại 63 tỉnh thành, Telegram sẽ đổ chuông báo ngay kèm thông tin khách và địa chỉ chi tiết!
+          </p>
+        </div>
+      </div>
+
+      <!-- BƯỚC 4 -->
+      <div class="guide-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>🎯 Gắn Mã Meta (Facebook) Pixel Để Chạy Quảng Cáo Ads</h4>
+          <p>
+            • Mở <b>Trình quản lý sự kiện (Events Manager)</b> trên Facebook Ads &rarr; Sao chép mã <b>Pixel ID</b> (dãy số gồm 15-16 số, ví dụ: <code>123456789012345</code>).<br>
+            • Vào Tab <b>🏪 Shop & Chuyển khoản</b> &rarr; Dán mã vào ô <b>🎯 Meta Pixel ID</b> &rarr; Bấm <b>Lưu</b>.<br>
+            • Landing Page sẽ tự động kích hoạt mã theo dõi chuẩn của Facebook (<code>PageView</code>, <code>InitiateCheckout</code>, <code>Purchase</code>) giúp tối ưu hóa chuyển đổi quảng cáo.
+          </p>
+        </div>
+      </div>
+
+      <!-- BƯỚC 5 -->
+      <div class="guide-step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h4>📦 Quy Trình Xử Lý Đơn Hàng COD Toàn Quốc</h4>
+          <p>
+            • Mở Tab <b>📦 Quản lý Đơn hàng</b> hoặc trực tiếp trên Google Sheets để xem danh sách khách hàng đặt mua.<br>
+            • Bấm trực tiếp vào số điện thoại của khách để gọi điện xác nhận đơn hàng, tư vấn size và tiến hành tạo đơn giao hàng qua <b>Viettel Post, GHTK, VNPost, J&T</b>.
           </p>
         </div>
       </div>
