@@ -663,13 +663,12 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   <!-- Quick Bar -->
   <div class="quick-bar">
     <div class="small">
-      <strong>Đồng bộ:</strong> Bảng giá được đồng bộ 2 chiều với 2 Sheet <b>BangGia_VN</b> & <b>BangGia_TW</b>.
+      <strong>Hệ thống:</strong> Quản trị Bán hàng Phú Gia Diamond (Việt Nam).
     </div>
     <div class="quick-btns">
       <button class="btn2" onclick="loadConfig()">🔄 Tải lại cấu hình</button>
       <button class="btn2" onclick="loadOrders()">📦 Xem đơn hàng</button>
-      <button class="btn2" onclick="openLanding('index.html')">🇻🇳 Trang Việt Nam</button>
-      <button class="btn2" onclick="openLanding('taiwan.html')">🇹🇼 Trang Đài Loan</button>
+      <button class="btn2" onclick="openLanding('index.html')">🌐 Mở Trang Bán Hàng</button>
     </div>
   </div>
 
@@ -678,7 +677,6 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   <!-- Tabs Navigation -->
   <nav class="tabs">
     <button class="tab active" onclick="showTab('productVN')">🇻🇳 Bảng giá Việt Nam (VNĐ)</button>
-    <button class="tab" onclick="showTab('productTW')">🇹🇼 Bảng giá Đài Loan (NT$)</button>
     <button class="tab" onclick="showTab('shop')">🏪 Shop & Chuyển khoản</button>
     <button class="tab" onclick="showTab('security')">🔔 Telegram & Gmail</button>
     <button class="tab" onclick="showTab('orders')">📦 Quản lý Đơn hàng</button>
@@ -728,56 +726,9 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         <div class="table-toolbar">
           <button type="button" class="btn2" onclick="addPriceRow('tbodyVN', {type:'1 Đôi', size:'5mm', code:'MS05*2', stock:'50', oldPrice:'647895', salePrice:'459999'}, false)">➕ Thêm dòng Size mới</button>
           <button type="button" class="btn2" onclick="resetDefaultPrices('tbodyVN', false)">🔄 Nạp bảng giá mặc định VN</button>
-        </div>
-      </div>
     </section>
 
-    <!-- TAB 2: ĐÀI LOAN -->
-    <section id="productTW" class="panel card">
-      <h2>🇹🇼 Bảng giá & Tồn kho Đài Loan (NT$)</h2>
-      <p class="small">Dành riêng cho thị trường Đài Loan (Lưu trực tiếp tại Sheet <b>BangGia_TW</b>).</p><br>
-      <div class="grid">
-        <div><label>Tên sản phẩm (Đài Loan)</label><input name="productNameTW" value="Bông nụ bạc S925 Moissanite cao cấp - giao tại Đài Loan"></div>
-        <div><label>Đơn vị tiền tệ</label><input value="NT$ (Tân Đài Tệ)" readonly style="color:#aaa"></div>
-        <div><label>Giá bán mặc định (NT$)</label><input name="salePriceTW" value="599"></div>
-        <div><label>Giá gốc mặc định (NT$)</label><input name="oldPriceTW" value="899"></div>
-        <div><label>Text giảm giá (Đài Loan)</label><input name="discountTextTW" value="Flash Sale"></div>
-        <div><label>Đã bán (Đài Loan)</label><input name="soldCountTW" value="865"></div>
-        <div><label>Còn hàng tổng tại Đài Loan</label><input name="stockLeftTW" value="23"></div>
-      </div>
-      <br>
-      <label>Mô tả ngắn (Đài Loan)</label>
-      <textarea name="shortDescriptionTW">Bạc thật S925, Moissanite sáng đẹp, full kiểm định GRA quốc tế, hỗ trợ giao tận tay tại Đài Loan.</textarea>
-      <br><br>
-
-      <!-- BẢNG NHẬP LIỆU GIÁ TRỰC QUAN ĐÀI LOAN -->
-      <label style="font-size:15px; color:var(--gold-light); margin-bottom:4px;">📊 Bảng quản lý Từng Size & Tồn kho Đài Loan (NT$)</label>
-      <p class="small" style="margin-bottom:8px;">Nhập giá và tồn kho trực tiếp vào từng dòng (hoặc sửa trực tiếp trên Google Sheet <b>BangGia_TW</b>):</p>
-      
-      <div class="price-editor-box">
-        <table class="price-editor-table" id="tableTW">
-          <thead>
-            <tr>
-              <th style="width:130px;">Phân loại</th>
-              <th style="width:110px;">Size đá</th>
-              <th style="width:110px;">Mã SKU</th>
-              <th style="width:110px;">Tồn kho</th>
-              <th>Giá gốc (NT$)</th>
-              <th>Giá bán ưu đãi (NT$)</th>
-              <th style="width:60px; text-align:center;">Xóa</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyTW"></tbody>
-        </table>
-
-        <div class="table-toolbar">
-          <button type="button" class="btn2" onclick="addPriceRow('tbodyTW', {type:'1 Đôi', size:'5mm', code:'MS05*2', stock:'50', oldPrice:'899', salePrice:'599'}, true)">➕ Thêm dòng Size mới (TW)</button>
-          <button type="button" class="btn2" onclick="resetDefaultPrices('tbodyTW', true)">🔄 Nạp bảng giá mặc định TW</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 3: SHOP & CHUYỂN KHOẢN -->
+    <!-- TAB 2: SHOP & CHUYỂN KHOẢN -->
     <section id="shop" class="panel card">
       <h2>🏪 Thông tin Shop & Chuyển khoản</h2><br>
       <div class="grid">
@@ -1210,29 +1161,19 @@ function authPayload(extra = {}) {
   return {
     username: currentAuthUsername,
     password: currentAuthPassword,
+    key: currentAuthPassword,
     ...extra
   };
 }
 
 function formToObject() {
   const data = Object.fromEntries(new FormData($("#configForm")).entries());
-  // Đóng gói dữ liệu từ 2 bảng trực quan thành JSON
-  data.priceTableVN = JSON.stringify(getPriceTableData("tbodyVN"));
-  data.priceTableTW = JSON.stringify(getPriceTableData("tbodyTW"));
+  data.priceTable = JSON.stringify(getPriceTableData("tbodyVN"));
   return data;
 }
 
 function fillForm(config) {
   if (!config) return;
-
-  // Tự động ánh xạ fallback nếu Sheet cũ chứa các key đơn lẻ
-  if (!config.productNameVN && config.productName) config.productNameVN = config.productName;
-  if (!config.salePriceVN && config.salePrice) config.salePriceVN = config.salePrice;
-  if (!config.oldPriceVN && config.oldPrice) config.oldPriceVN = config.oldPrice;
-  if (!config.discountTextVN && config.discountText) config.discountTextVN = config.discountText;
-  if (!config.soldCountVN && config.soldCount) config.soldCountVN = config.soldCount;
-  if (!config.stockLeftVN && config.stockLeft) config.stockLeftVN = config.stockLeft;
-  if (!config.shortDescriptionVN && config.shortDescription) config.shortDescriptionVN = config.shortDescription;
 
   Object.entries(config).forEach(([k, v]) => {
     const el = document.querySelector(`[name="${k}"]`);
@@ -1241,20 +1182,18 @@ function fillForm(config) {
     }
   });
 
-  // Render 2 bảng trực quan
-  const parseTable = (raw, isTW) => {
-    if (!raw) return isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN;
+  const parseTable = (raw) => {
+    if (!raw) return DEFAULT_PRICES_VN;
     if (Array.isArray(raw)) return raw;
     try {
       const p = JSON.parse(raw);
-      return Array.isArray(p) ? p : (isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN);
+      return Array.isArray(p) ? p : DEFAULT_PRICES_VN;
     } catch(e) {
-      return isTW ? DEFAULT_PRICES_TW : DEFAULT_PRICES_VN;
+      return DEFAULT_PRICES_VN;
     }
   };
 
-  renderPriceEditorTable("tbodyVN", parseTable(config.priceTableVN || config.priceTable, false), false);
-  renderPriceEditorTable("tbodyTW", parseTable(config.priceTableTW, true), true);
+  renderPriceEditorTable("tbodyVN", parseTable(config.priceTable || config.priceTableVN));
 
   if (config.currentAdminUsername) {
     $("#currentUserBadge").textContent = "🟢 " + config.currentAdminUsername;
@@ -1273,7 +1212,7 @@ async function loadConfig() {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Không tải được cấu hình");
     fillForm(data.config);
-    showStatus("Đã tải cấu hình và bảng giá 2 quốc gia thành công từ Google Sheets.");
+    showStatus("Đã tải cấu hình và bảng giá Việt Nam thành công từ Google Sheets.");
   } catch (e) {
     showStatus(e.message, false);
   }
@@ -1321,25 +1260,22 @@ async function loadOrders() {
     tbody.innerHTML = "";
     
     if (!data.orders || data.orders.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='11' style='text-align:center; padding:24px; color:#888;'>Chưa có đơn hàng nào.</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='10' style='text-align:center; padding:24px; color:#888;'>Chưa có đơn hàng nào.</td></tr>";
     } else {
       data.orders.forEach(o => {
         const tr = document.createElement("tr");
-        const isTW = (o.market && o.market.includes("Đài Loan")) || String(o.price || "").includes("NT$");
-        const badgeHtml = isTW ? "<span class='badge-tw'>🇹🇼 Đài Loan</span>" : "<span class='badge-vn'>🇻🇳 Việt Nam</span>";
-        
         const phoneHtml = o.phone ? `<a href="tel:${o.phone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;">${o.phone}</a>` : "";
-        const priceHtml = `<strong style="color:#f87171;">${o.price || "Chưa có"}</strong>`;
+        const cleanPrice = String(o.price || "").replace(/[^0-9]/g, "");
+        const priceHtml = `<strong style="color:#f87171;">${Number(cleanPrice || 0).toLocaleString("vi-VN")}đ</strong>`;
 
         const cols = [
           o.createdAt,
           `<span style="font-family:'JetBrains Mono',monospace; font-size:12px;">${o.orderId}</span>`,
-          badgeHtml,
           `<strong style="color:#fff;">${o.name || "Khách ẩn danh"}</strong>`,
           phoneHtml,
           o.address || "Chưa nhập",
-          o.variant || "1 Đôi",
-          o.size || "5mm",
+          o.city || "Chưa chọn",
+          `${o.variant || "1 Đôi"} (Size ${o.size || "5mm"})`,
           o.quantity || "1",
           priceHtml,
           `<span style="background:rgba(16,185,129,0.15); color:#6ee7b7; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">${o.status || "Mới"}</span>`
@@ -1366,12 +1302,10 @@ function openLanding(page = "index.html") {
 
 // Khởi chạy khi load trang
 window.addEventListener("DOMContentLoaded", () => {
-  // Render bảng mặc định sẵn
-  renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN, false);
-  renderPriceEditorTable("tbodyTW", DEFAULT_PRICES_TW, true);
+  renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN);
 
-  const savedUser = sessionStorage.getItem("PGD_AUTH_USER");
-  const savedPass = sessionStorage.getItem("PGD_AUTH_PASS");
+  const savedUser = sessionStorage.getItem("PGD_AUTH_USER_VN");
+  const savedPass = sessionStorage.getItem("PGD_AUTH_PASS_VN");
   
   if (savedUser && savedPass) {
     $("#inputUsername").value = savedUser;
