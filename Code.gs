@@ -2,6 +2,7 @@
  * =========================================================================
  * PHÚ GIA DIAMOND - CHUYÊN BIỆT THỊ TRƯỜNG VIỆT NAM (VNĐ)
  * Backend Google Apps Script Độc Lập - Quản lý Google Sheet & Telegram VN
+ * Tích hợp luồng chốt đơn Inbox Zero: Gọi xác nhận -> Sửa đơn -> Đẩy eShop -> Tự xóa tin Telegram
  * =========================================================================
  */
 
@@ -16,7 +17,7 @@ function doGet(e) {
   return HtmlService.createHtmlOutput(
     "<div style='font-family:sans-serif;text-align:center;padding:50px;'>" +
     "<h2>Phú Gia Diamond - Vietnam API is running securely.</h2>" +
-    "<p>Hệ thống tiếp nhận đơn hàng Việt Nam hoạt động 24/7.</p>" +
+    "<p>Hệ thống tiếp nhận đơn hàng Việt Nam hoạt động 24/7 (Đã tích hợp quy trình Inbox Zero Telegram & eShop).</p>" +
     "</div>"
   );
 }
@@ -25,27 +26,50 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents || "{}");
 
+    // 0. Xử lý nút bấm trực tiếp trên Telegram (Callback Query)
+    if (data.callback_query) {
+      return handleTelegramCallback_(data.callback_query);
+    }
+
     // 1. Admin lấy cấu hình
     if (data.action === "adminConfig") {
-      checkAdminWithBruteForceGuard_(data.key);
+      checkAdminWithBruteForceGuard_(data.key || data.password);
       return json_({ ok: true, config: getConfig_() });
     }
 
     // 2. Admin xem danh sách đơn hàng
     if (data.action === "orders") {
-      checkAdminWithBruteForceGuard_(data.key);
+      checkAdminWithBruteForceGuard_(data.key || data.password);
       return json_({ ok: true, orders: getOrders_() });
     }
 
     // 3. Admin lưu cấu hình
     if (data.action === "saveConfig") {
-      checkAdminWithBruteForceGuard_(data.key);
+      checkAdminWithBruteForceGuard_(data.key || data.password);
       saveConfig_(data.config || {});
       savePrivateProps_(data.config || {});
       return json_({ ok: true });
     }
 
-    // 4. Khách đặt hàng từ Landing Page Việt Nam
+    // 4. Admin sửa đơn hàng (Xoá tin cũ trên Telegram, gửi lại tin mới cập nhật)
+    if (data.action === "updateOrder") {
+      checkAdminWithBruteForceGuard_(data.key || data.password);
+      return handleUpdateOrderVN_(data);
+    }
+
+    // 5. Admin xác nhận đẩy đơn sang eShop (Hoàn tất -> Xóa tin Telegram)
+    if (data.action === "pushToEShop") {
+      checkAdminWithBruteForceGuard_(data.key || data.password);
+      return handlePushToEShopVN_(data);
+    }
+
+    // 6. Admin hủy đơn (Khách bom / không mua -> Xóa tin Telegram)
+    if (data.action === "cancelOrder") {
+      checkAdminWithBruteForceGuard_(data.key || data.password);
+      return handleCancelOrderVN_(data);
+    }
+
+    // 7. Khách đặt hàng từ Landing Page Việt Nam
     return handleOrderVN_(data);
   } catch (err) {
     return json_({ ok: false, error: err.message || err.toString() });
@@ -96,7 +120,7 @@ function handleOrderVN_(data) {
     const priceRaw = stockResult.price || config.salePrice || "459999";
     const priceFormatted = `${formatMoney_(priceRaw)}đ`;
 
-    // Ghi an toàn vào Google Sheet
+    // Ghi an toàn vào Google Sheet (18 cột chuẩn + 2 cột TelegramMsgId & EShopCode)
     sheet.appendRow([
       createdAt,
       orderId,
@@ -115,10 +139,14 @@ function handleOrderVN_(data) {
       priceFormatted,
       cleanText_(data.note || ""),
       mapsLink,
-      "Mới"
+      "Chờ xác nhận",
+      "", // Cột 19: TelegramMsgId
+      ""  // Cột 20: EShopCode
     ]);
 
-    // Bắn tin nhắn Telegram & Gmail
+    const lastRow = sheet.getLastRow();
+
+    // Bắn tin nhắn Telegram kèm cụm nút bấm kết hợp (Dạng 1 & Dạng 2)
     const message =
 `💎 🇻🇳 ĐƠN HÀNG MỚI (VIỆT NAM) - PHÚ GIA DIAMOND
 🧾 Mã đơn: ${orderId}
@@ -137,7 +165,12 @@ function handleOrderVN_(data) {
 📝 Ghi chú: ${cleanText_(data.note || "Không có")}
 🕒 Thời gian: ${createdAt}`;
 
-    safeSendTelegram_(message);
+    const cleanPhone = cleanText_(data.phone || "");
+    const msgId = safeSendTelegram_(message, orderId, cleanPhone, data.adminUrl);
+    if (msgId) {
+      sheet.getRange(lastRow, 19).setValue(msgId);
+    }
+
     safeSendGmail_(orderId, message);
 
     return json_({ ok: true, orderId, market: "Việt Nam" });
@@ -146,12 +179,241 @@ function handleOrderVN_(data) {
   }
 }
 
+/**
+ * Admin Sửa Đơn: Cập nhật Google Sheet, XÓA tin nhắn Telegram cũ và GỬI LẠI tin nhắn mới
+ */
+function handleUpdateOrderVN_(data) {
+  const orderId = String(data.orderId || "").trim();
+  if (!orderId) throw new Error("Thiếu mã đơn hàng!");
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+  let targetRow = -1;
+  let oldMsgId = "";
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][1]).trim() === orderId) {
+      targetRow = i + 1;
+      oldMsgId = String(values[i][18] || "");
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    throw new Error("Không tìm thấy đơn hàng " + orderId);
+  }
+
+  const name = cleanText_(data.name || "");
+  const phone = cleanText_(data.phone || "");
+  const address = cleanText_(data.address || "");
+  const province = cleanText_(data.province || "");
+  const district = cleanText_(data.district || "");
+  const ward = cleanText_(data.ward || "");
+  const variant = cleanText_(data.variant || "");
+  const size = cleanText_(data.size || "");
+  const quantity = cleanText_(data.quantity || "1");
+  const price = cleanText_(data.price || "");
+  const note = cleanText_(data.note || "");
+  const fullAddress = [address, ward, district, province].filter(Boolean).join(", ");
+  const mapsLink = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(fullAddress);
+
+  if (name) sheet.getRange(targetRow, 4).setValue(name);
+  if (phone) sheet.getRange(targetRow, 5).setValue(phone);
+  sheet.getRange(targetRow, 6).setValue(address);
+  sheet.getRange(targetRow, 7).setValue(province);
+  sheet.getRange(targetRow, 8).setValue(district);
+  sheet.getRange(targetRow, 9).setValue(ward);
+  sheet.getRange(targetRow, 10).setValue(variant);
+  sheet.getRange(targetRow, 11).setValue(size);
+  sheet.getRange(targetRow, 12).setValue(quantity);
+  if (price) sheet.getRange(targetRow, 15).setValue(price.endsWith("đ") ? price : formatMoney_(price) + "đ");
+  sheet.getRange(targetRow, 16).setValue(note);
+  sheet.getRange(targetRow, 17).setValue(mapsLink);
+  sheet.getRange(targetRow, 18).setValue("Đã sửa");
+
+  // 1. XOÁ TIN NHẮN CŨ TRÊN TELEGRAM
+  if (oldMsgId) {
+    safeDeleteTelegramMessage_(oldMsgId);
+  }
+
+  // 2. GỬI LẠI TIN MỚI CẬP NHẬT KÈM ĐẦY ĐỦ CỤM NÚT BẤM
+  const updatedTime = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
+  const formattedPrice = price.endsWith("đ") ? price : formatMoney_(price) + "đ";
+
+  const newMessage =
+`💎 🇻🇳 [ĐÃ CẬP NHẬT] ĐƠN HÀNG - PHÚ GIA DIAMOND
+🧾 Mã đơn: ${orderId}
+👤 Khách hàng: ${name}
+📞 Số điện thoại: ${phone}
+📍 Địa chỉ mới: ${fullAddress}
+🗺 Google Maps: ${mapsLink}
+💍 Phân loại: ${variant}
+📏 Kích cỡ đá: ${size}
+🔢 Số lượng: ${quantity}
+💰 Tổng thu COD: ${formattedPrice}
+📝 Ghi chú: ${note || "Không có"}
+🕒 Cập nhật lúc: ${updatedTime}`;
+
+  const newMsgId = safeSendTelegram_(newMessage, orderId, phone, data.adminUrl);
+  if (newMsgId) {
+    sheet.getRange(targetRow, 19).setValue(newMsgId);
+  }
+
+  return json_({
+    ok: true,
+    orderId,
+    newMsgId,
+    message: "Đã cập nhật đơn hàng thành công, xoá tin cũ và gửi tin mới lên Telegram!"
+  });
+}
+
+/**
+ * Đẩy đơn sang eShop: Đổi trạng thái trong Sheet, TỰ ĐỘNG XOÁ TIN NHẮN TRÊN TELEGRAM (Hoàn tất)
+ */
+function handlePushToEShopVN_(data) {
+  const orderId = String(data.orderId || "").trim();
+  if (!orderId) throw new Error("Thiếu mã đơn hàng!");
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+  let targetRow = -1;
+  let oldMsgId = "";
+  let customerName = "";
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][1]).trim() === orderId) {
+      targetRow = i + 1;
+      customerName = values[i][3] || "";
+      oldMsgId = String(values[i][18] || "");
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    throw new Error("Không tìm thấy đơn hàng " + orderId);
+  }
+
+  // 1. Cập nhật trạng thái trong Sheet
+  sheet.getRange(targetRow, 18).setValue("Đã đẩy eShop");
+  const eshopCode = "ES-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyMMdd-HHmmss");
+  sheet.getRange(targetRow, 20).setValue(eshopCode);
+
+  // 2. XOÁ TIN NHẮN TRÊN TELEGRAM (CÔNG VIỆC HOÀN THÀNH - INBOX ZERO!)
+  if (oldMsgId) {
+    safeDeleteTelegramMessage_(oldMsgId);
+    sheet.getRange(targetRow, 19).setValue(""); // Xóa ID tin nhắn vì đã hoàn tất
+  }
+
+  // 3. Gửi thông báo ngắn gọn xác nhận hoàn tất
+  safeSendQuickNotice_(`✅ [HOÀN TẤT] Đơn hàng ${orderId} (${customerName}) đã được đẩy sang eShop thành công! Mã eShop: ${eshopCode}`);
+
+  return json_({
+    ok: true,
+    orderId,
+    eshopCode,
+    message: "Đã đẩy đơn sang eShop thành công! Tin nhắn Telegram đã được dọn sạch."
+  });
+}
+
+/**
+ * Hủy đơn: Cập nhật trạng thái, XÓA TIN NHẮN TRÊN TELEGRAM
+ */
+function handleCancelOrderVN_(data) {
+  const orderId = String(data.orderId || "").trim();
+  if (!orderId) throw new Error("Thiếu mã đơn hàng!");
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+  let targetRow = -1;
+  let oldMsgId = "";
+  let customerName = "";
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][1]).trim() === orderId) {
+      targetRow = i + 1;
+      customerName = values[i][3] || "";
+      oldMsgId = String(values[i][18] || "");
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    throw new Error("Không tìm thấy đơn hàng " + orderId);
+  }
+
+  sheet.getRange(targetRow, 18).setValue("Đã hủy");
+
+  // Xóa tin nhắn Telegram
+  if (oldMsgId) {
+    safeDeleteTelegramMessage_(oldMsgId);
+    sheet.getRange(targetRow, 19).setValue("");
+  }
+
+  safeSendQuickNotice_(`❌ [ĐÃ HỦY] Đơn hàng ${orderId} (${customerName}) đã hủy theo yêu cầu.`);
+
+  return json_({
+    ok: true,
+    orderId,
+    message: "Đã hủy đơn hàng và dọn sạch tin nhắn trên Telegram!"
+  });
+}
+
+/**
+ * Xử lý sự kiện bấm nút trực tiếp trên Telegram (Callback Query)
+ */
+function handleTelegramCallback_(cb) {
+  const data = String(cb.data || "");
+  const cbId = cb.id;
+  const props = PropertiesService.getScriptProperties();
+  const token = props.getProperty("TELEGRAM_BOT_TOKEN");
+
+  function answerCb(text) {
+    try {
+      UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify({ callback_query_id: cbId, text: text, show_alert: false }),
+        muteHttpExceptions: true
+      });
+    } catch (e) {}
+  }
+
+  if (data.startsWith("push_")) {
+    const orderId = data.replace("push_", "");
+    try {
+      handlePushToEShopVN_({ orderId: orderId });
+      answerCb("✅ Đã đẩy sang eShop và dọn tin Telegram!");
+    } catch (err) {
+      answerCb("Lỗi: " + (err.message || err.toString()));
+    }
+    return json_({ ok: true });
+  }
+
+  if (data.startsWith("cancel_")) {
+    const orderId = data.replace("cancel_", "");
+    try {
+      handleCancelOrderVN_({ orderId: orderId });
+      answerCb("❌ Đã hủy đơn hàng!");
+    } catch (err) {
+      answerCb("Lỗi: " + (err.message || err.toString()));
+    }
+    return json_({ ok: true });
+  }
+
+  answerCb("Đã nhận yêu cầu!");
+  return json_({ ok: true });
+}
+
 function getOrCreateOrdersSheet_(ss) {
   let sheet = ss.getSheetByName(SHEET_ORDERS);
   const headers = [
-    "Thời gian","Mã đơn","Sản phẩm","Họ tên","Số điện thoại","Địa chỉ",
-    "Tỉnh/TP","Quận/Huyện","Phường/Xã","Phân loại","Size","Số lượng","Combo",
-    "Thanh toán","Tổng tiền","Ghi chú","Google Maps","Trạng thái"
+    "Thời gian", "Mã đơn", "Sản phẩm", "Họ tên", "Số điện thoại", "Địa chỉ",
+    "Tỉnh/TP", "Quận/Huyện", "Phường/Xã", "Phân loại", "Size", "Số lượng", "Combo",
+    "Thanh toán", "Tổng tiền", "Ghi chú", "Google Maps", "Trạng thái",
+    "TelegramMsgId", "EShopCode"
   ];
 
   if (!sheet) {
@@ -160,9 +422,11 @@ function getOrCreateOrdersSheet_(ss) {
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
     sheet.setFrozenRows(1);
   } else {
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
-    sheet.setFrozenRows(1);
+    const existingCols = sheet.getLastColumn();
+    if (existingCols < headers.length) {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+    }
   }
   return sheet;
 }
@@ -211,7 +475,8 @@ function defaultConfigVN_() {
     bankContent: "PGD + Số điện thoại",
     shopAddress: "Hưng Yên, Việt Nam",
     hotline: "0398138678",
-    zalo: "0398138678"
+    zalo: "0398138678",
+    adminUrl: ""
   };
 }
 
@@ -253,7 +518,7 @@ function saveConfig_(config) {
   sheet.appendRow(["key", "value"]);
 
   const all = Object.assign(defaultConfigVN_(), config);
-  const privateKeys = ["telegramBotToken", "telegramChatId", "adminEmail", "newAdminKey"];
+  const privateKeys = ["telegramBotToken", "telegramChatId", "adminEmail", "newAdminKey", "adminUrl"];
 
   Object.keys(all).forEach(k => {
     if (privateKeys.indexOf(k) === -1) {
@@ -320,6 +585,7 @@ function savePrivateProps_(config) {
   if (config.telegramBotToken) props.setProperty("TELEGRAM_BOT_TOKEN", config.telegramBotToken.trim());
   if (config.telegramChatId) props.setProperty("TELEGRAM_CHAT_ID", config.telegramChatId.trim());
   if (config.adminEmail) props.setProperty("ADMIN_EMAIL", config.adminEmail.trim());
+  if (config.adminUrl) props.setProperty("ADMIN_URL", config.adminUrl.trim());
   if (config.newAdminKey && config.newAdminKey.trim()) {
     props.setProperty("ADMIN_KEY", config.newAdminKey.trim());
   }
@@ -369,18 +635,109 @@ function getOrders_() {
       product: r[2],
       name: r[3],
       phone: r[4],
-      address: [r[5], r[8], r[7], r[6]].filter(Boolean).join(", "),
+      address: r[5] || "",
+      province: r[6] || "",
+      district: r[7] || "",
+      ward: r[8] || "",
+      fullAddress: [r[5], r[8], r[7], r[6]].filter(Boolean).join(", "),
       variant: r[9] || "",
       size: r[10] || "",
-      quantity: r[11] || "",
+      quantity: r[11] || "1",
+      combo: r[12] || "",
+      payment: r[13] || "COD",
       price: r[14] || "",
-      status: r[17] || "Mới"
+      note: r[15] || "",
+      mapsLink: r[16] || "",
+      status: r[17] || "Chờ xác nhận",
+      telegramMsgId: r[18] || "",
+      eshopCode: r[19] || ""
     });
   }
   return rows;
 }
 
-function safeSendTelegram_(text) {
+/**
+ * Gửi tin nhắn Telegram kèm cụm nút bấm kết hợp Dạng 1 & Dạng 2
+ * Trả về message_id từ Telegram để lưu vào Google Sheet
+ */
+function safeSendTelegram_(text, orderId, phone, adminBaseUrl) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const token = props.getProperty("TELEGRAM_BOT_TOKEN");
+    const chatId = props.getProperty("TELEGRAM_CHAT_ID");
+    if (!token || !chatId) return "";
+
+    const baseUrl = adminBaseUrl || props.getProperty("ADMIN_URL") || "";
+    const adminUrlWithOrder = baseUrl
+      ? (baseUrl + (baseUrl.indexOf("?") === -1 ? "?" : "&") + "orderId=" + encodeURIComponent(orderId))
+      : ("https://phugiadiamond.com/admin.html?orderId=" + encodeURIComponent(orderId));
+
+    const cleanPhone = String(phone || "").replace(/\D/g, "");
+
+    // CỤM NÚT BẤM KẾT HỢP DẠNG 1 & DẠNG 2:
+    // Hàng 1: Nút URL (Gọi điện & Mở Admin sửa đơn)
+    // Hàng 2: Nút Callback trực tiếp (Đẩy eShop & Hủy đơn)
+    const keyboard = [
+      [
+        { text: "📞 Gọi cho khách", url: `tel:${cleanPhone}` },
+        { text: "✏️ Mở Admin sửa đơn", url: adminUrlWithOrder }
+      ],
+      [
+        { text: "🚀 Đẩy ngay sang eShop", callback_data: `push_${orderId}` },
+        { text: "❌ Hủy đơn", callback_data: `cancel_${orderId}` }
+      ]
+    ];
+
+    const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        reply_markup: {
+          inline_keyboard: keyboard
+        }
+      }),
+      muteHttpExceptions: true
+    });
+
+    const resJson = JSON.parse(res.getContentText() || "{}");
+    if (resJson.ok && resJson.result && resJson.result.message_id) {
+      return String(resJson.result.message_id);
+    }
+    return "";
+  } catch (e) {
+    return "";
+  }
+}
+
+/**
+ * Xóa tin nhắn Telegram bằng message_id
+ */
+function safeDeleteTelegramMessage_(msgId) {
+  try {
+    if (!msgId) return;
+    const props = PropertiesService.getScriptProperties();
+    const token = props.getProperty("TELEGRAM_BOT_TOKEN");
+    const chatId = props.getProperty("TELEGRAM_CHAT_ID");
+    if (!token || !chatId) return;
+
+    UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/deleteMessage`, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        chat_id: chatId,
+        message_id: Number(msgId)
+      }),
+      muteHttpExceptions: true
+    });
+  } catch (e) {}
+}
+
+/**
+ * Gửi thông báo ngắn gọn xác nhận hoàn tất / hủy đơn (không gắn nút)
+ */
+function safeSendQuickNotice_(text) {
   try {
     const props = PropertiesService.getScriptProperties();
     const token = props.getProperty("TELEGRAM_BOT_TOKEN");
@@ -390,7 +747,10 @@ function safeSendTelegram_(text) {
     UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "post",
       contentType: "application/json",
-      payload: JSON.stringify({ chat_id: chatId, text }),
+      payload: JSON.stringify({
+        chat_id: chatId,
+        text: text
+      }),
       muteHttpExceptions: true
     });
   } catch (e) {}
