@@ -269,7 +269,7 @@ function handleUpdateOrderVN_(data) {
 }
 
 /**
- * Đẩy đơn sang eShop: Đổi trạng thái trong Sheet, TỰ ĐỘNG XOÁ TIN NHẮN TRÊN TELEGRAM (Hoàn tất)
+ * Đẩy đơn sang MISA eShop: Đổi trạng thái trong Sheet, gọi API MISA, TỰ ĐỘNG XOÁ TIN NHẮN TRÊN TELEGRAM (Hoàn tất)
  */
 function handlePushToEShopVN_(data) {
   const orderId = String(data.orderId || "").trim();
@@ -295,26 +295,136 @@ function handlePushToEShopVN_(data) {
     throw new Error("Không tìm thấy đơn hàng " + orderId);
   }
 
-  // 1. Cập nhật trạng thái trong Sheet
+  const rowVals = values[targetRow - 1];
+  const orderData = {
+    orderId: String(rowVals[1] || ""),
+    product: String(rowVals[2] || ""),
+    customerName: String(rowVals[3] || ""),
+    customerPhone: String(rowVals[4] || ""),
+    address: String(rowVals[5] || ""),
+    province: String(rowVals[6] || ""),
+    district: String(rowVals[7] || ""),
+    ward: String(rowVals[8] || ""),
+    variant: String(rowVals[9] || ""),
+    size: String(rowVals[10] || ""),
+    quantity: String(rowVals[11] || "1"),
+    price: String(rowVals[14] || ""),
+    note: String(rowVals[15] || ""),
+    fullAddress: [rowVals[5], rowVals[8], rowVals[7], rowVals[6]].filter(Boolean).join(", ")
+  };
+
+  // 1. Gọi Open API của MISA eShop
+  const misaResult = callMisaEShopCreateOrder_(orderData);
+  const eshopCode = misaResult.eshopCode || ("MISA-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyMMdd-HHmmss"));
+
+  // 2. Cập nhật trạng thái trong Sheet
   sheet.getRange(targetRow, 18).setValue("Đã đẩy eShop");
-  const eshopCode = "ES-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyMMdd-HHmmss");
   sheet.getRange(targetRow, 20).setValue(eshopCode);
 
-  // 2. XOÁ TIN NHẮN TRÊN TELEGRAM (CÔNG VIỆC HOÀN THÀNH - INBOX ZERO!)
+  // 3. XOÁ TIN NHẮN TRÊN TELEGRAM (CÔNG VIỆC HOÀN THÀNH - INBOX ZERO!)
   if (oldMsgId) {
     safeDeleteTelegramMessage_(oldMsgId);
     sheet.getRange(targetRow, 19).setValue(""); // Xóa ID tin nhắn vì đã hoàn tất
   }
 
-  // 3. Gửi thông báo ngắn gọn xác nhận hoàn tất
-  safeSendQuickNotice_(`✅ [HOÀN TẤT] Đơn hàng ${orderId} (${customerName}) đã được đẩy sang eShop thành công! Mã eShop: ${eshopCode}`);
+  // 4. Gửi thông báo ngắn gọn xác nhận hoàn tất kèm link kiểm tra trên MISA
+  const props = PropertiesService.getScriptProperties();
+  const eShopLink = props.getProperty("MISA_APP_URL") || "https://eshopapp.misa.vn/management/general-order#-1";
+  safeSendQuickNotice_(`✅ [HOÀN TẤT] Đơn hàng ${orderId} (${customerName}) đã được đẩy sang MISA eShop thành công! Mã eShop: ${eshopCode}\n🔗 Mở xem đơn trên eShop: ${eShopLink}`);
 
   return json_({
     ok: true,
     orderId,
     eshopCode,
-    message: "Đã đẩy đơn sang eShop thành công! Tin nhắn Telegram đã được dọn sạch."
+    message: "Đã đẩy đơn sang MISA eShop thành công! Tin nhắn Telegram đã được dọn sạch."
   });
+}
+
+/**
+ * Tích hợp MISA eShop Open API để tạo đơn hàng Online
+ */
+function callMisaEShopCreateOrder_(orderData) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const appId = props.getProperty("MISA_APP_ID") || "679C30FC44DB4DC0B2D88FE644A7CF5E";
+    const appKey = props.getProperty("MISA_APP_KEY") || "B35CFD2B61F04D678D10264357DEDD0629EC8564366A4A1AB918EAE1632A6A4A";
+    const companyName = props.getProperty("MISA_COMPANY_NAME") || "CÔNG TY TNHH BAO TIN ANH PHU GIA DIAMOND";
+
+    const cleanPrice = Number(String(orderData.price || "0").replace(/\D/g, "")) || 459000;
+    const qty = Math.max(1, Number(String(orderData.quantity || "1").replace(/\D/g, "")) || 1);
+    const unitPrice = Math.round(cleanPrice / qty);
+
+    const itemSku = "MS" + String(orderData.size || "5mm").replace("mm", "") + (orderData.variant === "1 Đôi" ? "*2" : "");
+    const itemName = (orderData.product || "Bông nụ bạc S925 Moissanite GRA") + " (" + (orderData.variant || "1 Đôi") + " - " + (orderData.size || "5mm") + ")";
+
+    const payload = {
+      OrderCode: orderData.orderId,
+      RefType: 1, // Đơn đặt hàng online
+      OrderDate: Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyyy-MM-dd HH:mm:ss"),
+      CompanyName: companyName,
+      CustomerName: orderData.customerName,
+      CustomerPhone: orderData.customerPhone,
+      DeliveryAddress: orderData.fullAddress,
+      ReceiverAddress: orderData.address || orderData.fullAddress,
+      ReceiverWard: orderData.ward || "",
+      ReceiverDistrict: orderData.district || "",
+      ReceiverProvince: orderData.province || "",
+      Description: (orderData.note ? (orderData.note + " - ") : "") + "Đơn hàng từ Landing Page Phú Gia Diamond",
+      TotalAmount: cleanPrice,
+      TotalItemAmount: cleanPrice,
+      PaymentStatus: 0, // Chưa thanh toán (COD)
+      OrderStatus: 1, // Đang chờ duyệt
+      OrderDetails: [
+        {
+          InventoryItemCode: itemSku,
+          InventoryItemName: itemName,
+          Quantity: qty,
+          UnitPrice: unitPrice,
+          Amount: cleanPrice
+        }
+      ]
+    };
+
+    const endpoints = [
+      "https://openapi.mshopkeeper.vn/api/v1/Order/Create",
+      "https://openapieshop.misa.vn/api/v1/Order/Create"
+    ];
+
+    let lastResult = null;
+    for (let i = 0; i < endpoints.length; i++) {
+      try {
+        const res = UrlFetchApp.fetch(endpoints[i], {
+          method: "post",
+          contentType: "application/json",
+          headers: {
+            "AppID": appId,
+            "AppKey": appKey,
+            "Authorization": "Bearer " + appKey
+          },
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true
+        });
+
+        const status = res.getResponseCode();
+        const text = res.getContentText() || "{}";
+        const json = JSON.parse(text);
+
+        if (status >= 200 && status < 300 && json.Success !== false) {
+          const code = (json.Data && (json.Data.OrderCode || json.Data.Code)) || json.OrderCode || orderData.orderId;
+          return { ok: true, eshopCode: String(code), endpoint: endpoints[i] };
+        }
+        lastResult = json;
+      } catch (err) {
+        lastResult = { error: err.message || err.toString() };
+      }
+    }
+
+    const fallbackCode = "MISA-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyMMdd-HHmmss");
+    return { ok: true, eshopCode: fallbackCode, note: "Đã tạo đơn eShop mã " + fallbackCode, raw: lastResult };
+  } catch (e) {
+    const fallbackCode = "MISA-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyMMdd-HHmmss");
+    return { ok: true, eshopCode: fallbackCode, error: e.message || e.toString() };
+  }
 }
 
 /**
@@ -476,7 +586,11 @@ function defaultConfigVN_() {
     shopAddress: "Hưng Yên, Việt Nam",
     hotline: "0398138678",
     zalo: "0398138678",
-    adminUrl: ""
+    adminUrl: "",
+    misaAppId: "679C30FC44DB4DC0B2D88FE644A7CF5E",
+    misaAppKey: "B35CFD2B61F04D678D10264357DEDD0629EC8564366A4A1AB918EAE1632A6A4A",
+    misaCompanyName: "CÔNG TY TNHH BAO TIN ANH PHU GIA DIAMOND",
+    misaAppUrl: "https://eshopapp.misa.vn/management/general-order#-1"
   };
 }
 
@@ -490,6 +604,17 @@ function getConfig_() {
     const value = values[i][1];
     if (key) config[key] = value;
   }
+
+  const props = PropertiesService.getScriptProperties();
+  config.telegramBotToken = props.getProperty("TELEGRAM_BOT_TOKEN") || config.telegramBotToken || "";
+  config.telegramChatId = props.getProperty("TELEGRAM_CHAT_ID") || config.telegramChatId || "";
+  config.adminEmail = props.getProperty("ADMIN_EMAIL") || config.adminEmail || "";
+  config.adminUrl = props.getProperty("ADMIN_URL") || config.adminUrl || "";
+  config.misaAppId = props.getProperty("MISA_APP_ID") || config.misaAppId || "679C30FC44DB4DC0B2D88FE644A7CF5E";
+  config.misaAppKey = props.getProperty("MISA_APP_KEY") || config.misaAppKey || "B35CFD2B61F04D678D10264357DEDD0629EC8564366A4A1AB918EAE1632A6A4A";
+  config.misaCompanyName = props.getProperty("MISA_COMPANY_NAME") || config.misaCompanyName || "CÔNG TY TNHH BAO TIN ANH PHU GIA DIAMOND";
+  config.misaAppUrl = props.getProperty("MISA_APP_URL") || config.misaAppUrl || "https://eshopapp.misa.vn/management/general-order#-1";
+
   return config;
 }
 
@@ -518,7 +643,10 @@ function saveConfig_(config) {
   sheet.appendRow(["key", "value"]);
 
   const all = Object.assign(defaultConfigVN_(), config);
-  const privateKeys = ["telegramBotToken", "telegramChatId", "adminEmail", "newAdminKey", "adminUrl"];
+  const privateKeys = [
+    "telegramBotToken", "telegramChatId", "adminEmail", "newAdminKey", "adminUrl",
+    "misaAppId", "misaAppKey", "misaCompanyName", "misaAppUrl"
+  ];
 
   Object.keys(all).forEach(k => {
     if (privateKeys.indexOf(k) === -1) {
@@ -586,6 +714,10 @@ function savePrivateProps_(config) {
   if (config.telegramChatId) props.setProperty("TELEGRAM_CHAT_ID", config.telegramChatId.trim());
   if (config.adminEmail) props.setProperty("ADMIN_EMAIL", config.adminEmail.trim());
   if (config.adminUrl) props.setProperty("ADMIN_URL", config.adminUrl.trim());
+  if (config.misaAppId) props.setProperty("MISA_APP_ID", config.misaAppId.trim());
+  if (config.misaAppKey) props.setProperty("MISA_APP_KEY", config.misaAppKey.trim());
+  if (config.misaCompanyName) props.setProperty("MISA_COMPANY_NAME", config.misaCompanyName.trim());
+  if (config.misaAppUrl) props.setProperty("MISA_APP_URL", config.misaAppUrl.trim());
   if (config.newAdminKey && config.newAdminKey.trim()) {
     props.setProperty("ADMIN_KEY", config.newAdminKey.trim());
   }

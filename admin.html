@@ -845,6 +845,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     <button class="tab active" onclick="showTab('productVN')">🇻🇳 Bảng giá Việt Nam (VNĐ)</button>
     <button class="tab" onclick="showTab('shop')">🏪 Shop & Chuyển khoản</button>
     <button class="tab" onclick="showTab('security')">🔔 Telegram & Gmail</button>
+    <button class="tab" onclick="showTab('misa')">🛒 Kết nối MISA eShop</button>
     <button class="tab" onclick="showTab('orders')">📦 Quản lý Đơn hàng</button>
     <button class="tab tab-guide" onclick="showTab('guide')">📖 Hướng dẫn sử dụng</button>
   </nav>
@@ -930,6 +931,43 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <div>
         <label>🔗 Đường dẫn trang Admin (để gắn vào nút '✏️ Mở Admin sửa đơn' trên Telegram)</label>
         <input name="adminUrl" placeholder="VD: https://phugiadiamond.com/admin.html (hoặc để trống sẽ tự lấy link hiện tại)">
+      </div>
+    </section>
+
+    <!-- TAB MISA ESHOP -->
+    <section id="misa" class="panel card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+        <div>
+          <h2>🛒 Kết Nối MISA eShop (Open API)</h2>
+          <p class="small">Tự động đẩy đơn hàng sang phần mềm MISA eShop Cloud để quản lý và đẩy sang đơn vị vận chuyển.</p>
+        </div>
+        <a href="https://eshopapp.misa.vn/management/general-order#-1" target="_blank" class="btn2" style="background:#2563eb; color:#fff; text-decoration:none; border:none; padding:8px 16px; border-radius:8px; font-weight:700;">🔗 Mở Đơn Hàng MISA eShop</a>
+      </div>
+      <div class="grid">
+        <div>
+          <label>Tên Công ty / Cửa hàng trên eShop</label>
+          <input name="misaCompanyName" value="CÔNG TY TNHH BAO TIN ANH PHU GIA DIAMOND">
+        </div>
+        <div>
+          <label>Mã kết nối (AppID)</label>
+          <input name="misaAppId" value="679C30FC44DB4DC0B2D88FE644A7CF5E">
+        </div>
+      </div>
+      <br>
+      <div>
+        <label>Khóa bảo mật bí mật (AppKey / SecretKey)</label>
+        <input name="misaAppKey" value="B35CFD2B61F04D678D10264357DEDD0629EC8564366A4A1AB918EAE1632A6A4A">
+      </div>
+      <br>
+      <div>
+        <label>Đường dẫn trang quản lý đơn trên MISA eShop</label>
+        <input name="misaAppUrl" value="https://eshopapp.misa.vn/management/general-order#-1">
+      </div>
+      <br>
+      <div style="background:#161622; border:1px solid rgba(37,99,235,0.3); border-radius:12px; padding:14px;">
+        <p style="font-size:13px; color:#93c5fd; line-height:1.6;">
+          💡 <b>Quy trình hoạt động:</b> Khi nhân viên chốt đơn xong trên trang Admin hoặc trên Telegram &rarr; Bấm <b>[ 🚀 Đẩy eShop ]</b> &rarr; Đơn hàng sẽ tự động bay sang mục <b>Đơn đặt hàng (Chờ duyệt)</b> trên MISA eShop, đồng thời tin nhắn trên Telegram sẽ <b>tự động được xóa sạch</b> (Inbox Zero)!
+        </p>
       </div>
     </section>
 
