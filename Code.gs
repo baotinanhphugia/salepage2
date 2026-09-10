@@ -802,16 +802,16 @@ function safeSendTelegram_(text, orderId, phone, adminBaseUrl) {
     const baseUrl = adminBaseUrl || props.getProperty("ADMIN_URL") || "";
     const adminUrlWithOrder = baseUrl
       ? (baseUrl + (baseUrl.indexOf("?") === -1 ? "?" : "&") + "orderId=" + encodeURIComponent(orderId))
-      : ("https://phugiadiamond.com/admin.html?orderId=" + encodeURIComponent(orderId));
+      : ("https://baotinanhphugia.github.io/salepage2/admin.html?orderId=" + encodeURIComponent(orderId));
 
     const cleanPhone = String(phone || "").replace(/\D/g, "");
 
     // CỤM NÚT BẤM KẾT HỢP DẠNG 1 & DẠNG 2:
-    // Hàng 1: Nút URL (Gọi điện & Mở Admin sửa đơn)
+    // Hàng 1: Nút URL (Nhắn Zalo & Mở Admin sửa đơn)
     // Hàng 2: Nút Callback trực tiếp (Đẩy eShop & Hủy đơn)
     const keyboard = [
       [
-        { text: "📞 Gọi cho khách", url: `tel:${cleanPhone}` },
+        { text: "💬 Nhắn Zalo khách", url: `https://zalo.me/${cleanPhone}` },
         { text: "✏️ Mở Admin sửa đơn", url: adminUrlWithOrder }
       ],
       [
