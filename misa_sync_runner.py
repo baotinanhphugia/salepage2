@@ -69,6 +69,60 @@ def get_misa_token():
         print(f"[TOKEN] Đã cấp mới Token MISA thành công (hết hạn sau 30 phút).")
         return _cached_token
 
+# --- QUẢN LÝ KHÁCH HÀNG MISA (TỰ ĐỘNG LƯU / TÌM KHÁCH HÀNG) ---
+def ensure_misa_customer(name, phone, address, province, district, ward):
+    token = get_misa_token()
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+
+    # 1. Thử tạo mới khách hàng với đầy đủ địa chỉ
+    cust_payload = {
+        "branch_id": MISA_BRANCH_ID,
+        "name": name,
+        "tel": phone,
+        "address": address,
+        "province_name": province,
+        "district_name": district,
+        "ward_name": ward,
+        "account_object_type": 1
+    }
+    try:
+        req = urllib.request.Request(
+            "https://eshopapp.misa.vn/api/platform/customers/create",
+            data=json.dumps(cust_payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            if res.get("Status", {}).get("Success"):
+                cust_id = res.get("Data", {}).get("id")
+                print(f"[CUSTOMER] Đã tạo mới khách hàng MISA: {name} ({phone}) -> {cust_id}")
+                return cust_id
+    except urllib.error.HTTPError:
+        pass
+    except Exception:
+        pass
+
+    # 2. Nếu khách đã tồn tại, tra cứu ID theo số điện thoại
+    try:
+        clean_phone = phone.replace(" ", "")
+        req_list = urllib.request.Request(
+            f"https://eshopapp.misa.vn/api/platform/customers/list?tel={clean_phone}",
+            headers=headers
+        )
+        with urllib.request.urlopen(req_list, timeout=10) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            items = res.get("Data", {}).get("Data", [])
+            for it in items:
+                if str(it.get("phone", "")).replace(" ", "") == clean_phone:
+                    cust_id = it.get("id")
+                    print(f"[CUSTOMER] Đã tìm thấy khách hàng cũ MISA: {it.get('name')} ({clean_phone}) -> {cust_id}")
+                    return cust_id
+    except Exception:
+        pass
+
+    return MISA_DEFAULT_CUSTOMER
+
 # --- HÀM TẠO ĐƠN TRÊN MISA ESHOP ---
 def push_order_to_misa(order):
     token = get_misa_token()
@@ -104,17 +158,34 @@ def push_order_to_misa(order):
         recipient_tel = "0" + recipient_tel
         
     full_addr = order.get("fullAddress") or order.get("address") or "Hà Nội"
+    street_addr = order.get("address") or full_addr
+    province_name = order.get("province") or ""
+    district_name = order.get("district") or ""
+    ward_name = order.get("ward") or ""
+
+    # Tự động tạo / tìm hồ sơ khách hàng trên MISA
+    customer_id = ensure_misa_customer(
+        recipient_name,
+        recipient_tel,
+        street_addr,
+        province_name,
+        district_name,
+        ward_name
+    )
 
     order_payload = {
         "branch_id": MISA_BRANCH_ID,
-        "customer_id": MISA_DEFAULT_CUSTOMER,
+        "customer_id": customer_id,
         "customer_name": recipient_name,
         "stock_id": MISA_STOCK_ID,
         "stock_code": "KHH",
         "stock_name": "Kho hàng hóa",
         "recipient_name": recipient_name,
         "recipient_tel": recipient_tel,
-        "recipient_address": full_addr,
+        "recipient_address": street_addr,
+        "province_name": province_name,
+        "district_name": district_name,
+        "ward_name": ward_name,
         "shipping_service_name": "Tự giao",
         "partner_service_type_name": "Tự giao",
         "shipping_payment_type": 1,
@@ -123,6 +194,13 @@ def push_order_to_misa(order):
         "shipping_partner_amount": 0,
         "weight": 100,
         "employee_note": f"Đơn Landing Page {order.get('orderId', '')} ({variant} - {size_str}) - {order.get('note', '')}",
+        "invoice": {
+            "inv_buyer_object_type": 2, # Cá nhân
+            "inv_buyer_name": recipient_name,
+            "inv_buyer_address": full_addr,
+            "inv_buyer_legal_tel": recipient_tel,
+            "inv_email": order.get("email") or ""
+        },
         "details": [
             {
                 "inventory_item_id": matched_item["id"],
