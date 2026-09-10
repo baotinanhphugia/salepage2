@@ -1752,28 +1752,42 @@ async function submitSaveOrder() {
 async function submitPushEShop() {
   const orderId = $("#editOrderId").value;
   if (!orderId) return;
-  if (!confirm(`Xác nhận hoàn thành và đẩy đơn ${orderId} sang eShop?\n(Tin nhắn đơn này trên Telegram sẽ tự động được xóa sạch!)`)) return;
+  if (!confirm(`Xác nhận hoàn thành và đẩy đơn ${orderId} sang MISA eShop?\n(Tin nhắn đơn này trên Telegram sẽ tự động được xóa sạch!)`)) return;
 
   const btn = event.target;
   try {
     btn.disabled = true;
     btn.innerText = "⏳ Đang đẩy eShop...";
-    showStatus("Đang đẩy sang eShop và dọn dẹp tin nhắn Telegram...", true, "#modalStatus");
+    showStatus("Đang đẩy sang MISA eShop và dọn dẹp tin nhắn Telegram...", true, "#modalStatus");
 
-    const payload = authPayload({
-      action: "pushToEShop",
-      orderId: orderId
-    });
+    // 1. Thử đẩy trực tiếp qua Local Runner (nếu mở trên máy Mac văn phòng)
+    let localPushed = false;
+    try {
+      const localRes = await fetch(`http://127.0.0.1:8899/push?orderId=${encodeURIComponent(orderId)}`, { method: "POST" });
+      const localData = await localRes.json();
+      if (localData.ok) {
+        localPushed = true;
+        showStatus(`✅ Đã đẩy MISA eShop thành công (Mã: ${localData.eshopCode}) & dọn tin Telegram!`, true, "#modalStatus");
+      }
+    } catch (_) {}
 
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Lỗi đẩy eShop!");
+    // 2. Nếu không đẩy trực tiếp được, đưa vào hàng đợi Google Sheet để Runner tự động quét
+    if (!localPushed) {
+      const payload = authPayload({
+        action: "pushToEShop",
+        orderId: orderId
+      });
 
-    showStatus(`✅ ${data.message || "Đã đẩy eShop thành công & xóa tin Telegram!"}`, true, "#modalStatus");
+      const res = await fetch(APP_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Lỗi đẩy eShop!");
+      showStatus(`⏳ Đã đưa vào hàng đợi đẩy MISA eShop! Hệ thống đang tự động đồng bộ...`, true, "#modalStatus");
+    }
+
     setTimeout(() => {
       closeOrderModal();
       loadOrders();
@@ -1817,9 +1831,24 @@ async function submitCancelOrder() {
 }
 
 async function quickPushEShop(orderId) {
-  if (!confirm(`Xác nhận hoàn tất và đẩy đơn ${orderId} sang eShop?\n(Tin nhắn đơn này trên Telegram sẽ tự động được xóa sạch!)`)) return;
+  if (!confirm(`Xác nhận hoàn tất và đẩy đơn ${orderId} sang MISA eShop?\n(Tin nhắn đơn này trên Telegram sẽ tự động được xóa sạch!)`)) return;
   try {
-    showStatus(`Đang đẩy đơn ${orderId} sang eShop...`);
+    showStatus(`Đang đẩy đơn ${orderId} sang MISA eShop...`);
+
+    // 1. Thử đẩy trực tiếp qua Local Runner trên Mac
+    let localPushed = false;
+    try {
+      const localRes = await fetch(`http://127.0.0.1:8899/push?orderId=${encodeURIComponent(orderId)}`, { method: "POST" });
+      const localData = await localRes.json();
+      if (localData.ok) {
+        localPushed = true;
+        showStatus(`✅ Đã đẩy đơn ${orderId} sang MISA eShop thành công (Mã: ${localData.eshopCode})! Đã dọn tin nhắn Telegram.`);
+        loadOrders();
+        return;
+      }
+    } catch (_) {}
+
+    // 2. Dự phòng qua hàng đợi Google Sheet
     const payload = authPayload({
       action: "pushToEShop",
       orderId: orderId
@@ -1831,7 +1860,7 @@ async function quickPushEShop(orderId) {
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Lỗi đẩy eShop!");
-    showStatus(`✅ Đã đẩy đơn ${orderId} sang eShop thành công! Đã dọn tin nhắn Telegram.`);
+    showStatus(`⏳ Đã đưa đơn ${orderId} vào hàng đợi đẩy MISA eShop!`);
     loadOrders();
   } catch (e) {
     showStatus(e.message, false);

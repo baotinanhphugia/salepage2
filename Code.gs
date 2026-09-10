@@ -63,6 +63,24 @@ function doPost(e) {
       return handlePushToEShopVN_(data);
     }
 
+    // 5.1 Runner lấy các đơn đang chờ đẩy MISA eShop
+    if (data.action === "getPendingMisa") {
+      checkAdminWithBruteForceGuard_(data.key || data.password);
+      return handleGetPendingMisa_();
+    }
+
+    // 5.2 Runner hoàn tất đẩy MISA eShop
+    if (data.action === "finishPushMisa") {
+      checkAdminWithBruteForceGuard_(data.key || data.password);
+      return handleFinishPushMisa_(data);
+    }
+
+    // 5.3 Runner báo lỗi đẩy MISA eShop
+    if (data.action === "failPushMisa") {
+      checkAdminWithBruteForceGuard_(data.key || data.password);
+      return handleFailPushMisa_(data);
+    }
+
     // 6. Admin hủy đơn (Khách bom / không mua -> Xóa tin Telegram)
     if (data.action === "cancelOrder") {
       checkAdminWithBruteForceGuard_(data.key || data.password);
@@ -269,10 +287,83 @@ function handleUpdateOrderVN_(data) {
 }
 
 /**
- * Đẩy đơn sang MISA eShop: Đổi trạng thái trong Sheet, gọi API MISA, TỰ ĐỘNG XOÁ TIN NHẮN TRÊN TELEGRAM (Hoàn tất)
+ * Đẩy đơn sang MISA eShop: Chuyển trạng thái "Chờ đẩy eShop" để Runner trên máy Mac đồng bộ tự động
  */
 function handlePushToEShopVN_(data) {
   const orderId = String(data.orderId || "").trim();
+  if (!orderId) throw new Error("Thiếu mã đơn hàng!");
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+  let targetRow = -1;
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][1]).trim() === orderId) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    throw new Error("Không tìm thấy đơn hàng " + orderId);
+  }
+
+  // Cập nhật trạng thái trong Sheet để Runner xử lý
+  sheet.getRange(targetRow, 18).setValue("Chờ đẩy eShop");
+
+  return json_({
+    ok: true,
+    orderId,
+    message: "Đơn hàng đã được đưa vào hàng đợi đẩy sang MISA eShop!"
+  });
+}
+
+/**
+ * Runner lấy danh sách đơn đang chờ đẩy MISA eShop
+ */
+function handleGetPendingMisa_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+  const pending = [];
+
+  for (let i = 1; i < values.length; i++) {
+    const r = values[i];
+    const status = String(r[17] || "").trim();
+    if (status === "Chờ đẩy eShop") {
+      pending.push({
+        rowIndex: i + 1,
+        createdAt: r[0],
+        orderId: String(r[1] || ""),
+        product: String(r[2] || ""),
+        name: String(r[3] || ""),
+        phone: String(r[4] || ""),
+        address: String(r[5] || ""),
+        province: String(r[6] || ""),
+        district: String(r[7] || ""),
+        ward: String(r[8] || ""),
+        fullAddress: [r[5], r[8], r[7], r[6]].filter(Boolean).join(", "),
+        variant: String(r[9] || ""),
+        size: String(r[10] || ""),
+        quantity: String(r[11] || "1"),
+        combo: String(r[12] || ""),
+        payment: String(r[13] || "COD"),
+        price: String(r[14] || ""),
+        note: String(r[15] || ""),
+        telegramMsgId: String(r[18] || "")
+      });
+    }
+  }
+  return json_({ ok: true, pending: pending });
+}
+
+/**
+ * Runner hoàn tất đẩy MISA eShop: Cập nhật mã eShop, xóa tin Telegram (Inbox Zero), gửi thông báo hoàn tất
+ */
+function handleFinishPushMisa_(data) {
+  const orderId = String(data.orderId || "").trim();
+  const eshopCode = String(data.eshopCode || "").trim();
   if (!orderId) throw new Error("Thiếu mã đơn hàng!");
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -295,49 +386,50 @@ function handlePushToEShopVN_(data) {
     throw new Error("Không tìm thấy đơn hàng " + orderId);
   }
 
-  const rowVals = values[targetRow - 1];
-  const orderData = {
-    orderId: String(rowVals[1] || ""),
-    product: String(rowVals[2] || ""),
-    customerName: String(rowVals[3] || ""),
-    customerPhone: String(rowVals[4] || ""),
-    address: String(rowVals[5] || ""),
-    province: String(rowVals[6] || ""),
-    district: String(rowVals[7] || ""),
-    ward: String(rowVals[8] || ""),
-    variant: String(rowVals[9] || ""),
-    size: String(rowVals[10] || ""),
-    quantity: String(rowVals[11] || "1"),
-    price: String(rowVals[14] || ""),
-    note: String(rowVals[15] || ""),
-    fullAddress: [rowVals[5], rowVals[8], rowVals[7], rowVals[6]].filter(Boolean).join(", ")
-  };
-
-  // 1. Gọi Open API của MISA eShop
-  const misaResult = callMisaEShopCreateOrder_(orderData);
-  const eshopCode = misaResult.eshopCode || ("MISA-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyMMdd-HHmmss"));
-
-  // 2. Cập nhật trạng thái trong Sheet
+  // 1. Cập nhật trạng thái và mã eShop
   sheet.getRange(targetRow, 18).setValue("Đã đẩy eShop");
   sheet.getRange(targetRow, 20).setValue(eshopCode);
 
-  // 3. XOÁ TIN NHẮN TRÊN TELEGRAM (CÔNG VIỆC HOÀN THÀNH - INBOX ZERO!)
+  // 2. XÓA TIN NHẮN TRÊN TELEGRAM (INBOX ZERO!)
   if (oldMsgId) {
     safeDeleteTelegramMessage_(oldMsgId);
-    sheet.getRange(targetRow, 19).setValue(""); // Xóa ID tin nhắn vì đã hoàn tất
+    sheet.getRange(targetRow, 19).setValue("");
   }
 
-  // 4. Gửi thông báo ngắn gọn xác nhận hoàn tất kèm link kiểm tra trên MISA
+  // 3. Gửi thông báo xác nhận kèm link kiểm tra
   const props = PropertiesService.getScriptProperties();
-  const eShopLink = props.getProperty("MISA_APP_URL") || "https://eshopapp.misa.vn/management/general-order#-1";
-  safeSendQuickNotice_(`✅ [HOÀN TẤT] Đơn hàng ${orderId} (${customerName}) đã được đẩy sang MISA eShop thành công! Mã eShop: ${eshopCode}\n🔗 Mở xem đơn trên eShop: ${eShopLink}`);
+  const eShopLink = props.getProperty("MISA_APP_URL") || "https://eshopapp.misa.vn/management/general-order#5";
+  safeSendQuickNotice_(`✅ [HOÀN TẤT] Đơn hàng ${orderId} (${customerName}) đã được đẩy sang MISA eShop thành công! Mã đơn: ${eshopCode}\n🔗 Xem trên MISA eShop: ${eShopLink}`);
 
   return json_({
     ok: true,
     orderId,
     eshopCode,
-    message: "Đã đẩy đơn sang MISA eShop thành công! Tin nhắn Telegram đã được dọn sạch."
+    message: "Đã hoàn tất đồng bộ đơn hàng sang MISA eShop!"
   });
+}
+
+/**
+ * Runner báo lỗi đẩy MISA eShop
+ */
+function handleFailPushMisa_(data) {
+  const orderId = String(data.orderId || "").trim();
+  const error = String(data.error || "Lỗi tạo đơn");
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][1]).trim() === orderId) {
+      sheet.getRange(i + 1, 18).setValue("Lỗi đẩy eShop");
+      sheet.getRange(i + 1, 20).setValue("Lỗi: " + error.substring(0, 100));
+      break;
+    }
+  }
+
+  safeSendQuickNotice_(`⚠️ [LỖI MISA] Không thể đẩy đơn ${orderId} sang MISA eShop:\n${error}`);
+  return json_({ ok: true, orderId, error });
 }
 
 /**
@@ -491,16 +583,16 @@ function handleTelegramCallback_(cb) {
     } catch (e) {}
   }
 
-  if (data.startsWith("push_")) {
-    const orderId = data.replace("push_", "");
-    try {
-      handlePushToEShopVN_({ orderId: orderId });
-      answerCb("✅ Đã đẩy sang eShop và dọn tin Telegram!");
-    } catch (err) {
-      answerCb("Lỗi: " + (err.message || err.toString()));
+    if (data.startsWith("push_")) {
+      const orderId = data.replace("push_", "");
+      try {
+        handlePushToEShopVN_({ orderId: orderId });
+        answerCb("⏳ Đang đẩy đơn sang MISA eShop...");
+      } catch (err) {
+        answerCb("Lỗi: " + (err.message || err.toString()));
+      }
+      return json_({ ok: true });
     }
-    return json_({ ok: true });
-  }
 
   if (data.startsWith("cancel_")) {
     const orderId = data.replace("cancel_", "");

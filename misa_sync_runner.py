@@ -1,0 +1,311 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+MISA eShop Sync Runner - Phú Gia Diamond
+Tự động đồng bộ đơn hàng nháp sang MISA eShop khi duyệt từ Telegram Bot hoặc trang Web Admin.
+Chạy trực tiếp trên máy Mac (IP 123.26.190.185 được cấp phép Open API).
+"""
+
+import time
+import json
+import hmac
+import hashlib
+import uuid
+import threading
+import urllib.request
+import urllib.error
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+
+# --- CẤU HÌNH HỆ THỐNG ---
+MISA_APP_ID = "679C30FC44DB4DC0B2D88FE644A7CF5E"
+MISA_APP_KEY = "B35CFD2B61F04D678D10264357DEDD0629EC8564366A4A1AB918EAE1632A6A4A"
+MISA_BRANCH_ID = "a38f9189-ad87-11ef-a35e-005056b28600" # ChiNhanh01
+MISA_STOCK_ID = "485b5d06-306c-11f0-b467-005056b34af7"  # Kho hàng hóa
+MISA_DEFAULT_CUSTOMER = "bf4e7242-a3d4-4ae8-aae5-258b110dbcf6"
+
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiMiheaDBzBSbSaV9_Fo4JlEQDPU9iEgrRERLun-Abjk1nfw6gY08xNOAUqoEo-fg/exec"
+ADMIN_KEY = "123456"
+
+LOCAL_PORT = 8899
+POLL_INTERVAL_SECONDS = 4
+
+# Danh mục hàng hóa mapping chuẩn trên MISA eShop
+CATALOG = {
+    "4mm": {"id": "7c74256d-0026-449a-bbb7-47c1d678cee9", "sku": "MS04", "name": "Bông nụ Moissanite 4ly-S925-BMOI143", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
+    "4.5mm": {"id": "7e39b085-6b0c-4dc4-ad23-59435a2f8636", "sku": "MS04.5", "name": "Bông nụ Moissanite 4ly5-S925-BMOI142", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
+    "5mm": {"id": "cd1ebd5c-0fa0-4e57-8235-c271900b7de8", "sku": "MS05", "name": "Bông nụ Moissanite 5ly-S925 -BMOI144", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
+    "6mm": {"id": "b5a970a4-39dc-4103-94ea-9b9b31fa57d7", "sku": "MS06", "name": "Bông nụ Moissanite 6ly-S925-BMOI145", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
+    "6.8mm": {"id": "0459fdc2-126f-47e2-b79f-b3b277bf056e", "sku": "MS06.8", "name": "Bông nụ Moissanite 6ly8-S925-BMOI146", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
+    "7.5mm": {"id": "43e2beef-a3d7-4d9f-94bf-353ea991be29", "sku": "MS07.5", "name": "Bông nụ Moissanite 7ly5-S925-BMOI47", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"}
+}
+DEFAULT_ITEM = CATALOG["5mm"]
+
+# --- QUẢN LÝ TOKEN MISA ---
+_cached_token = None
+_token_expire_time = 0
+
+def get_misa_token():
+    global _cached_token, _token_expire_time
+    now = time.time()
+    if _cached_token and now < _token_expire_time:
+        return _cached_token
+
+    login_time = int(now * 1000)
+    raw_str = f"app_id:{MISA_APP_ID};login_time:{login_time}"
+    sign = hmac.new(MISA_APP_KEY.encode('utf-8'), raw_str.encode('utf-8'), hashlib.sha256).hexdigest()
+
+    req = urllib.request.Request(
+        "https://eshopapp.misa.vn/api/auth-platform/tokens/create",
+        data=json.dumps({"app_id": MISA_APP_ID, "login_time": login_time, "sign": sign}).encode('utf-8'),
+        headers={"Content-Type": "application/json"},
+        method="POST"
+    )
+
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        res = json.loads(resp.read().decode('utf-8'))
+        _cached_token = res["Data"]["token"]
+        _token_expire_time = now + 1800 # 30 phút
+        print(f"[TOKEN] Đã cấp mới Token MISA thành công (hết hạn sau 30 phút).")
+        return _cached_token
+
+# --- HÀM TẠO ĐƠN TRÊN MISA ESHOP ---
+def push_order_to_misa(order):
+    token = get_misa_token()
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    # Chọn SKU tương ứng kích cỡ
+    size_str = str(order.get("size", "5mm")).strip()
+    matched_item = None
+    for k, v in CATALOG.items():
+        if k in size_str:
+            matched_item = v
+            break
+    if not matched_item:
+        matched_item = DEFAULT_ITEM
+
+    # Tính toán đơn giá & số lượng
+    raw_price = str(order.get("price", "459000"))
+    clean_price = int(''.join(filter(str.isdigit, raw_price)) or 459000)
+    variant = str(order.get("variant", "1 Đôi"))
+    qty = int(order.get("quantity", 1) or 1)
+    
+    # Nếu đặt 1 đôi thì số chiếc = 2 * qty
+    multiplier = 2 if "đôi" in variant.lower() else 1
+    total_qty = qty * multiplier
+    unit_price = round(clean_price / total_qty) if total_qty > 0 else clean_price
+
+    recipient_name = order.get("name") or "Khách hàng Online"
+    recipient_tel = str(order.get("phone") or "0987654321").replace(" ", "").replace("+84", "0")
+    if recipient_tel and not recipient_tel.startswith("0"):
+        recipient_tel = "0" + recipient_tel
+        
+    full_addr = order.get("fullAddress") or order.get("address") or "Hà Nội"
+
+    order_payload = {
+        "branch_id": MISA_BRANCH_ID,
+        "customer_id": MISA_DEFAULT_CUSTOMER,
+        "customer_name": recipient_name,
+        "stock_id": MISA_STOCK_ID,
+        "stock_code": "KHH",
+        "stock_name": "Kho hàng hóa",
+        "recipient_name": recipient_name,
+        "recipient_tel": recipient_tel,
+        "recipient_address": full_addr,
+        "shipping_service_name": "Tự giao",
+        "partner_service_type_name": "Tự giao",
+        "shipping_payment_type": 1,
+        "discount_amount": 0,
+        "delivery_amount": 0,
+        "shipping_partner_amount": 0,
+        "weight": 100,
+        "employee_note": f"Đơn Landing Page {order.get('orderId', '')} ({variant} - {size_str}) - {order.get('note', '')}",
+        "details": [
+            {
+                "inventory_item_id": matched_item["id"],
+                "sku_code": matched_item["sku"],
+                "inventory_item_name": f"{matched_item['name']} ({variant})",
+                "unit_id": matched_item["unit_id"],
+                "unit_name": matched_item["unit_name"],
+                "quantity": total_qty,
+                "unit_price": unit_price,
+                "discount_amount": 0
+            }
+        ]
+    }
+
+    req = urllib.request.Request(
+        "https://eshopapp.misa.vn/api/platform/openpartnervouchers/orders/create",
+        data=json.dumps(order_payload).encode('utf-8'),
+        headers=headers,
+        method="POST"
+    )
+
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        res_data = json.loads(resp.read().decode('utf-8'))
+        if res_data.get("Status", {}).get("Success"):
+            ref_no = res_data["Data"]["ref_no"]
+            print(f"[MISA SUCCESS] Đơn {order.get('orderId')} tạo thành công! Mã eShop: {ref_no}")
+            return {"ok": True, "ref_no": ref_no}
+        else:
+            msg = res_data.get("Status", {}).get("Message") or "Lỗi không xác định từ MISA"
+            print(f"[MISA ERROR] Đơn {order.get('orderId')} thất bại: {msg}")
+            return {"ok": False, "error": msg}
+
+# --- GỌI GOOGLE APPS SCRIPT ---
+def call_apps_script(payload):
+    req = urllib.request.Request(
+        APPS_SCRIPT_URL,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={"Content-Type": "application/json"},
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode('utf-8'))
+
+# --- VÒNG LẶP QUÉT VÀ ĐỒNG BỘ ĐƠN ---
+def sync_loop():
+    print(f"[DAEMON] MISA Sync Runner đã kích hoạt! Đang quét hàng đợi mỗi {POLL_INTERVAL_SECONDS}s...")
+    while True:
+        try:
+            # 1. Lấy danh sách đơn hàng đang chờ đẩy
+            res = call_apps_script({
+                "action": "getPendingMisa",
+                "key": ADMIN_KEY
+            })
+
+            pending_orders = res.get("pending", []) if res.get("ok") else []
+            if pending_orders:
+                print(f"[QUEUE] Phát hiện {len(pending_orders)} đơn hàng đang chờ đẩy sang MISA eShop...")
+                for order in pending_orders:
+                    order_id = order.get("orderId")
+                    print(f"[PROCESSING] Đang xử lý đơn: {order_id} ({order.get('name')})...")
+                    
+                    # 2. Đẩy sang MISA eShop
+                    push_res = push_order_to_misa(order)
+                    
+                    if push_res.get("ok"):
+                        # 3. Báo hoàn tất cho Google Sheet & Telegram
+                        call_apps_script({
+                            "action": "finishPushMisa",
+                            "key": ADMIN_KEY,
+                            "orderId": order_id,
+                            "eshopCode": push_res["ref_no"]
+                        })
+                        print(f"[DONE] Hoàn tất đồng bộ đơn {order_id} -> MISA {push_res['ref_no']}!")
+                    else:
+                        # 4. Ghi nhận lỗi
+                        call_apps_script({
+                            "action": "failPushMisa",
+                            "key": ADMIN_KEY,
+                            "orderId": order_id,
+                            "error": push_res.get("error", "Lỗi tạo đơn")
+                        })
+        except Exception as e:
+            # Ghi log nhưng không dừng tiến trình
+            # print(f"[LOOP EXCEPTION] {e}")
+            pass
+
+        time.sleep(POLL_INTERVAL_SECONDS)
+
+# --- LOCAL HTTP SERVER CHO ADMIN WEB ---
+class LocalServerHandler(BaseHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/health":
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "healthy", "service": "MISA Sync Runner"}).encode())
+            return
+        self.send_response(404)
+        self.end_headers()
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/push":
+            qs = parse_qs(parsed.query)
+            order_id = (qs.get("orderId") or [""])[0]
+            if not order_id:
+                # Thử đọc body nếu có
+                content_len = int(self.headers.get('Content-Length', 0))
+                if content_len > 0:
+                    body = json.loads(self.rfile.read(content_len).decode('utf-8'))
+                    order_id = body.get("orderId", "")
+
+            if not order_id:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"ok": False, "error": "Thiếu orderId"}).encode())
+                return
+
+            print(f"[HTTP PUSH] Nhận yêu cầu đẩy đơn ngay lập tức: {order_id}")
+            try:
+                # Lấy chi tiết đơn từ Apps Script
+                orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
+                target_order = None
+                for o in orders_res.get("orders", []):
+                    if o.get("orderId") == order_id:
+                        target_order = o
+                        break
+
+                if not target_order:
+                    self.send_response(404)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"ok": False, "error": f"Không tìm thấy đơn {order_id}"}).encode())
+                    return
+
+                push_res = push_order_to_misa(target_order)
+                if push_res.get("ok"):
+                    call_apps_script({
+                        "action": "finishPushMisa",
+                        "key": ADMIN_KEY,
+                        "orderId": order_id,
+                        "eshopCode": push_res["ref_no"]
+                    })
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"ok": True, "eshopCode": push_res["ref_no"]}).encode())
+                else:
+                    self.send_response(500)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"ok": False, "error": push_res.get("error")}).encode())
+            except Exception as ex:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"ok": False, "error": str(ex)}).encode())
+            return
+
+        self.send_response(404)
+        self.end_headers()
+
+def run_local_server():
+    server = HTTPServer(('127.0.0.1', LOCAL_PORT), LocalServerHandler)
+    print(f"[HTTP SERVER] Lắng nghe yêu cầu đẩy đơn trực tiếp tại http://127.0.0.1:{LOCAL_PORT}...")
+    server.serve_forever()
+
+if __name__ == "__main__":
+    # Khởi chạy Local Server trong luồng riêng
+    t_server = threading.Thread(target=run_local_server, daemon=True)
+    t_server.start()
+
+    # Chạy vòng lặp đồng bộ chính
+    sync_loop()
