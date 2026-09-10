@@ -631,6 +631,30 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   transition: all 0.15s;
 }
 .btn-action-cancel:hover { background: rgba(239, 68, 68, 0.3); }
+.btn-action-call {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11.5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-action-call:hover { background: rgba(34, 197, 94, 0.3); }
+.btn-action-zalo {
+  background: rgba(6, 182, 212, 0.15);
+  color: #67e8f9;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11.5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-action-zalo:hover { background: rgba(6, 182, 212, 0.3); }
 
 .btn-secondary {
   background: #272733;
@@ -1634,12 +1658,27 @@ function renderOrdersTable(orders) {
     } else if (o.status === "Đã sửa") {
       statusBg = "rgba(245,158,11,0.2)";
       statusColor = "#fcd34d";
+    } else if (o.status === "Đang gọi điện") {
+      statusBg = "rgba(34,197,94,0.2)";
+      statusColor = "#86efac";
+    } else if (o.status === "Đã nhắn Zalo") {
+      statusBg = "rgba(6,182,212,0.2)";
+      statusColor = "#67e8f9";
+    } else if (o.status === "Chờ đẩy eShop") {
+      statusBg = "rgba(168,85,247,0.2)";
+      statusColor = "#d8b4fe";
+    } else if (o.status === "Lỗi đẩy eShop") {
+      statusBg = "rgba(239,68,68,0.25)";
+      statusColor = "#f87171";
     }
 
     const statusHtml = `<span style="background:${statusBg}; color:${statusColor}; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">${o.status || "Chờ xác nhận"}</span>`;
 
+    const cleanPhoneNum = String(o.phone || "").replace(/\D/g, "");
     const actionsHtml = `
-      <div style="display:flex; gap:6px; justify-content:center; flex-wrap:nowrap;">
+      <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${o.phone}')" title="Gọi điện & cập nhật trạng thái">📞 Gọi</button>
+        <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Mở Zalo & cập nhật trạng thái">💬 Zalo</button>
         <button class="btn-action-edit" onclick="openOrderModal('${o.orderId}')" title="Sửa size, địa chỉ & báo Tele">✏️ Sửa</button>
         <button class="btn-action-eshop" onclick="quickPushEShop('${o.orderId}')" title="Đẩy eShop & Hoàn tất (Xóa tin Tele)">🚀 eShop</button>
         <button class="btn-action-cancel" onclick="quickCancelOrder('${o.orderId}')" title="Hủy đơn & Xóa tin Tele">❌ Hủy</button>
@@ -1888,6 +1927,41 @@ async function quickCancelOrder(orderId) {
     showStatus(e.message, false);
   }
 }
+
+async function quickCallOrder(orderId, phone) {
+  try {
+    // Cập nhật trạng thái Sheet
+    const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đang gọi điện" });
+    fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).then(() => loadOrders()).catch(() => {});
+    // Mở ứng dụng gọi điện trên thiết bị
+    window.open(`tel:${phone}`, "_self");
+    showStatus(`📞 Đang gọi ${phone}... Trạng thái cập nhật: Đang gọi điện`);
+  } catch (e) {
+    showStatus(e.message, false);
+  }
+}
+
+async function quickZaloOrder(orderId, cleanPhone) {
+  try {
+    // Cập nhật trạng thái Sheet
+    const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đã nhắn Zalo" });
+    fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).then(() => loadOrders()).catch(() => {});
+    // Mở Zalo chat
+    window.open(`https://zalo.me/${cleanPhone}`, "_blank");
+    showStatus(`💬 Đã mở Zalo chat với ${cleanPhone}... Trạng thái cập nhật: Đã nhắn Zalo`);
+  } catch (e) {
+    showStatus(e.message, false);
+  }
+}
+
 
 function checkUrlDeepLink() {
   try {

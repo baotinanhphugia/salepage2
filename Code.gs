@@ -87,7 +87,14 @@ function doPost(e) {
       return handleCancelOrderVN_(data);
     }
 
-    // 7. Khách đặt hàng từ Landing Page Việt Nam
+    // 7. Admin cập nhật trạng thái nhanh (Gọi điện / Zalo...)
+    if (data.action === "updateStatus") {
+      checkAdminWithBruteForceGuard_(data.key || data.password);
+      const result = updateOrderStatus_(data.orderId, data.status);
+      return json_({ ok: true, orderId: data.orderId, status: data.status });
+    }
+
+    // 8. Khách đặt hàng từ Landing Page Việt Nam
     return handleOrderVN_(data);
   } catch (err) {
     return json_({ ok: false, error: err.message || err.toString() });
@@ -572,28 +579,54 @@ function handleTelegramCallback_(cb) {
   const props = PropertiesService.getScriptProperties();
   const token = props.getProperty("TELEGRAM_BOT_TOKEN");
 
-  function answerCb(text) {
+  function answerCb(text, showAlert) {
     try {
       UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
         method: "post",
         contentType: "application/json",
-        payload: JSON.stringify({ callback_query_id: cbId, text: text, show_alert: false }),
+        payload: JSON.stringify({ callback_query_id: cbId, text: text, show_alert: showAlert || false }),
         muteHttpExceptions: true
       });
     } catch (e) {}
   }
 
-    if (data.startsWith("push_")) {
-      const orderId = data.replace("push_", "");
-      try {
-        handlePushToEShopVN_({ orderId: orderId });
-        answerCb("⏳ Đang đẩy đơn sang MISA eShop...");
-      } catch (err) {
-        answerCb("Lỗi: " + (err.message || err.toString()));
-      }
-      return json_({ ok: true });
+  // 📞 Gọi khách — cập nhật Sheet "Đang gọi điện"
+  if (data.startsWith("call_")) {
+    const orderId = data.replace("call_", "");
+    try {
+      const result = updateOrderStatus_(orderId, "Đang gọi điện");
+      answerCb(`📞 SĐT: ${result.phone}\n✅ Đã ghi nhận: Đang gọi điện`, true);
+    } catch (err) {
+      answerCb("Lỗi: " + (err.message || err.toString()));
     }
+    return json_({ ok: true });
+  }
 
+  // 💬 Nhắn Zalo — cập nhật Sheet "Đã nhắn Zalo"
+  if (data.startsWith("zalo_")) {
+    const orderId = data.replace("zalo_", "");
+    try {
+      const result = updateOrderStatus_(orderId, "Đã nhắn Zalo");
+      answerCb(`💬 Zalo: https://zalo.me/${result.phone}\n✅ Đã ghi nhận: Nhắn Zalo`, true);
+    } catch (err) {
+      answerCb("Lỗi: " + (err.message || err.toString()));
+    }
+    return json_({ ok: true });
+  }
+
+  // 🚀 Đẩy sang MISA eShop
+  if (data.startsWith("push_")) {
+    const orderId = data.replace("push_", "");
+    try {
+      handlePushToEShopVN_({ orderId: orderId });
+      answerCb("⏳ Đang đẩy đơn sang MISA eShop...");
+    } catch (err) {
+      answerCb("Lỗi: " + (err.message || err.toString()));
+    }
+    return json_({ ok: true });
+  }
+
+  // ❌ Hủy đơn
   if (data.startsWith("cancel_")) {
     const orderId = data.replace("cancel_", "");
     try {
@@ -607,6 +640,23 @@ function handleTelegramCallback_(cb) {
 
   answerCb("Đã nhận yêu cầu!");
   return json_({ ok: true });
+}
+
+/**
+ * Cập nhật trạng thái đơn hàng theo orderId — trả về { phone } để hiện thị thông báo
+ */
+function updateOrderStatus_(orderId, newStatus) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][1]).trim() === orderId) {
+      sheet.getRange(i + 1, 18).setValue(newStatus);
+      return { phone: String(values[i][4] || "") };
+    }
+  }
+  throw new Error("Không tìm thấy đơn hàng " + orderId);
 }
 
 function getOrCreateOrdersSheet_(ss) {
@@ -898,12 +948,16 @@ function safeSendTelegram_(text, orderId, phone, adminBaseUrl) {
 
     const cleanPhone = String(phone || "").replace(/\D/g, "");
 
-    // CỤM NÚT BẤM KẾT HỢP DẠNG 1 & DẠNG 2:
-    // Hàng 1: Nút URL (Nhắn Zalo & Mở Admin sửa đơn)
-    // Hàng 2: Nút Callback trực tiếp (Đẩy eShop & Hủy đơn)
+    // CỤM NÚT BẤM 4 HÀNG:
+    // Hàng 1: Gọi khách & Nhắn Zalo (callback → cập nhật Sheet)
+    // Hàng 2: Mở Admin sửa đơn (URL)
+    // Hàng 3: Đẩy eShop & Hủy đơn (callback → cập nhật Sheet)
     const keyboard = [
       [
-        { text: "💬 Nhắn Zalo khách", url: `https://zalo.me/${cleanPhone}` },
+        { text: "📞 Gọi khách", callback_data: `call_${orderId}` },
+        { text: "💬 Nhắn Zalo", callback_data: `zalo_${orderId}` }
+      ],
+      [
         { text: "✏️ Mở Admin sửa đơn", url: adminUrlWithOrder }
       ],
       [
