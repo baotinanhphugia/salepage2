@@ -32,15 +32,61 @@ LOCAL_PORT = 8899
 POLL_INTERVAL_SECONDS = 4
 
 # Danh mục hàng hóa mapping chuẩn trên MISA eShop
-CATALOG = {
-    "4mm": {"id": "7c74256d-0026-449a-bbb7-47c1d678cee9", "sku": "MS04", "name": "Bông nụ Moissanite 4ly-S925-BMOI143", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
-    "4.5mm": {"id": "7e39b085-6b0c-4dc4-ad23-59435a2f8636", "sku": "MS04.5", "name": "Bông nụ Moissanite 4ly5-S925-BMOI142", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
-    "5mm": {"id": "cd1ebd5c-0fa0-4e57-8235-c271900b7de8", "sku": "MS05", "name": "Bông nụ Moissanite 5ly-S925 -BMOI144", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
-    "6mm": {"id": "b5a970a4-39dc-4103-94ea-9b9b31fa57d7", "sku": "MS06", "name": "Bông nụ Moissanite 6ly-S925-BMOI145", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
-    "6.8mm": {"id": "0459fdc2-126f-47e2-b79f-b3b277bf056e", "sku": "MS06.8", "name": "Bông nụ Moissanite 6ly8-S925-BMOI146", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"},
-    "7.5mm": {"id": "43e2beef-a3d7-4d9f-94bf-353ea991be29", "sku": "MS07.5", "name": "Bông nụ Moissanite 7ly5-S925-BMOI47", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái"}
+MISA_INVENTORY = {
+    # 1 Đôi (Mã Bộ -> Map về mã tồn kho vật lý tương ứng trên MISA, số lượng x2 chiếc)
+    "BNM6B01": {"id": "841beb30-0614-4233-b6b7-c06395964f30", "sku": "MS06-1", "name": "Bông nụ Moissaanite 6mm-S925- BMOI45-1 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "BNM4SB01": {"id": "2f3ac933-7bcd-43a9-9906-74cdde41c702", "sku": "MS 04.5-1", "name": "Bông nụ Moissanite 4.5mm- S925- BMOI42-1 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "MS051": {"id": "cd1ebd5c-0fa0-4e57-8235-c271900b7de8", "sku": "MS05", "name": "Bông nụ Moissanite 5ly-S925 -BMOI144 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "MS041": {"id": "7c74256d-0026-449a-bbb7-47c1d678cee9", "sku": "MS04", "name": "Bông nụ Moissanite 4ly-S925-BMOI143 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "MS0681": {"id": "0459fdc2-126f-47e2-b79f-b3b277bf056e", "sku": "MS06.8", "name": "Bông nụ Moissanite 6ly8-S925-BMOI146 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "MS0751": {"id": "43e2beef-a3d7-4d9f-94bf-353ea991be29", "sku": "MS07.5", "name": "Bông nụ Moissanite 7ly5-S925-BMOI47 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+
+    # 1 Chiếc (Mã Lẻ)
+    "MS06-1": {"id": "841beb30-0614-4233-b6b7-c06395964f30", "sku": "MS06-1", "name": "Bông nụ Moissaanite 6mm-S925- BMOI45-1", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
+    "MS 04.5-1": {"id": "2f3ac933-7bcd-43a9-9906-74cdde41c702", "sku": "MS 04.5-1", "name": "Bông nụ Moissanite 4.5mm- S925- BMOI42-1", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
+    "MS05": {"id": "cd1ebd5c-0fa0-4e57-8235-c271900b7de8", "sku": "MS05", "name": "Bông nụ Moissanite 5ly-S925 -BMOI144", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
+    "MS04": {"id": "7c74256d-0026-449a-bbb7-47c1d678cee9", "sku": "MS04", "name": "Bông nụ Moissanite 4ly-S925-BMOI143", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
+    "MS06.8": {"id": "0459fdc2-126f-47e2-b79f-b3b277bf056e", "sku": "MS06.8", "name": "Bông nụ Moissanite 6ly8-S925-BMOI146", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
+    "MS07.5": {"id": "43e2beef-a3d7-4d9f-94bf-353ea991be29", "sku": "MS07.5", "name": "Bông nụ Moissanite 7ly5-S925-BMOI47", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
+
+    # Dòng 6 Chấu (Map về mã vật lý tương ứng 6C...)
+    "6 chấu 48": {"id": "8f33a76d-fe84-40ab-8ce5-3e84da8e826c", "sku": "6C48", "name": "Bông nụ 6 chấu Moissanite 4ly -S925-BMOI48 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "6 chấu 50": {"id": "a46fef25-b21c-4b8a-9acf-614accc448b3", "sku": "6C50", "name": "Bông nụ 6 chấu Moissanite 5ly -S925-BMOI50 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "6 chấu 52": {"id": "50bbc7c1-e956-4c6a-9166-1e5c1e77314f", "sku": "6C52", "name": "Bông nụ 6 chấu Moissanite 6Ly -S925-BMOI52 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "6 chấu 53": {"id": "bde95908-e4d5-40ac-b72c-f3659a31aed8", "sku": "6C53", "name": "Bông nụ 6 chấu Moissanite 6ly3 -S925-BMOI53 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "6 chấu 54": {"id": "8b8c4a5d-69f7-4908-b00b-264757938e6f", "sku": "6C54", "name": "Bông nụ 6 chấu Moissanite 7ly -S925-BMOI54 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "6 chấu 56": {"id": "01841d20-de6d-468b-8a29-6c04d4c021ea", "sku": "6C56", "name": "Bông nụ 6 chấu moissanite 8ly -S925-BMOI56 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+
+    # Mẫu khác
+    "Bốn Lá 39": {"id": "1efff9ca-5671-447c-9c04-02c2aefff4ca", "sku": "Bốn Lá 39", "name": "Bông tai full Moissanite Bốn lá 3ly5 -S925-BMOI39", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "Đồng Tiền 34": {"id": "055cae33-3a40-443a-a0d3-2fae593c34e3", "sku": "Đồng Tiền 34", "name": "Bông tai Full Moissanite Đồng tiền -S925 -BMOI34", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+    "BT143 - 5ly": {"id": "8883adde-546e-41da-8289-f62400109ab9", "sku": "BT143 - 5ly", "name": "Bông tai Moissanite -5ly -S925-BMOI43", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
+
+    # Phụ kiện đi kèm
+    "HOP NHAN": {"id": "ec950be7-bc3b-4bfd-8f7a-05a1685da472", "sku": "HOP NHAN", "name": "Hộp giấy đựng trang sức", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_accessory": True},
+    "CARD": {"id": "ef6117d0-79dc-473b-978d-33f0111e85f8", "sku": "CARD", "name": "IN CARD", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_accessory": True}
 }
-DEFAULT_ITEM = CATALOG["5mm"]
+
+# Tự động chọn SKU MISA mới nhất theo Size và Phân loại
+SIZE_TO_SKU = {
+    "4mm": {"1 Đôi": "MS041", "1 Chiếc": "MS04"},
+    "4.5mm": {"1 Đôi": "BNM4SB01", "1 Chiếc": "MS 04.5-1"},
+    "5mm": {"1 Đôi": "MS051", "1 Chiếc": "MS05"},
+    "6mm": {"1 Đôi": "BNM6B01", "1 Chiếc": "MS06-1"},
+    "6.8mm": {"1 Đôi": "MS0681", "1 Chiếc": "MS06.8"},
+    "7.5mm": {"1 Đôi": "MS0751", "1 Chiếc": "MS07.5"}
+}
+
+# CATALOG tương thích ngược cho các module cũ
+CATALOG = {
+    "4mm": MISA_INVENTORY["MS041"],
+    "4.5mm": MISA_INVENTORY["BNM4SB01"],
+    "5mm": MISA_INVENTORY["MS051"],
+    "6mm": MISA_INVENTORY["BNM6B01"],
+    "6.8mm": MISA_INVENTORY["MS0681"],
+    "7.5mm": MISA_INVENTORY["MS0751"]
+}
+DEFAULT_ITEM = MISA_INVENTORY["BNM6B01"]
 
 # --- QUẢN LÝ TOKEN MISA ---
 _cached_token = None
@@ -205,25 +251,44 @@ def push_order_to_misa(order):
         "Authorization": f"Bearer {token}"
     }
 
-    # Chọn SKU tương ứng kích cỡ
-    size_str = str(order.get("size", "5mm")).strip()
-    matched_item = None
-    for k, v in CATALOG.items():
-        if k in size_str:
-            matched_item = v
-            break
-    if not matched_item:
-        matched_item = DEFAULT_ITEM
+    # 1. Tìm mặt hàng chính (Ưu tiên mã chọn từ Admin / Note, sau đó đến mapping theo Size & Phân loại)
+    misa_sku = str(order.get("misaSku") or "").strip()
+    note_str = str(order.get("note") or "")
+    if not misa_sku:
+        import re
+        m_sku = re.search(r'\[MISA:\s*([^\]|]+)', note_str)
+        if m_sku:
+            misa_sku = m_sku.group(1).strip()
 
-    # Tính toán đơn giá & số lượng
+    matched_item = None
+    if misa_sku and misa_sku in MISA_INVENTORY:
+        matched_item = MISA_INVENTORY[misa_sku]
+    else:
+        size_str = str(order.get("size", "5mm")).strip()
+        variant = str(order.get("variant", "1 Đôi")).strip()
+        size_key = "5mm"
+        for k in SIZE_TO_SKU.keys():
+            if k in size_str:
+                size_key = k
+                break
+        sku_map = SIZE_TO_SKU.get(size_key, SIZE_TO_SKU["5mm"])
+        chosen_sku = sku_map.get("1 Đôi" if "đôi" in variant.lower() else "1 Chiếc", "BNM6B01")
+        matched_item = MISA_INVENTORY.get(chosen_sku, DEFAULT_ITEM)
+
+    # 2. Tính toán đơn giá & số lượng
     raw_price = str(order.get("price", "459000"))
     clean_price = int(''.join(filter(str.isdigit, raw_price)) or 459000)
     variant = str(order.get("variant", "1 Đôi"))
     qty = int(order.get("quantity", 1) or 1)
-    
-    # Nếu đặt 1 đôi thì số chiếc = 2 * qty
-    multiplier = 2 if "đôi" in variant.lower() else 1
-    total_qty = qty * multiplier
+
+    # Nếu mặt hàng là mã Đôi (is_pair=True) thì SL gửi MISA là qty
+    # Nếu mặt hàng là mã Chiếc lẻ nhưng khách đặt 1 Đôi thì SL = qty * 2
+    if matched_item.get("is_pair"):
+        total_qty = qty
+    elif "đôi" in variant.lower():
+        total_qty = qty * 2
+    else:
+        total_qty = qty
     unit_price = round(clean_price / total_qty) if total_qty > 0 else clean_price
 
     recipient_name = order.get("name") or "Khách hàng Online"
@@ -253,6 +318,60 @@ def push_order_to_misa(order):
         ward_name
     )
 
+    # Xây dựng danh sách hàng hóa đẩy sang MISA
+    details = [
+        {
+            "inventory_item_id": matched_item["id"],
+            "sku_code": matched_item["sku"],
+            "inventory_item_name": matched_item["name"],
+            "unit_id": matched_item["unit_id"],
+            "unit_name": matched_item["unit_name"],
+            "quantity": total_qty,
+            "unit_price": unit_price,
+            "discount_amount": 0
+        }
+    ]
+
+    # Phụ kiện 1: Hộp đựng trang sức (mặc định Có tặng kèm trừ khi chỉ định không)
+    include_box = order.get("includeBox")
+    if include_box is None:
+        include_box = not ("[Hộp: Không]" in note_str or "[Hộp: 0]" in note_str)
+    elif isinstance(include_box, str):
+        include_box = include_box.lower() not in ["false", "0", "khong", "không"]
+
+    if include_box:
+        box_item = MISA_INVENTORY["HOP NHAN"]
+        details.append({
+            "inventory_item_id": box_item["id"],
+            "sku_code": box_item["sku"],
+            "inventory_item_name": box_item["name"],
+            "unit_id": box_item["unit_id"],
+            "unit_name": box_item["unit_name"],
+            "quantity": 1,
+            "unit_price": 0,
+            "discount_amount": 0
+        })
+
+    # Phụ kiện 2: Thẻ kiểm định GRA / In Card (mặc định Có tặng kèm trừ khi chỉ định không)
+    include_card = order.get("includeCard")
+    if include_card is None:
+        include_card = not ("[Thẻ: Không]" in note_str or "[Thẻ: 0]" in note_str)
+    elif isinstance(include_card, str):
+        include_card = include_card.lower() not in ["false", "0", "khong", "không"]
+
+    if include_card:
+        card_item = MISA_INVENTORY["CARD"]
+        details.append({
+            "inventory_item_id": card_item["id"],
+            "sku_code": card_item["sku"],
+            "inventory_item_name": card_item["name"],
+            "unit_id": card_item["unit_id"],
+            "unit_name": card_item["unit_name"],
+            "quantity": 1,
+            "unit_price": 0,
+            "discount_amount": 0
+        })
+
     order_payload = {
         "branch_id": MISA_BRANCH_ID,
         "customer_id": customer_id,
@@ -273,7 +392,7 @@ def push_order_to_misa(order):
         "delivery_amount": 0,
         "shipping_partner_amount": 0,
         "weight": 100,
-        "employee_note": f"Đơn Landing Page {order.get('orderId', '')} ({variant} - {size_str}) - {order.get('note', '')}",
+        "employee_note": f"Đơn PGD {order.get('orderId', '')} [MISA:{matched_item['sku']}] - {order.get('note', '')}",
         "invoice": {
             "inv_buyer_object_type": 2, # Cá nhân
             "inv_buyer_name": recipient_name,
@@ -281,18 +400,7 @@ def push_order_to_misa(order):
             "inv_buyer_legal_tel": recipient_tel,
             "inv_email": order.get("email") or ""
         },
-        "details": [
-            {
-                "inventory_item_id": matched_item["id"],
-                "sku_code": matched_item["sku"],
-                "inventory_item_name": f"{matched_item['name']} ({variant})",
-                "unit_id": matched_item["unit_id"],
-                "unit_name": matched_item["unit_name"],
-                "quantity": total_qty,
-                "unit_price": unit_price,
-                "discount_amount": 0
-            }
-        ]
+        "details": details
     }
 
     req = urllib.request.Request(
@@ -539,11 +647,24 @@ class LocalServerHandler(BaseHTTPRequestHandler):
         if parsed.path == "/push":
             qs = parse_qs(parsed.query)
             order_id = (qs.get("orderId") or [""])[0]
-            if not order_id:
-                content_len = int(self.headers.get('Content-Length', 0))
-                if content_len > 0:
+            misa_sku = (qs.get("misaSku") or [""])[0]
+            include_box = (qs.get("includeBox") or [None])[0]
+            include_card = (qs.get("includeCard") or [None])[0]
+
+            content_len = int(self.headers.get('Content-Length', 0))
+            if content_len > 0:
+                try:
                     body = json.loads(self.rfile.read(content_len).decode('utf-8'))
-                    order_id = body.get("orderId", "")
+                    if not order_id:
+                        order_id = body.get("orderId", "")
+                    if body.get("misaSku"):
+                        misa_sku = body["misaSku"]
+                    if "includeBox" in body:
+                        include_box = body["includeBox"]
+                    if "includeCard" in body:
+                        include_card = body["includeCard"]
+                except Exception:
+                    pass
 
             if not order_id:
                 self.send_response(400)
@@ -552,7 +673,7 @@ class LocalServerHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"ok": False, "error": "Thiếu orderId"}).encode())
                 return
 
-            print(f"[HTTP PUSH] Nhận yêu cầu đẩy đơn từ Web Admin: {order_id}")
+            print(f"[HTTP PUSH] Nhận yêu cầu đẩy đơn từ Web Admin: {order_id} (SKU: {misa_sku or 'Tự động'})")
             try:
                 orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
                 target_order = None
@@ -567,6 +688,13 @@ class LocalServerHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps({"ok": False, "error": f"Không tìm thấy đơn {order_id}"}).encode())
                     return
+
+                if misa_sku:
+                    target_order["misaSku"] = misa_sku
+                if include_box is not None:
+                    target_order["includeBox"] = include_box
+                if include_card is not None:
+                    target_order["includeCard"] = include_card
 
                 push_res = push_order_to_misa(target_order)
                 if push_res.get("ok"):
