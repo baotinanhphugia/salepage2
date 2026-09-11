@@ -171,26 +171,26 @@ function handleOrderVN_(data) {
 
     const lastRow = sheet.getLastRow();
 
-    // Bắn tin nhắn Telegram kèm cụm nút bấm kết hợp (Dạng 1 & Dạng 2)
-    const message =
-`💎 🇻🇳 ĐƠN HÀNG MỚI (VIỆT NAM) - PHÚ GIA DIAMOND
-🧾 Mã đơn: ${orderId}
-👤 Khách hàng: ${cleanText_(data.name || "")}
-📞 Số điện thoại: ${cleanText_(data.phone || "")}
-📍 Địa chỉ: ${fullAddress}
-🗺 Google Maps: ${mapsLink}
-💍 Sản phẩm: ${productName}
-📦 Phân loại: ${cleanText_(data.variant || "")}
-📏 Kích cỡ đá: ${cleanText_(data.size || "")}
-🔢 Số lượng: ${cleanText_(data.quantity || "1")}
-🎁 Combo: ${cleanText_(data.combo || "")}
-💳 Thanh toán: ${cleanText_(data.payment || "COD")}
-💰 Tổng thu COD: ${priceFormatted}
-📦 Kho còn: ${stockResult.stockLeft}
-📝 Ghi chú: ${cleanText_(data.note || "Không có")}
-🕒 Thời gian: ${createdAt}`;
-
     const cleanPhone = cleanText_(data.phone || "");
+    // Bắn tin nhắn Telegram kèm cụm nút bấm kết hợp (Dạng 1 & Dạng 2) - In đậm SĐT
+    const message =
+`💎 🇻🇳 <b>ĐƠN HÀNG MỚI (VIỆT NAM) - PHÚ GIA DIAMOND</b>
+🧾 Mã đơn: <b>${escapeHtml_(orderId)}</b>
+👤 Khách hàng: <b>${escapeHtml_(cleanText_(data.name || ""))}</b>
+📞 Số điện thoại: <b>${escapeHtml_(cleanPhone)}</b>
+📍 Địa chỉ: ${escapeHtml_(fullAddress)}
+🗺 Google Maps: ${escapeHtml_(mapsLink)}
+💍 Sản phẩm: ${escapeHtml_(productName)}
+📦 Phân loại: ${escapeHtml_(cleanText_(data.variant || ""))}
+📏 Kích cỡ đá: ${escapeHtml_(cleanText_(data.size || ""))}
+🔢 Số lượng: ${escapeHtml_(cleanText_(data.quantity || "1"))}
+🎁 Combo: ${escapeHtml_(cleanText_(data.combo || ""))}
+💳 Thanh toán: ${escapeHtml_(cleanText_(data.payment || "COD"))}
+💰 Tổng thu COD: <b>${escapeHtml_(priceFormatted)}</b>
+📦 Kho còn: ${escapeHtml_(stockResult.stockLeft)}
+📝 Ghi chú: ${escapeHtml_(cleanText_(data.note || "Không có"))}
+🕒 Thời gian: ${escapeHtml_(createdAt)}`;
+
     const msgId = safeSendTelegram_(message, orderId, cleanPhone, data.adminUrl);
     if (msgId) {
       sheet.getRange(lastRow, 19).setValue(msgId);
@@ -262,23 +262,23 @@ function handleUpdateOrderVN_(data) {
     safeDeleteTelegramMessage_(oldMsgId);
   }
 
-  // 2. GỬI LẠI TIN MỚI CẬP NHẬT KÈM ĐẦY ĐỦ CỤM NÚT BẤM
+  // 2. GỬI LẠI TIN MỚI CẬP NHẬT KÈM ĐẦY ĐỦ CỤM NÚT BẤM (IN ĐẬM SĐT)
   const updatedTime = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
   const formattedPrice = price.endsWith("đ") ? price : formatMoney_(price) + "đ";
 
   const newMessage =
-`💎 🇻🇳 [ĐÃ CẬP NHẬT] ĐƠN HÀNG - PHÚ GIA DIAMOND
-🧾 Mã đơn: ${orderId}
-👤 Khách hàng: ${name}
-📞 Số điện thoại: ${phone}
-📍 Địa chỉ mới: ${fullAddress}
-🗺 Google Maps: ${mapsLink}
-💍 Phân loại: ${variant}
-📏 Kích cỡ đá: ${size}
-🔢 Số lượng: ${quantity}
-💰 Tổng thu COD: ${formattedPrice}
-📝 Ghi chú: ${note || "Không có"}
-🕒 Cập nhật lúc: ${updatedTime}`;
+`💎 🇻🇳 <b>[ĐÃ CẬP NHẬT] ĐƠN HÀNG - PHÚ GIA DIAMOND</b>
+🧾 Mã đơn: <b>${escapeHtml_(orderId)}</b>
+👤 Khách hàng: <b>${escapeHtml_(name)}</b>
+📞 Số điện thoại: <b>${escapeHtml_(phone)}</b>
+📍 Địa chỉ mới: ${escapeHtml_(fullAddress)}
+🗺 Google Maps: ${escapeHtml_(mapsLink)}
+💍 Phân loại: ${escapeHtml_(variant)}
+📏 Kích cỡ đá: ${escapeHtml_(size)}
+🔢 Số lượng: ${escapeHtml_(quantity)}
+💰 Tổng thu COD: <b>${escapeHtml_(formattedPrice)}</b>
+📝 Ghi chú: ${escapeHtml_(note || "Không có")}
+🕒 Cập nhật lúc: ${escapeHtml_(updatedTime)}`;
 
   const newMsgId = safeSendTelegram_(newMessage, orderId, phone, data.adminUrl);
   if (newMsgId) {
@@ -972,6 +972,7 @@ function safeSendTelegram_(text, orderId, phone, adminBaseUrl) {
       payload: JSON.stringify({
         chat_id: chatId,
         text: text,
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: keyboard
         }
@@ -1061,4 +1062,12 @@ function json_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function escapeHtml_(text) {
+  if (text === null || text === undefined) return "";
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
