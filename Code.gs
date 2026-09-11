@@ -172,12 +172,14 @@ function handleOrderVN_(data) {
     const lastRow = sheet.getLastRow();
 
     const cleanPhone = cleanText_(data.phone || "");
-    // Bắn tin nhắn Telegram kèm cụm nút bấm kết hợp (Dạng 1 & Dạng 2) - In đậm SĐT
+    const rawPhoneDigits = cleanPhone.replace(/\D/g, "");
+    // Bắn tin nhắn Telegram kèm cụm nút bấm kết hợp - SĐT thẻ code tự copy + Link Zalo màu xanh
     const message =
 `💎 🇻🇳 <b>ĐƠN HÀNG MỚI (VIỆT NAM) - PHÚ GIA DIAMOND</b>
-🧾 Mã đơn: <b>${escapeHtml_(orderId)}</b>
+🧾 Mã đơn: <code>${escapeHtml_(orderId)}</code>
 👤 Khách hàng: <b>${escapeHtml_(cleanText_(data.name || ""))}</b>
-📞 Số điện thoại: <b>${escapeHtml_(cleanPhone)}</b>
+📞 Số điện thoại: <code>${escapeHtml_(cleanPhone)}</code> <i>(Chạm số để sao chép)</i>
+💬 Link Zalo: <a href="https://zalo.me/${escapeHtml_(rawPhoneDigits)}">https://zalo.me/${escapeHtml_(rawPhoneDigits)}</a>
 📍 Địa chỉ: ${escapeHtml_(fullAddress)}
 🗺 Google Maps: ${escapeHtml_(mapsLink)}
 💍 Sản phẩm: ${escapeHtml_(productName)}
@@ -262,15 +264,17 @@ function handleUpdateOrderVN_(data) {
     safeDeleteTelegramMessage_(oldMsgId);
   }
 
-  // 2. GỬI LẠI TIN MỚI CẬP NHẬT KÈM ĐẦY ĐỦ CỤM NÚT BẤM (IN ĐẬM SĐT)
+  // 2. GỬI LẠI TIN MỚI CẬP NHẬT KÈM ĐẦY ĐỦ CỤM NÚT BẤM (SĐT tự copy + Link Zalo)
   const updatedTime = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
   const formattedPrice = price.endsWith("đ") ? price : formatMoney_(price) + "đ";
+  const rawPhoneDigits = String(phone || "").replace(/\D/g, "");
 
   const newMessage =
 `💎 🇻🇳 <b>[ĐÃ CẬP NHẬT] ĐƠN HÀNG - PHÚ GIA DIAMOND</b>
-🧾 Mã đơn: <b>${escapeHtml_(orderId)}</b>
+🧾 Mã đơn: <code>${escapeHtml_(orderId)}</code>
 👤 Khách hàng: <b>${escapeHtml_(name)}</b>
-📞 Số điện thoại: <b>${escapeHtml_(phone)}</b>
+📞 Số điện thoại: <code>${escapeHtml_(phone)}</code> <i>(Chạm số để sao chép)</i>
+💬 Link Zalo: <a href="https://zalo.me/${escapeHtml_(rawPhoneDigits)}">https://zalo.me/${escapeHtml_(rawPhoneDigits)}</a>
 📍 Địa chỉ mới: ${escapeHtml_(fullAddress)}
 🗺 Google Maps: ${escapeHtml_(mapsLink)}
 💍 Phân loại: ${escapeHtml_(variant)}
