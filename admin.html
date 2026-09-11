@@ -769,16 +769,16 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     <!-- FORM 1: ĐĂNG NHẬP -->
     <form id="loginForm" onsubmit="handleLogin(event)">
       <div class="form-group">
-        <label for="inputUsername">👤 Tên đăng nhập</label>
+        <label for="inputUsername">👤 Tên đăng nhập (Admin hoặc Nhân viên)</label>
         <div class="input-wrapper">
-          <input id="inputUsername" placeholder="Nhập tài khoản quản trị" required autocomplete="username">
+          <input id="inputUsername" placeholder="Nhập tài khoản (VD: admin, thuha_cskh...)" required autocomplete="username">
         </div>
       </div>
 
       <div class="form-group">
         <label for="inputPassword">🔑 Mật khẩu</label>
         <div class="input-wrapper">
-          <input id="inputPassword" type="password" placeholder="Nhập mật khẩu quản trị" required autocomplete="current-password">
+          <input id="inputPassword" type="password" placeholder="Nhập mật khẩu" required autocomplete="current-password">
           <button type="button" class="toggle-eye" onclick="togglePasswordVisibility('inputPassword')" title="Ẩn/Hiện mật khẩu">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
           </button>
@@ -786,7 +786,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       </div>
 
       <button type="submit" id="loginBtn" class="login-btn">
-        <span>🔐 ĐĂNG NHẬP QUẢN TRỊ</span>
+        <span>🔐 ĐĂNG NHẬP HỆ THỐNG</span>
       </button>
     </form>
 
@@ -1467,12 +1467,28 @@ function applyUserRolePermissions(user) {
     if (btn) {
       btn.style.display = isStaffOnly ? "none" : "";
     }
+    const p = document.getElementById(tabId);
+    if (p && isStaffOnly) {
+      p.classList.remove("active");
+    }
   });
 
-  // Nếu là CSKH / Sale, chuyển ngay vào Tab Quản lý Đơn hàng
+  // Ẩn nút tải cấu hình ở thanh Quick bar đối với nhân viên
+  const quickConfigBtn = document.querySelector(".quick-btns button[onclick*='loadConfig']");
+  if (quickConfigBtn) {
+    quickConfigBtn.style.display = isStaffOnly ? "none" : "";
+  }
+
+  // Phân luồng điều hướng tab chính xác
   if (isStaffOnly) {
     showTabFromCode("orders");
-    setTimeout(loadOrders, 300);
+    setTimeout(loadOrders, 200);
+  } else {
+    // Với Admin, nếu chưa chọn tab hoặc đang ở tab orders thì chuyển về tab bảng giá
+    const currentActive = document.querySelector(".panel.active");
+    if (!currentActive) {
+      showTabFromCode("productVN");
+    }
   }
 }
 
@@ -1580,19 +1596,28 @@ async function handleLogin(event) {
 
     currentAuthUsername = username;
     currentAuthPassword = password;
-    currentAuthUser = data.user || { username: username, fullName: username, role: "Admin", status: "Hoạt động" };
+    const isMasterAdmin = (username.toLowerCase() === "admin");
+    currentAuthUser = data.user || {
+      username: username,
+      fullName: username,
+      role: isMasterAdmin ? "Admin" : "CSKH",
+      status: "Hoạt động"
+    };
 
     sessionStorage.setItem("PGD_AUTH_USER_VN", username);
     sessionStorage.setItem("PGD_AUTH_PASS_VN", password);
     sessionStorage.setItem("PGD_AUTH_INFO_VN", JSON.stringify(currentAuthUser));
 
     setAuthView(true);
-    if (data.config) fillForm(data.config);
+    if (data.config && currentAuthUser.role === "Admin") {
+      fillForm(data.config);
+    }
     showStatus(`Xin chào ${currentAuthUser.fullName || username}! Đăng nhập thành công.`, true);
 
     // Tự động tải đơn nếu mở từ link Telegram
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("orderId")) {
+      showTabFromCode("orders");
       setTimeout(loadOrders, 300);
     }
 
@@ -1600,7 +1625,7 @@ async function handleLogin(event) {
     showStatus(err.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", false, "#loginStatus");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = "<span>🔐 ĐĂNG NHẬP QUẢN TRỊ</span>";
+    btn.innerHTML = "<span>🔐 ĐĂNG NHẬP HỆ THỐNG</span>";
   }
 }
 
@@ -1671,15 +1696,18 @@ async function handleChangePassword(event) {
 
 // Xử lý Đăng xuất
 function handleLogout() {
-  if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi trang quản trị?")) {
+  if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?")) {
     currentAuthUsername = "";
     currentAuthPassword = "";
     currentAuthUser = null;
-    sessionStorage.removeItem("PGD_AUTH_USER_VN");
-    sessionStorage.removeItem("PGD_AUTH_PASS_VN");
-    sessionStorage.removeItem("PGD_AUTH_INFO_VN");
+    sessionStorage.clear();
+    const uInput = $("#inputUsername");
+    const pInput = $("#inputPassword");
+    if (uInput) uInput.value = "";
+    if (pInput) pInput.value = "";
     setAuthView(false);
     clearStatus("#loginStatus");
+    showStatus("Đã đăng xuất thành công.", true, "#loginStatus");
   }
 }
 
@@ -1756,10 +1784,6 @@ function fillForm(config) {
   };
 
   renderPriceEditorTable("tbodyVN", parseTable(config.priceTable || config.priceTableVN));
-
-  if (config.currentAdminUsername) {
-    $("#currentUserBadge").textContent = "🟢 " + config.currentAdminUsername;
-  }
 }
 
 // Tải cấu hình từ Sheet

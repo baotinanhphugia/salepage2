@@ -34,10 +34,11 @@ function doPost(e) {
     // 1. Đăng nhập / Lấy cấu hình hệ thống & thông tin người dùng
     if (data.action === "login" || data.action === "adminConfig") {
       const auth = authenticateUser_(data.username, data.password || data.key);
+      const isAdmin = (auth.user && auth.user.role === "Admin");
       return json_({
         ok: true,
         user: auth.user,
-        config: getConfig_()
+        config: isAdmin ? getConfig_() : { shopName: "Phú Gia Diamond" }
       });
     }
 
@@ -1024,12 +1025,8 @@ function checkStaffAuth_(username, password) {
   if (!password) {
     throw new Error("Yêu cầu mật khẩu xác thực!");
   }
-  const props = PropertiesService.getScriptProperties();
-  const masterKey = props.getProperty("ADMIN_KEY") || "123456";
-  if (String(password).trim() === masterKey) {
-    return { id: "NV01", username: "admin", fullName: "Quản Trị Viên", role: "Admin" };
-  }
-  return authenticateUser_(username, password).user;
+  const auth = authenticateUser_(username, password);
+  return auth.user;
 }
 
 function checkAdminRole_(username, password) {
