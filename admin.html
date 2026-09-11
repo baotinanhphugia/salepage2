@@ -871,6 +871,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     <button class="tab" onclick="showTab('security')">🔔 Telegram & Gmail</button>
     <button class="tab" onclick="showTab('misa')">🛒 Kết nối MISA eShop</button>
     <button class="tab" onclick="showTab('orders')">📦 Quản lý Đơn hàng</button>
+    <button class="tab tab-users" id="tabBtnUsers" onclick="showTab('users')">👥 Quản lý Nhân sự</button>
     <button class="tab tab-guide" onclick="showTab('guide')">📖 Hướng dẫn sử dụng</button>
   </nav>
 
@@ -1175,6 +1176,113 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   </div>
 </section>
 
+  <!-- TAB 6: QUẢN LÝ NHÂN SỰ & PHÂN QUYỀN (USERS) -->
+  <section id="users" class="panel card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+      <div>
+        <h2 style="margin:0;">👥 Quản Lý Nhân Sự & Phân Quyền</h2>
+        <p class="small">Quản lý danh sách tài khoản nhân viên CSKH, Sale và phân quyền truy cập hệ thống.</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn2" onclick="loadUsers()">🔄 Làm mới</button>
+        <button type="button" class="btn-primary" onclick="openUserModal()" style="background:var(--gold-gradient); color:#000; font-weight:700; border:none; padding:10px 18px; border-radius:10px; cursor:pointer;">➕ Thêm Nhân Sự Mới</button>
+      </div>
+    </div>
+
+    <!-- THẺ THỐNG KÊ NHÂN SỰ -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
+      <div style="background:#13131c; border:1px solid #28283a; border-radius:12px; padding:14px;">
+        <div style="font-size:12px; color:#888;">Tổng số nhân sự</div>
+        <div id="statTotalUsers" style="font-size:24px; font-weight:800; color:var(--gold-light); margin-top:4px;">0</div>
+      </div>
+      <div style="background:#13131c; border:1px solid #28283a; border-radius:12px; padding:14px;">
+        <div style="font-size:12px; color:#888;">Đang hoạt động</div>
+        <div id="statActiveUsers" style="font-size:24px; font-weight:800; color:#4ade80; margin-top:4px;">0</div>
+      </div>
+      <div style="background:#13131c; border:1px solid #28283a; border-radius:12px; padding:14px;">
+        <div style="font-size:12px; color:#888;">Tài khoản bị khóa</div>
+        <div id="statLockedUsers" style="font-size:24px; font-weight:800; color:#f87171; margin-top:4px;">0</div>
+      </div>
+    </div>
+
+    <div id="usersStatus" class="status"></div>
+
+    <!-- BẢNG DANH SÁCH NHÂN SỰ -->
+    <div class="table-wrap" style="border:1px solid #2a2a3c; border-radius:12px; overflow:hidden;">
+      <table class="data-table" id="usersTable">
+        <thead>
+          <tr>
+            <th style="width:60px;">Mã</th>
+            <th>Họ và Tên</th>
+            <th>Tên Đăng Nhập</th>
+            <th style="width:120px;">Vai Trò</th>
+            <th style="width:130px;">Trạng Thái</th>
+            <th>Lần Đăng Nhập Cuối</th>
+            <th>Ghi Chú</th>
+            <th style="width:160px; text-align:center;">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody id="usersTbody">
+          <tr><td colspan="8" style="text-align:center; padding:24px; color:#777;">Đang tải danh sách nhân sự...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- MODAL THÊM / SỬA NHÂN SỰ -->
+    <div id="userEditModal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:540px;">
+        <div class="modal-header">
+          <h3 id="userModalTitle">➕ Thêm Nhân Sự Mới</h3>
+          <button type="button" class="modal-close-btn" onclick="closeUserModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editUserId">
+          <div style="margin-bottom:12px;">
+            <label>Họ và tên nhân viên *</label>
+            <input type="text" id="editUserFullName" placeholder="Ví dụ: Nguyễn Thu Hà">
+          </div>
+          <div class="grid" style="margin-bottom:12px;">
+            <div>
+              <label>Tên đăng nhập (Username) *</label>
+              <input type="text" id="editUserUsername" placeholder="thuha_cskh">
+            </div>
+            <div>
+              <label>Mật khẩu đăng nhập *</label>
+              <input type="password" id="editUserPassword" placeholder="Nhập mật khẩu (ít nhất 4 ký tự)">
+              <div id="pwdHint" class="small" style="font-size:11px; color:#888; margin-top:2px; display:none;">(Để trống nếu không muốn đổi mật khẩu)</div>
+            </div>
+          </div>
+          <div class="grid" style="margin-bottom:12px;">
+            <div>
+              <label>Vai trò / Phân quyền *</label>
+              <select id="editUserRole">
+                <option value="CSKH">🎧 CSKH / Trực Chốt Đơn</option>
+                <option value="Admin">👑 Quản Trị Viên (Admin)</option>
+                <option value="Kho">📦 Nhân Viên Kho / Vận Hành</option>
+              </select>
+            </div>
+            <div>
+              <label>Trạng thái tài khoản *</label>
+              <select id="editUserStatus">
+                <option value="Hoạt động">🟢 Hoạt động</option>
+                <option value="Đã khóa">🔴 Đã khóa (Tạm dừng)</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label>Ghi chú thêm (SĐT, Ca trực, Ghi chú nội bộ)</label>
+            <textarea id="editUserNote" rows="2" placeholder="Ghi chú nhân viên..."></textarea>
+          </div>
+          <div id="userModalStatus" class="status"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeUserModal()">Đóng</button>
+          <button type="button" class="btn-primary" id="btnSaveUser" onclick="submitSaveUser()" style="background:var(--gold-gradient); color:#000; font-weight:700;">💾 Lưu Nhân Sự</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- TAB 5: HƯỚNG DẪN CHI TIẾT (USER GUIDE) -->
   <section id="guide" class="panel card">
     <h2>📖 Cẩm Nang Hướng Dẫn Vận Hành Hệ Thống Bán Hàng Việt Nam (COD)</h2>
@@ -1254,6 +1362,7 @@ const APP_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyG
 
 let currentAuthUsername = "";
 let currentAuthPassword = "";
+let currentAuthUser = null;
 
 // BẢNG GIÁ MẪU MẶC ĐỊNH
 const DEFAULT_PRICES_VN = [
@@ -1332,12 +1441,38 @@ function setAuthView(isAuthenticated) {
   if (isAuthenticated) {
     loginSection.style.display = "none";
     dashboardSection.style.display = "block";
-    $("#currentUserBadge").textContent = "🟢 " + (currentAuthUsername || "Admin");
+    applyUserRolePermissions(currentAuthUser);
   } else {
     loginSection.style.display = "flex";
     dashboardSection.style.display = "none";
     $("#inputPassword").value = "";
     switchAuthTab("login");
+  }
+}
+
+function applyUserRolePermissions(user) {
+  if (!user) return;
+  const badge = $("#currentUserBadge");
+  if (badge) {
+    const roleIcon = user.role === "Admin" ? "👑" : user.role === "Kho" ? "📦" : "🎧";
+    badge.innerHTML = `${roleIcon} <b>${escapeHtml(user.fullName || user.username)}</b> <span style="font-size:11px; opacity:0.85;">[${user.role || 'CSKH'}]</span>`;
+  }
+
+  const isStaffOnly = (user.role === "CSKH" || user.role === "Sale" || user.role === "Kho");
+
+  // Ẩn/Hiện các tab cấu hình và tab Quản lý nhân sự đối với nhân sự CSKH
+  const adminOnlyTabs = ["productVN", "shop", "security", "misa", "users"];
+  adminOnlyTabs.forEach(tabId => {
+    const btn = Array.from(document.querySelectorAll(".tab")).find(t => t.getAttribute("onclick")?.includes(tabId));
+    if (btn) {
+      btn.style.display = isStaffOnly ? "none" : "";
+    }
+  });
+
+  // Nếu là CSKH / Sale, chuyển ngay vào Tab Quản lý Đơn hàng
+  if (isStaffOnly) {
+    showTabFromCode("orders");
+    setTimeout(loadOrders, 300);
   }
 }
 
@@ -1435,7 +1570,7 @@ async function handleLogin(event) {
     const res = await fetch(APP_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "adminConfig", username: username, password: password })
+      body: JSON.stringify({ action: "login", username: username, password: password })
     });
 
     const data = await res.json();
@@ -1445,14 +1580,17 @@ async function handleLogin(event) {
 
     currentAuthUsername = username;
     currentAuthPassword = password;
-    sessionStorage.setItem("PGD_AUTH_USER", username);
-    sessionStorage.setItem("PGD_AUTH_PASS", password);
+    currentAuthUser = data.user || { username: username, fullName: username, role: "Admin", status: "Hoạt động" };
+
+    sessionStorage.setItem("PGD_AUTH_USER_VN", username);
+    sessionStorage.setItem("PGD_AUTH_PASS_VN", password);
+    sessionStorage.setItem("PGD_AUTH_INFO_VN", JSON.stringify(currentAuthUser));
 
     setAuthView(true);
-    fillForm(data.config);
-    showStatus("Đăng nhập thành công! Đã đồng bộ dữ liệu hệ thống.", true);
+    if (data.config) fillForm(data.config);
+    showStatus(`Xin chào ${currentAuthUser.fullName || username}! Đăng nhập thành công.`, true);
 
-    // Tự động tải đơn và mở modal sửa nếu mở từ link Telegram
+    // Tự động tải đơn nếu mở từ link Telegram
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("orderId")) {
       setTimeout(loadOrders, 300);
@@ -1536,8 +1674,10 @@ function handleLogout() {
   if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi trang quản trị?")) {
     currentAuthUsername = "";
     currentAuthPassword = "";
-    sessionStorage.removeItem("PGD_AUTH_USER");
-    sessionStorage.removeItem("PGD_AUTH_PASS");
+    currentAuthUser = null;
+    sessionStorage.removeItem("PGD_AUTH_USER_VN");
+    sessionStorage.removeItem("PGD_AUTH_PASS_VN");
+    sessionStorage.removeItem("PGD_AUTH_INFO_VN");
     setAuthView(false);
     clearStatus("#loginStatus");
   }
@@ -1548,11 +1688,18 @@ function showTab(id) {
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
   document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
   
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add("active");
+  if (window.event && window.event.currentTarget && window.event.currentTarget.classList) {
+    window.event.currentTarget.classList.add("active");
+  } else {
+    const tabBtn = Array.from(document.querySelectorAll(".tab")).find(t => t.getAttribute("onclick")?.includes(id));
+    if (tabBtn) tabBtn.classList.add("active");
   }
   const targetPanel = document.getElementById(id);
   if (targetPanel) targetPanel.classList.add("active");
+
+  if (id === "users") {
+    loadUsers();
+  }
 }
 
 function showTabFromCode(id) {
@@ -1563,14 +1710,20 @@ function showTabFromCode(id) {
   if (tabBtn) tabBtn.classList.add("active");
   const targetPanel = document.getElementById(id);
   if (targetPanel) targetPanel.classList.add("active");
+
+  if (id === "users") {
+    loadUsers();
+  }
 }
 
 function authPayload(extra = {}) {
   if (!currentAuthPassword) throw new Error("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!");
+  const staff = (currentAuthUser && currentAuthUser.fullName) ? currentAuthUser.fullName : (currentAuthUsername || "Admin");
   return {
     username: currentAuthUsername,
     password: currentAuthPassword,
     key: currentAuthPassword,
+    staffName: staff,
     ...extra
   };
 }
@@ -2087,6 +2240,266 @@ async function quickZaloOrder(orderId, cleanPhone) {
 }
 
 
+// ================= MODULE QUẢN LÝ NHÂN SỰ & PHÂN QUYỀN (RBAC) =================
+let cachedUsersList = [];
+
+async function loadUsers() {
+  const tbody = $("#usersTbody");
+  try {
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:#888;">⏳ Đang tải danh sách nhân sự...</td></tr>`;
+    }
+    const payload = authPayload({ action: "getUsers" });
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Không thể tải danh sách nhân sự!");
+
+    cachedUsersList = Array.isArray(data.users) ? data.users : [];
+    
+    // Cập nhật thống kê
+    const total = cachedUsersList.length;
+    const active = cachedUsersList.filter(u => u.status === "Hoạt động").length;
+    const locked = cachedUsersList.filter(u => u.status !== "Hoạt động").length;
+
+    if ($("#statTotalUsers")) $("#statTotalUsers").textContent = total;
+    if ($("#statActiveUsers")) $("#statActiveUsers").textContent = active;
+    if ($("#statLockedUsers")) $("#statLockedUsers").textContent = locked;
+
+    renderUsersTable(cachedUsersList);
+  } catch (e) {
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:#f87171;">⚠️ Lỗi: ${escapeHtml(e.message)}</td></tr>`;
+    }
+    showStatus(e.message, false, "#usersStatus");
+  }
+}
+
+function renderUsersTable(users) {
+  const tbody = $("#usersTbody");
+  if (!tbody) return;
+  if (!users || users.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:#888;">Chưa có tài khoản nhân viên nào. Bấm <b>➕ Thêm Nhân Sự Mới</b> để tạo tài khoản.</td></tr>`;
+    return;
+  }
+
+  let html = "";
+  users.forEach(u => {
+    const isMasterAdmin = (u.username && u.username.toLowerCase() === "admin");
+    const roleBadge = u.role === "Admin"
+      ? `<span style="background:rgba(217,119,6,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); padding:3px 8px; border-radius:6px; font-weight:700; font-size:12px;">👑 Admin</span>`
+      : u.role === "Kho"
+      ? `<span style="background:rgba(147,51,234,0.2); color:#c084fc; border:1px solid rgba(192,132,252,0.4); padding:3px 8px; border-radius:6px; font-weight:700; font-size:12px;">📦 Kho</span>`
+      : `<span style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(96,165,250,0.4); padding:3px 8px; border-radius:6px; font-weight:700; font-size:12px;">🎧 CSKH</span>`;
+
+    const statusBadge = u.status === "Hoạt động"
+      ? `<span style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); padding:3px 8px; border-radius:6px; font-weight:600; font-size:12px;">🟢 Hoạt động</span>`
+      : `<span style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(248,113,113,0.3); padding:3px 8px; border-radius:6px; font-weight:600; font-size:12px;">🔴 Đã khóa</span>`;
+
+    const lockBtnText = u.status === "Hoạt động" ? "🔒 Khóa" : "🔓 Mở";
+    const lockBtnStyle = u.status === "Hoạt động" ? "background:#2b1a1a; color:#fca5a5; border:1px solid #7f1d1d;" : "background:#1a2b1f; color:#86efac; border:1px solid #14532d;";
+
+    html += `
+      <tr>
+        <td style="font-weight:700; color:var(--gold-light); font-family:monospace;">${escapeHtml(u.id || "")}</td>
+        <td style="font-weight:600; color:#fff;">${escapeHtml(u.fullName || "")}</td>
+        <td><code style="background:#0f1016; padding:2px 6px; border-radius:4px; color:#cbd5e1;">${escapeHtml(u.username || "")}</code></td>
+        <td>${roleBadge}</td>
+        <td>${statusBadge}</td>
+        <td style="font-size:12px; color:#94a3b8;">${escapeHtml(u.lastLogin || "Chưa đăng nhập")}</td>
+        <td style="font-size:12px; color:#94a3b8; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(u.note || "")}">${escapeHtml(u.note || "-")}</td>
+        <td style="text-align:center;">
+          <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn2" style="padding:4px 8px; font-size:12px;" onclick="openUserModal('${escapeHtml(u.username)}')">✏️ Sửa</button>
+            ${!isMasterAdmin ? `
+              <button type="button" class="btn2" style="padding:4px 8px; font-size:12px; ${lockBtnStyle}" onclick="toggleUserStatus('${escapeHtml(u.username)}')">${lockBtnText}</button>
+              <button type="button" class="btn2" style="padding:4px 8px; font-size:12px; background:#361414; color:#f87171; border:1px solid #7f1d1d;" onclick="deleteUser('${escapeHtml(u.username)}')">🗑️</button>
+            ` : `<span style="font-size:11px; color:#64748b; padding:4px 0;">(Chính)</span>`}
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+function openUserModal(targetUsername = null) {
+  const modal = $("#userEditModal");
+  if (!modal) return;
+  clearStatus("#userModalStatus");
+
+  if (targetUsername) {
+    const user = cachedUsersList.find(u => u.username.toLowerCase() === targetUsername.toLowerCase());
+    if (!user) {
+      alert("Không tìm thấy thông tin nhân sự!");
+      return;
+    }
+    $("#userModalTitle").textContent = `✏️ Sửa Nhân Sự: ${user.fullName || user.username}`;
+    $("#editUserId").value = user.id || "";
+    $("#editUserFullName").value = user.fullName || "";
+    $("#editUserUsername").value = user.username || "";
+    $("#editUserUsername").disabled = true; // Không cho sửa username đã có
+    $("#editUserPassword").value = "";
+    $("#pwdHint").style.display = "block";
+    $("#editUserRole").value = user.role || "CSKH";
+    $("#editUserStatus").value = user.status || "Hoạt động";
+    $("#editUserNote").value = user.note || "";
+    
+    if (user.username.toLowerCase() === "admin") {
+      $("#editUserRole").disabled = true;
+      $("#editUserStatus").disabled = true;
+    } else {
+      $("#editUserRole").disabled = false;
+      $("#editUserStatus").disabled = false;
+    }
+  } else {
+    $("#userModalTitle").textContent = "➕ Thêm Nhân Sự Mới";
+    $("#editUserId").value = "";
+    $("#editUserFullName").value = "";
+    $("#editUserUsername").value = "";
+    $("#editUserUsername").disabled = false;
+    $("#editUserPassword").value = "";
+    $("#pwdHint").style.display = "none";
+    $("#editUserRole").value = "CSKH";
+    $("#editUserRole").disabled = false;
+    $("#editUserStatus").value = "Hoạt động";
+    $("#editUserStatus").disabled = false;
+    $("#editUserNote").value = "";
+  }
+
+  modal.style.display = "flex";
+}
+
+function closeUserModal() {
+  const modal = $("#userEditModal");
+  if (modal) modal.style.display = "none";
+}
+
+async function submitSaveUser() {
+  const btn = $("#btnSaveUser");
+  const id = $("#editUserId").value.trim();
+  const fullName = $("#editUserFullName").value.trim();
+  const username = $("#editUserUsername").value.trim();
+  const password = $("#editUserPassword").value.trim();
+  const role = $("#editUserRole").value;
+  const status = $("#editUserStatus").value;
+  const note = $("#editUserNote").value.trim();
+
+  if (!fullName) {
+    showStatus("Vui lòng nhập Họ và tên nhân viên!", false, "#userModalStatus");
+    return;
+  }
+  if (!username) {
+    showStatus("Vui lòng nhập Tên đăng nhập!", false, "#userModalStatus");
+    return;
+  }
+  if (!id && !password) {
+    showStatus("Vui lòng nhập mật khẩu cho nhân viên mới!", false, "#userModalStatus");
+    return;
+  }
+  if (password && password.length < 4) {
+    showStatus("Mật khẩu phải có ít nhất 4 ký tự!", false, "#userModalStatus");
+    return;
+  }
+
+  try {
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Đang lưu...";
+    clearStatus("#userModalStatus");
+
+    const userData = {
+      id: id,
+      username: username,
+      fullName: fullName,
+      role: role,
+      status: status,
+      note: note
+    };
+    if (password) userData.password = password;
+
+    const payload = authPayload({
+      action: "saveUser",
+      user: userData
+    });
+
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Không thể lưu thông tin nhân sự!");
+
+    showStatus(`✅ Đã lưu nhân sự ${fullName} (${username}) thành công!`, true);
+    closeUserModal();
+    loadUsers();
+  } catch (e) {
+    showStatus(e.message, false, "#userModalStatus");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "💾 Lưu Nhân Sự";
+  }
+}
+
+async function toggleUserStatus(username) {
+  if (username.toLowerCase() === "admin") {
+    alert("Không thể khóa tài khoản Quản trị viên chính!");
+    return;
+  }
+  if (!confirm(`Xác nhận thay đổi trạng thái (Khóa/Mở khóa) cho tài khoản "${username}"?`)) return;
+
+  try {
+    showStatus(`Đang cập nhật trạng thái nhân sự ${username}...`);
+    const payload = authPayload({
+      action: "toggleUserStatus",
+      targetUsername: username
+    });
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Không thể đổi trạng thái nhân sự!");
+    showStatus(`✅ Đã đổi trạng thái tài khoản ${username} thành: ${data.status}`);
+    loadUsers();
+  } catch (e) {
+    showStatus(e.message, false);
+  }
+}
+
+async function deleteUser(username) {
+  if (username.toLowerCase() === "admin") {
+    alert("Không thể xóa tài khoản Quản trị viên chính!");
+    return;
+  }
+  if (!confirm(`⚠️ CẢNH BÁO: Xác nhận XÓA VĨNH VIỄN tài khoản nhân sự "${username}" khỏi hệ thống?`)) return;
+
+  try {
+    showStatus(`Đang xóa nhân sự ${username}...`);
+    const payload = authPayload({
+      action: "deleteUser",
+      targetUsername: username
+    });
+    const res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Không thể xóa nhân sự!");
+    showStatus(`✅ Đã xóa vĩnh viễn tài khoản ${username}!`);
+    loadUsers();
+  } catch (e) {
+    showStatus(e.message, false);
+  }
+}
+
 function checkUrlDeepLink() {
   try {
     const urlParams = new URLSearchParams(window.location.search);
@@ -2111,7 +2524,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
   const savedUser = sessionStorage.getItem("PGD_AUTH_USER_VN");
   const savedPass = sessionStorage.getItem("PGD_AUTH_PASS_VN");
+  const savedInfo = sessionStorage.getItem("PGD_AUTH_INFO_VN");
   
+  if (savedInfo) {
+    try {
+      currentAuthUser = JSON.parse(savedInfo);
+    } catch (e) {}
+  }
+
   if (savedUser && savedPass) {
     $("#inputUsername").value = savedUser;
     $("#inputPassword").value = savedPass;

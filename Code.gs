@@ -31,35 +31,66 @@ function doPost(e) {
       return handleTelegramCallback_(data.callback_query);
     }
 
-    // 1. Admin lấy cấu hình
-    if (data.action === "adminConfig") {
-      checkAdminWithBruteForceGuard_(data.key || data.password);
-      return json_({ ok: true, config: getConfig_() });
+    // 1. Đăng nhập / Lấy cấu hình hệ thống & thông tin người dùng
+    if (data.action === "login" || data.action === "adminConfig") {
+      const auth = authenticateUser_(data.username, data.password || data.key);
+      return json_({
+        ok: true,
+        user: auth.user,
+        config: getConfig_()
+      });
     }
 
-    // 2. Admin xem danh sách đơn hàng
+    // 1.1 Quản lý Nhân sự: Lấy danh sách (Chỉ Admin)
+    if (data.action === "getUsers") {
+      checkAdminRole_(data.username, data.password || data.key);
+      return json_({ ok: true, users: getUsers_() });
+    }
+
+    // 1.2 Quản lý Nhân sự: Thêm / Sửa nhân viên (Chỉ Admin)
+    if (data.action === "saveUser") {
+      checkAdminRole_(data.username, data.password || data.key);
+      const saved = saveUser_(data.user);
+      return json_({ ok: true, user: saved });
+    }
+
+    // 1.3 Quản lý Nhân sự: Khóa / Mở khóa nhân viên (Chỉ Admin)
+    if (data.action === "toggleUserStatus") {
+      checkAdminRole_(data.username, data.password || data.key);
+      const newStatus = toggleUserStatus_(data.targetUsername);
+      return json_({ ok: true, username: data.targetUsername, status: newStatus });
+    }
+
+    // 1.4 Quản lý Nhân sự: Xóa nhân viên (Chỉ Admin)
+    if (data.action === "deleteUser") {
+      checkAdminRole_(data.username, data.password || data.key);
+      deleteUser_(data.targetUsername);
+      return json_({ ok: true, username: data.targetUsername });
+    }
+
+    // 2. Xem danh sách đơn hàng (Admin & CSKH)
     if (data.action === "orders") {
-      checkAdminWithBruteForceGuard_(data.key || data.password);
+      checkStaffAuth_(data.username, data.password || data.key);
       return json_({ ok: true, orders: getOrders_() });
     }
 
-    // 3. Admin lưu cấu hình
+    // 3. Admin lưu cấu hình (Chỉ Admin)
     if (data.action === "saveConfig") {
-      checkAdminWithBruteForceGuard_(data.key || data.password);
+      checkAdminRole_(data.username, data.password || data.key);
       saveConfig_(data.config || {});
       savePrivateProps_(data.config || {});
       return json_({ ok: true });
     }
 
-    // 4. Admin sửa đơn hàng (Xoá tin cũ trên Telegram, gửi lại tin mới cập nhật)
+    // 4. Sửa đơn hàng (Admin & CSKH - Xoá tin cũ trên Telegram, gửi lại tin mới cập nhật)
     if (data.action === "updateOrder") {
-      checkAdminWithBruteForceGuard_(data.key || data.password);
+      checkStaffAuth_(data.username, data.password || data.key);
       return handleUpdateOrderVN_(data);
     }
 
-    // 5. Admin xác nhận đẩy đơn sang eShop (Hoàn tất -> Xóa tin Telegram)
+    // 5. Xác nhận đẩy đơn sang eShop (Admin & CSKH - Hoàn tất -> Xóa tin Telegram)
     if (data.action === "pushToEShop") {
-      checkAdminWithBruteForceGuard_(data.key || data.password);
+      checkStaffAuth_(data.username, data.password || data.key);
       return handlePushToEShopVN_(data);
     }
 
@@ -81,15 +112,15 @@ function doPost(e) {
       return handleFailPushMisa_(data);
     }
 
-    // 6. Admin hủy đơn (Khách bom / không mua -> Xóa tin Telegram)
+    // 6. Hủy đơn (Admin & CSKH - Khách bom / không mua -> Xóa tin Telegram)
     if (data.action === "cancelOrder") {
-      checkAdminWithBruteForceGuard_(data.key || data.password);
+      checkStaffAuth_(data.username, data.password || data.key);
       return handleCancelOrderVN_(data);
     }
 
-    // 7. Admin cập nhật trạng thái nhanh (Gọi điện / Zalo...)
+    // 7. Cập nhật trạng thái nhanh (Admin & CSKH - Gọi điện / Zalo...)
     if (data.action === "updateStatus") {
-      checkAdminWithBruteForceGuard_(data.key || data.password);
+      checkStaffAuth_(data.username, data.password || data.key);
       const result = updateOrderStatus_(data.orderId, data.status);
       return json_({ ok: true, orderId: data.orderId, status: data.status });
     }
@@ -241,7 +272,11 @@ function handleUpdateOrderVN_(data) {
   const size = cleanText_(data.size || "");
   const quantity = cleanText_(data.quantity || "1");
   const price = cleanText_(data.price || "");
-  const note = cleanText_(data.note || "");
+  let note = cleanText_(data.note || "");
+  const staffName = cleanText_(data.staffName || data.operator || "");
+  if (staffName && !note.includes("[NV:")) {
+    note = note ? `${note} [NV: ${staffName}]` : `[NV: ${staffName}]`;
+  }
   const fullAddress = [address, ward, district, province].filter(Boolean).join(", ");
   const mapsLink = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(fullAddress);
 
@@ -897,6 +932,220 @@ function checkAdminWithBruteForceGuard_(key) {
     }
   }
   cache.remove(failCountKey);
+}
+
+// --- MODULE QUẢN LÝ NHÂN SỰ & PHÂN QUYỀN (RBAC) ---
+function getOrCreateUsersSheet_(ss) {
+  let sheet = ss.getSheetByName("Users");
+  if (!sheet) {
+    sheet = ss.getSheetByName("NhanSu");
+  }
+  if (!sheet) {
+    sheet = ss.insertSheet("Users");
+    const headers = ["ID", "Tên Đăng Nhập", "Mật Khẩu", "Họ Và Tên", "Vai Trò", "Trạng Thái", "Ngày Tạo", "Đăng Nhập Cuối", "Ghi Chú"];
+    sheet.appendRow(headers);
+    const headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setBackground("#1a1a24").setFontColor("#d4af37").setFontWeight("bold");
+    sheet.setFrozenRows(1);
+
+    // Tạo tài khoản Admin mặc định
+    const nowStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
+    sheet.appendRow(["NV01", "admin", "123456", "Quản Trị Viên", "Admin", "Hoạt động", nowStr, "", "Tài khoản quản trị cao nhất"]);
+  }
+  return sheet;
+}
+
+function authenticateUser_(username, password) {
+  const u = String(username || "").trim().toLowerCase();
+  const p = String(password || "").trim();
+
+  const props = PropertiesService.getScriptProperties();
+  let masterKey = props.getProperty("ADMIN_KEY");
+  if (!masterKey) {
+    masterKey = "123456";
+    props.setProperty("ADMIN_KEY", masterKey);
+  }
+
+  // 1. Cho phép đăng nhập bằng Master Key
+  if ((!u || u === "admin") && p === masterKey) {
+    return {
+      ok: true,
+      user: {
+        id: "NV01",
+        username: "admin",
+        fullName: "Quản Trị Viên",
+        role: "Admin",
+        status: "Hoạt động"
+      }
+    };
+  }
+
+  // 2. Tra cứu trong Sheet Users
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateUsersSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const rowUser = String(row[1] || "").trim().toLowerCase();
+    const rowPass = String(row[2] || "").trim();
+    const rowStatus = String(row[5] || "Hoạt động").trim();
+
+    if (rowUser === u) {
+      if (rowPass !== p) {
+        throw new Error("Mật khẩu không chính xác!");
+      }
+      if (rowStatus === "Đã khóa") {
+        throw new Error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Quản trị viên!");
+      }
+
+      // Cập nhật thời điểm đăng nhập cuối
+      const nowStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
+      sheet.getRange(i + 1, 8).setValue(nowStr);
+
+      return {
+        ok: true,
+        user: {
+          id: String(row[0] || "NV" + i),
+          username: String(row[1] || ""),
+          fullName: String(row[3] || row[1]),
+          role: String(row[4] || "CSKH"),
+          status: rowStatus,
+          note: String(row[8] || "")
+        }
+      };
+    }
+  }
+
+  throw new Error("Tài khoản hoặc mật khẩu không chính xác!");
+}
+
+function checkStaffAuth_(username, password) {
+  if (!password) {
+    throw new Error("Yêu cầu mật khẩu xác thực!");
+  }
+  const props = PropertiesService.getScriptProperties();
+  const masterKey = props.getProperty("ADMIN_KEY") || "123456";
+  if (String(password).trim() === masterKey) {
+    return { id: "NV01", username: "admin", fullName: "Quản Trị Viên", role: "Admin" };
+  }
+  return authenticateUser_(username, password).user;
+}
+
+function checkAdminRole_(username, password) {
+  const user = checkStaffAuth_(username, password);
+  if (user.role !== "Admin") {
+    throw new Error("Quyền truy cập bị từ chối! Chức năng này chỉ dành riêng cho Quản Trị Viên (Admin).");
+  }
+  return user;
+}
+
+function getUsers_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateUsersSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+  const users = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i];
+    if (r[1]) {
+      users.push({
+        id: String(r[0] || "NV" + i),
+        username: String(r[1] || ""),
+        fullName: String(r[3] || ""),
+        role: String(r[4] || "CSKH"),
+        status: String(r[5] || "Hoạt động"),
+        createdAt: r[6] ? String(r[6]) : "",
+        lastLogin: r[7] ? String(r[7]) : "",
+        note: String(r[8] || "")
+      });
+    }
+  }
+  return users;
+}
+
+function saveUser_(userData) {
+  if (!userData || !userData.username) {
+    throw new Error("Thiếu tên đăng nhập!");
+  }
+  const username = String(userData.username).trim().toLowerCase();
+  const fullName = String(userData.fullName || "").trim() || username;
+  const role = String(userData.role || "CSKH").trim();
+  const status = String(userData.status || "Hoạt động").trim();
+  const note = String(userData.note || "").trim();
+  const password = String(userData.password || "").trim();
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateUsersSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+  let targetRow = -1;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).trim().toLowerCase() === username) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+
+  const nowStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
+
+  if (targetRow > -1) {
+    // Cập nhật thông tin nhân viên
+    sheet.getRange(targetRow, 4).setValue(fullName);
+    sheet.getRange(targetRow, 5).setValue(role);
+    sheet.getRange(targetRow, 6).setValue(status);
+    sheet.getRange(targetRow, 9).setValue(note);
+    if (password) {
+      sheet.getRange(targetRow, 3).setValue(password);
+    }
+    return { username, fullName, role, status, note };
+  } else {
+    // Thêm mới nhân viên
+    if (!password) {
+      throw new Error("Vui lòng đặt mật khẩu cho tài khoản nhân viên mới!");
+    }
+    const newId = "NV" + ("00" + data.length).slice(-2);
+    sheet.appendRow([newId, username, password, fullName, role, status, nowStr, "", note]);
+    return { id: newId, username, fullName, role, status, note, createdAt: nowStr };
+  }
+}
+
+function toggleUserStatus_(username) {
+  const u = String(username || "").trim().toLowerCase();
+  if (u === "admin") {
+    throw new Error("Không thể khóa tài khoản Quản trị viên chính (Admin)!");
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateUsersSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).trim().toLowerCase() === u) {
+      const currentStatus = String(data[i][5] || "Hoạt động").trim();
+      const newStatus = currentStatus === "Hoạt động" ? "Đã khóa" : "Hoạt động";
+      sheet.getRange(i + 1, 6).setValue(newStatus);
+      return newStatus;
+    }
+  }
+  throw new Error("Không tìm thấy nhân sự " + username);
+}
+
+function deleteUser_(username) {
+  const u = String(username || "").trim().toLowerCase();
+  if (u === "admin") {
+    throw new Error("Không thể xóa tài khoản Quản trị viên chính (Admin)!");
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateUsersSheet_(ss);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).trim().toLowerCase() === u) {
+      sheet.deleteRow(i + 1);
+      return true;
+    }
+  }
+  throw new Error("Không tìm thấy nhân sự " + username);
 }
 
 function getOrders_() {
