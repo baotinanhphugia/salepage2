@@ -730,8 +730,8 @@ button{border:0;background:#e60000;color:#fff;border-radius:999px;padding:17px;f
       <input name="phone" placeholder="Số điện thoại" required>
     </div>
     <select name="province" id="provinceSelect" style="width:100%;padding:14px;border:1.5px solid #bbb;border-radius:10px;font-size:15px;font-weight:bold;background:#fff;color:#111;" required>
-      <option value="">📍 Chọn Tỉnh / Thành phố</option>
-      <option value="Hà Nội" selected>Hà Nội 🔥</option>
+      <option value="" disabled selected>📍 Chọn Tỉnh / Thành phố nhận hàng *</option>
+      <option value="Hà Nội">Hà Nội 🔥</option>
       <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh 🔥</option>
       <option value="Hưng Yên">Hưng Yên</option>
       <option value="Bắc Ninh">Bắc Ninh</option>
@@ -1112,8 +1112,51 @@ function updateMapLink(){
   }
 }
 
+// Danh sách tỉnh thành chuẩn để tự động nhận diện thông minh từ ô địa chỉ
+const VN_PROVINCES = [
+  "Hà Nội", "TP. Hồ Chí Minh", "Hưng Yên", "Bắc Ninh", "Hải Phòng", "Đà Nẵng",
+  "Bình Dương", "Đồng Nai", "Hải Dương", "Quảng Ninh", "Thái Bình", "Nam Định",
+  "Hà Nam", "Ninh Bình", "Thanh Hóa", "Nghệ An", "Hà Tĩnh", "Quảng Bình",
+  "Quảng Trị", "Thừa Thiên Huế", "Quảng Nam", "Quảng Ngãi", "Bình Định",
+  "Phú Yên", "Khánh Hòa", "Ninh Thuận", "Bình Thuận", "Kon Tum", "Gia Lai",
+  "Đắk Lắk", "Đắk Nông", "Lâm Đồng", "Bình Phước", "Tây Ninh", "Bà Rịa - Vũng Tàu",
+  "Long An", "Tiền Giang", "Bến Tre", "Trà Vinh", "Vĩnh Long", "Đồng Tháp",
+  "An Giang", "Kiên Giang", "Cần Thơ", "Hậu Giang", "Sóc Trăng", "Bạc Liêu",
+  "Cà Mau", "Vĩnh Phúc", "Phú Thọ", "Bắc Giang", "Thái Nguyên", "Tuyên Quang",
+  "Lạng Sơn", "Cao Bằng", "Bắc Kạn", "Hà Giang", "Lào Cai", "Yên Bái",
+  "Sơn La", "Hòa Bình", "Điện Biên", "Lai Châu"
+];
+
+function autoDetectProvinceFromAddress() {
+  if (!addressEl || !provinceSelectEl) return;
+  const rawText = (addressEl.value || "").toLowerCase();
+  if (rawText.length < 3) return;
+
+  // Kiểm tra từng tỉnh thành
+  for (const prov of VN_PROVINCES) {
+    const provLower = prov.toLowerCase();
+    // Bỏ tiền tố TP. nếu có để so khớp
+    const cleanProv = provLower.replace("tp. ", "").replace("tỉnh ", "").trim();
+    if (rawText.includes(cleanProv)) {
+      if (provinceSelectEl.value !== prov) {
+        provinceSelectEl.value = prov;
+        provinceSelectEl.style.borderColor = "#10b981";
+        provinceSelectEl.style.background = "#f0fdf4";
+        setTimeout(() => {
+          provinceSelectEl.style.borderColor = "#bbb";
+          provinceSelectEl.style.background = "#fff";
+        }, 1500);
+      }
+      break;
+    }
+  }
+}
+
 provinceSelectEl?.addEventListener("change", updateMapLink);
-addressEl?.addEventListener("input", updateMapLink);
+addressEl?.addEventListener("input", () => {
+  autoDetectProvinceFromAddress();
+  updateMapLink();
+});
 
 
 

@@ -124,6 +124,79 @@ def ensure_misa_customer(name, phone, address, province, district, ward):
 
     return MISA_DEFAULT_CUSTOMER
 
+# --- DANH SÁCH 63 TỈNH THÀNH & BỘ PHÂN TÍCH ĐỊA CHỈ THÔNG MINH ---
+VN_PROVINCES = [
+    "Hà Nội", "TP. Hồ Chí Minh", "Hồ Chí Minh", "Hưng Yên", "Bắc Ninh", "Hải Phòng", "Đà Nẵng",
+    "Bình Dương", "Đồng Nai", "Hải Dương", "Quảng Ninh", "Thái Bình", "Nam Định",
+    "Hà Nam", "Ninh Bình", "Thanh Hóa", "Nghệ An", "Hà Tĩnh", "Quảng Bình",
+    "Quảng Trị", "Thừa Thiên Huế", "Quảng Nam", "Quảng Ngãi", "Bình Định",
+    "Phú Yên", "Khánh Hòa", "Ninh Thuận", "Bình Thuận", "Kon Tum", "Gia Lai",
+    "Đắk Lắk", "Đắk Nông", "Lâm Đồng", "Bình Phước", "Tây Ninh", "Bà Rịa - Vũng Tàu",
+    "Long An", "Tiền Giang", "Bến Tre", "Trà Vinh", "Vĩnh Long", "Đồng Tháp",
+    "An Giang", "Kiên Giang", "Cần Thơ", "Hậu Giang", "Sóc Trăng", "Bạc Liêu",
+    "Cà Mau", "Vĩnh Phúc", "Phú Thọ", "Bắc Giang", "Thái Nguyên", "Tuyên Quang",
+    "Lạng Sơn", "Cao Bằng", "Bắc Kạn", "Hà Giang", "Lào Cai", "Yên Bái",
+    "Sơn La", "Hòa Bình", "Điện Biên", "Lai Châu"
+]
+
+def smart_parse_vietnam_address(raw_full, raw_street, raw_province, raw_district, raw_ward):
+    """
+    Tự động phân tích và chuẩn hóa địa chỉ 3 cấp (Tỉnh, Quận/Huyện, Phường/Xã)
+    kể cả khi người dùng gõ thiếu dấu phẩy hoặc bị nhảy ngầm về Hà Nội.
+    """
+    import re
+    text = f"{raw_street or ''} {raw_full or ''}".strip()
+    
+    found_prov = (raw_province or "").strip()
+    found_dist = (raw_district or "").strip()
+    found_ward = (raw_ward or "").strip()
+    street = (raw_street or raw_full or "").strip()
+
+    # 1. Quét tìm Tỉnh / Thành phố thực sự trong chuỗi địa chỉ
+    text_lower = text.lower()
+    detected_prov = None
+    for prov in VN_PROVINCES:
+        clean_p = prov.lower().replace("tp. ", "").replace("tỉnh ", "").strip()
+        if clean_p in text_lower:
+            detected_prov = "TP. Hồ Chí Minh" if ("hồ chí minh" in clean_p or "sài gòn" in text_lower) else prov
+            break
+
+    # Nếu phát hiện tỉnh trong địa chỉ khách gõ, ưu tiên tỉnh đó (tránh lỗi bị gán nhầm Hà Nội)
+    if detected_prov:
+        found_prov = detected_prov
+    elif not found_prov:
+        found_prov = "Hà Nội"
+
+    # 2. Quét tìm Quận / Huyện (kể cả thiếu dấu phẩy)
+    if not found_dist:
+        dist_m = re.search(r'(quận|huyện|thị xã|thành phố|tx|tp|h\.|q\.)\s+([a-zà-ỹ0-9\s]+?)(?=,|\s+(xã|phường|thị trấn|tỉnh|tp)|$)', text, re.IGNORECASE)
+        if dist_m:
+            d_candidate = f"{dist_m.group(1).title()} {dist_m.group(2).strip().title()}"
+            # Cắt bỏ tên tỉnh nếu bị dính vào đuôi huyện
+            for p in VN_PROVINCES:
+                d_candidate = re.sub(r'\s+' + re.escape(p) + r'$', '', d_candidate, flags=re.IGNORECASE).strip()
+            found_dist = d_candidate
+
+    # 3. Quét tìm Phường / Xã (kể cả thiếu dấu phẩy)
+    if not found_ward:
+        ward_m = re.search(r'(phường|xã|thị trấn|p\.|x\.)\s+([a-zà-ỹ0-9\s]+?)(?=,|\s+(quận|huyện|thị xã|thành phố|tỉnh)|$)', text, re.IGNORECASE)
+        if ward_m:
+            w_candidate = f"{ward_m.group(1).title()} {ward_m.group(2).strip().title()}"
+            for p in VN_PROVINCES:
+                w_candidate = re.sub(r'\s+' + re.escape(p) + r'$', '', w_candidate, flags=re.IGNORECASE).strip()
+            found_ward = w_candidate
+
+    # 4. Làm sạch street_addr
+    clean_street = street
+    for term in [found_prov, found_dist, found_ward, "Tỉnh", "Thành phố", "TP.", "TP"]:
+        if term and len(term) > 1:
+            clean_street = re.sub(re.escape(term), '', clean_street, flags=re.IGNORECASE).strip(' ,-')
+
+    if not clean_street or len(clean_street) < 3:
+        clean_street = street
+
+    return clean_street, found_prov, found_dist, found_ward
+
 # --- HÀM TẠO ĐƠN TRÊN MISA ESHOP ---
 def push_order_to_misa(order):
     token = get_misa_token()
@@ -158,11 +231,17 @@ def push_order_to_misa(order):
     if recipient_tel and not recipient_tel.startswith("0"):
         recipient_tel = "0" + recipient_tel
         
-    full_addr = order.get("fullAddress") or order.get("address") or "Hà Nội"
-    street_addr = order.get("address") or full_addr
-    province_name = order.get("province") or ""
-    district_name = order.get("district") or ""
-    ward_name = order.get("ward") or ""
+    full_addr = order.get("fullAddress") or order.get("address") or ""
+    street_raw = order.get("address") or full_addr
+    
+    # Chuẩn hóa địa chỉ 3 cấp thông minh
+    street_addr, province_name, district_name, ward_name = smart_parse_vietnam_address(
+        full_addr,
+        street_raw,
+        order.get("province") or "",
+        order.get("district") or "",
+        order.get("ward") or ""
+    )
 
     # Tự động tạo / tìm hồ sơ khách hàng trên MISA
     customer_id = ensure_misa_customer(
