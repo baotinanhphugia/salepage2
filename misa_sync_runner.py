@@ -26,6 +26,7 @@ MISA_DEFAULT_CUSTOMER = "bf4e7242-a3d4-4ae8-aae5-258b110dbcf6"
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiMiheaDBzBSbSaV9_Fo4JlEQDPU9iEgrRERLun-Abjk1nfw6gY08xNOAUqoEo-fg/exec"
 ADMIN_KEY = "123456"
+TELEGRAM_BOT_TOKEN = "8658895620:AAE06m6t4C2PWSKILT8zAD6ElOZ45Lod3Fk"
 
 LOCAL_PORT = 8899
 POLL_INTERVAL_SECONDS = 4
@@ -244,7 +245,7 @@ def call_apps_script(payload):
     with urllib.request.urlopen(req, timeout=15) as resp:
         return json.loads(resp.read().decode('utf-8'))
 
-# --- VÒNG LẶP QUÉT VÀ ĐỒNG BỘ ĐƠN ---
+# --- VÒNG LẶP QUÉT VÀ ĐỒNG BỘ ĐƠN TỪ GOOGLE SHEET ---
 def sync_loop():
     print(f"[DAEMON] MISA Sync Runner đã kích hoạt! Đang quét hàng đợi mỗi {POLL_INTERVAL_SECONDS}s...")
     while True:
@@ -283,11 +284,137 @@ def sync_loop():
                             "error": push_res.get("error", "Lỗi tạo đơn")
                         })
         except Exception as e:
-            # Ghi log nhưng không dừng tiến trình
-            # print(f"[LOOP EXCEPTION] {e}")
-            pass
+            # Ghi nhận lỗi kết nối mạng / timeout
+            print(f"[SYNC LOOP NOTICE] {e}")
 
         time.sleep(POLL_INTERVAL_SECONDS)
+
+# --- TELEGRAM BOT LONG-POLLING (XỬ LÝ NÚT BẤM TELEGRAM TỨC THÌ) ---
+def answer_telegram_callback(callback_query_id, text, show_alert=False):
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/answerCallbackQuery"
+        payload = {
+            "callback_query_id": callback_query_id,
+            "text": text,
+            "show_alert": show_alert
+        }
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            pass
+    except Exception as e:
+        print(f"[TELEGRAM] Lỗi answerCallbackQuery: {e}")
+
+def remove_telegram_webhook():
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteWebhook"
+        req = urllib.request.Request(url, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as r:
+            res = json.loads(r.read().decode())
+            print(f"[TELEGRAM] Chuyển chế độ Direct Polling: {res.get('ok')}")
+    except Exception as e:
+        print(f"[TELEGRAM] Lỗi xóa webhook: {e}")
+
+def telegram_bot_loop():
+    remove_telegram_webhook()
+    offset = 0
+    print(f"[TELEGRAM] Bot Polling đã kích hoạt! Đang lắng nghe nút bấm Telegram tức thì...")
+    while True:
+        try:
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates?offset={offset}&timeout=15"
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                if data.get("ok"):
+                    for update in data.get("result", []):
+                        offset = max(offset, update["update_id"] + 1)
+                        cb = update.get("callback_query")
+                        if not cb:
+                            continue
+                        
+                        cb_id = cb.get("id")
+                        action_data = str(cb.get("data", ""))
+                        print(f"[TELEGRAM BTN] Đã bấm: {action_data}")
+
+                        # 1. Bấm [🚀 Đẩy ngay sang eShop]
+                        if action_data.startswith("push_"):
+                            order_id = action_data.replace("push_", "")
+                            answer_telegram_callback(cb_id, f"⏳ Đang đẩy đơn {order_id} sang MISA eShop...")
+                            
+                            orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
+                            target_order = None
+                            for o in orders_res.get("orders", []):
+                                if o.get("orderId") == order_id:
+                                    target_order = o
+                                    break
+                            if target_order:
+                                push_res = push_order_to_misa(target_order)
+                                if push_res.get("ok"):
+                                    call_apps_script({
+                                        "action": "finishPushMisa",
+                                        "key": ADMIN_KEY,
+                                        "orderId": order_id,
+                                        "eshopCode": push_res["ref_no"]
+                                    })
+                                    print(f"[TELEGRAM PUSH SUCCESS] Đơn {order_id} -> {push_res['ref_no']}")
+                                else:
+                                    call_apps_script({
+                                        "action": "failPushMisa",
+                                        "key": ADMIN_KEY,
+                                        "orderId": order_id,
+                                        "error": push_res.get("error", "Lỗi tạo đơn")
+                                    })
+                            else:
+                                print(f"[TELEGRAM PUSH ERROR] Không tìm thấy đơn {order_id}")
+
+                        # 2. Bấm [❌ Hủy đơn]
+                        elif action_data.startswith("cancel_"):
+                            order_id = action_data.replace("cancel_", "")
+                            answer_telegram_callback(cb_id, f"❌ Đang hủy đơn hàng {order_id}...")
+                            call_apps_script({"action": "cancelOrder", "key": ADMIN_KEY, "orderId": order_id})
+                            print(f"[TELEGRAM CANCEL] Đã hủy đơn {order_id}")
+
+                        # 3. Bấm [📞 Gọi khách]
+                        elif action_data.startswith("call_"):
+                            order_id = action_data.replace("call_", "")
+                            orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
+                            phone = ""
+                            name = ""
+                            for o in orders_res.get("orders", []):
+                                if o.get("orderId") == order_id:
+                                    phone = o.get("phone", "")
+                                    name = o.get("name", "")
+                                    break
+                            call_apps_script({"action": "updateStatus", "key": ADMIN_KEY, "orderId": order_id, "status": "Đang gọi điện"})
+                            answer_telegram_callback(
+                                cb_id,
+                                f"📞 Khách: {name} ({phone})\n👉 Chạm vào số điện thoại trong tin nhắn để bấm gọi ngay!",
+                                show_alert=True
+                            )
+                            print(f"[TELEGRAM CALL] Khách {name} ({phone}) - Cập nhật trạng thái: Đang gọi điện")
+
+                        # 4. Bấm [💬 Nhắn Zalo]
+                        elif action_data.startswith("zalo_"):
+                            order_id = action_data.replace("zalo_", "")
+                            orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
+                            phone = ""
+                            for o in orders_res.get("orders", []):
+                                if o.get("orderId") == order_id:
+                                    phone = str(o.get("phone", "")).replace(" ", "").replace("+84", "0")
+                                    break
+                            call_apps_script({"action": "updateStatus", "key": ADMIN_KEY, "orderId": order_id, "status": "Đã nhắn Zalo"})
+                            answer_telegram_callback(
+                                cb_id,
+                                f"💬 Zalo khách: https://zalo.me/{phone}\n✅ Đã cập nhật trạng thái: Đã nhắn Zalo",
+                                show_alert=True
+                            )
+                            print(f"[TELEGRAM ZALO] Cập nhật trạng thái: Đã nhắn Zalo cho {order_id}")
+        except Exception as ex:
+            time.sleep(2)
 
 # --- LOCAL HTTP SERVER CHO ADMIN WEB ---
 class LocalServerHandler(BaseHTTPRequestHandler):
@@ -318,7 +445,6 @@ class LocalServerHandler(BaseHTTPRequestHandler):
             qs = parse_qs(parsed.query)
             order_id = (qs.get("orderId") or [""])[0]
             if not order_id:
-                # Thử đọc body nếu có
                 content_len = int(self.headers.get('Content-Length', 0))
                 if content_len > 0:
                     body = json.loads(self.rfile.read(content_len).decode('utf-8'))
@@ -331,9 +457,8 @@ class LocalServerHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"ok": False, "error": "Thiếu orderId"}).encode())
                 return
 
-            print(f"[HTTP PUSH] Nhận yêu cầu đẩy đơn ngay lập tức: {order_id}")
+            print(f"[HTTP PUSH] Nhận yêu cầu đẩy đơn từ Web Admin: {order_id}")
             try:
-                # Lấy chi tiết đơn từ Apps Script
                 orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
                 target_order = None
                 for o in orders_res.get("orders", []):
@@ -381,9 +506,13 @@ def run_local_server():
     server.serve_forever()
 
 if __name__ == "__main__":
-    # Khởi chạy Local Server trong luồng riêng
+    # 1. Khởi chạy Local Server trong luồng riêng
     t_server = threading.Thread(target=run_local_server, daemon=True)
     t_server.start()
 
-    # Chạy vòng lặp đồng bộ chính
+    # 2. Khởi chạy Telegram Bot Long-Polling trong luồng riêng
+    t_tele = threading.Thread(target=telegram_bot_loop, daemon=True)
+    t_tele.start()
+
+    # 3. Chạy vòng lặp đồng bộ hàng đợi chính từ Google Sheet
     sync_loop()
