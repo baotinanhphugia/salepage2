@@ -422,76 +422,92 @@ def telegram_bot_loop():
                         # 1. Bấm [🚀 Đẩy ngay sang eShop]
                         if action_data.startswith("push_"):
                             order_id = action_data.replace("push_", "")
+                            # Phản hồi Telegram tức thì (<0.1s) chống timeout
                             answer_telegram_callback(cb_id, f"⏳ Đang đẩy đơn {order_id} sang MISA eShop...")
                             
-                            orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
-                            target_order = None
-                            for o in orders_res.get("orders", []):
-                                if o.get("orderId") == order_id:
-                                    target_order = o
-                                    break
-                            if target_order:
-                                push_res = push_order_to_misa(target_order)
-                                if push_res.get("ok"):
-                                    call_apps_script({
-                                        "action": "finishPushMisa",
-                                        "key": ADMIN_KEY,
-                                        "orderId": order_id,
-                                        "eshopCode": push_res["ref_no"]
-                                    })
-                                    print(f"[TELEGRAM PUSH SUCCESS] Đơn {order_id} -> {push_res['ref_no']}")
-                                else:
-                                    call_apps_script({
-                                        "action": "failPushMisa",
-                                        "key": ADMIN_KEY,
-                                        "orderId": order_id,
-                                        "error": push_res.get("error", "Lỗi tạo đơn")
-                                    })
-                            else:
-                                print(f"[TELEGRAM PUSH ERROR] Không tìm thấy đơn {order_id}")
+                            def do_push(oid):
+                                try:
+                                    orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
+                                    target_order = None
+                                    for o in orders_res.get("orders", []):
+                                        if o.get("orderId") == oid:
+                                            target_order = o
+                                            break
+                                    if target_order:
+                                        push_res = push_order_to_misa(target_order)
+                                        if push_res.get("ok"):
+                                            call_apps_script({
+                                                "action": "finishPushMisa",
+                                                "key": ADMIN_KEY,
+                                                "orderId": oid,
+                                                "eshopCode": push_res["ref_no"]
+                                            })
+                                            print(f"[TELEGRAM PUSH SUCCESS] Đơn {oid} -> {push_res['ref_no']}")
+                                        else:
+                                            call_apps_script({
+                                                "action": "failPushMisa",
+                                                "key": ADMIN_KEY,
+                                                "orderId": oid,
+                                                "error": push_res.get("error", "Lỗi tạo đơn")
+                                            })
+                                    else:
+                                        print(f"[TELEGRAM PUSH ERROR] Không tìm thấy đơn {oid}")
+                                except Exception as ex:
+                                    print(f"[PUSH THREAD ERROR] {ex}")
+
+                            threading.Thread(target=do_push, args=(order_id,), daemon=True).start()
 
                         # 2. Bấm [❌ Hủy đơn]
                         elif action_data.startswith("cancel_"):
                             order_id = action_data.replace("cancel_", "")
                             answer_telegram_callback(cb_id, f"❌ Đang hủy đơn hàng {order_id}...")
-                            call_apps_script({"action": "cancelOrder", "key": ADMIN_KEY, "orderId": order_id})
-                            print(f"[TELEGRAM CANCEL] Đã hủy đơn {order_id}")
+                            
+                            def do_cancel(oid):
+                                try:
+                                    call_apps_script({"action": "cancelOrder", "key": ADMIN_KEY, "orderId": oid})
+                                    print(f"[TELEGRAM CANCEL] Đã hủy đơn {oid}")
+                                except Exception as ex:
+                                    print(f"[CANCEL THREAD ERROR] {ex}")
+
+                            threading.Thread(target=do_cancel, args=(order_id,), daemon=True).start()
 
                         # 3. Bấm [📞 Gọi khách]
                         elif action_data.startswith("call_"):
                             order_id = action_data.replace("call_", "")
-                            orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
-                            phone = ""
-                            name = ""
-                            for o in orders_res.get("orders", []):
-                                if o.get("orderId") == order_id:
-                                    phone = o.get("phone", "")
-                                    name = o.get("name", "")
-                                    break
-                            call_apps_script({"action": "updateStatus", "key": ADMIN_KEY, "orderId": order_id, "status": "Đang gọi điện"})
+                            # Phản hồi Alert Dialog tức thì (<0.05s) cho người dùng
                             answer_telegram_callback(
                                 cb_id,
-                                f"📞 Khách: {name} ({phone})\n👉 Chạm vào số điện thoại trong tin nhắn để bấm gọi ngay!",
+                                f"📞 Ghi nhận cuộc gọi đơn {order_id}!\n✅ Trạng thái trên Google Sheet: Đang gọi điện\n👉 Chạm vào số điện thoại trong tin nhắn để bấm gọi.",
                                 show_alert=True
                             )
-                            print(f"[TELEGRAM CALL] Khách {name} ({phone}) - Cập nhật trạng thái: Đang gọi điện")
+                            
+                            def do_call(oid):
+                                try:
+                                    call_apps_script({"action": "updateStatus", "key": ADMIN_KEY, "orderId": oid, "status": "Đang gọi điện"})
+                                    print(f"[TELEGRAM CALL] Đã cập nhật trạng thái: Đang gọi điện cho {oid}")
+                                except Exception as ex:
+                                    print(f"[CALL THREAD ERROR] {ex}")
+
+                            threading.Thread(target=do_call, args=(order_id,), daemon=True).start()
 
                         # 4. Bấm [💬 Nhắn Zalo]
                         elif action_data.startswith("zalo_"):
                             order_id = action_data.replace("zalo_", "")
-                            orders_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
-                            phone = ""
-                            for o in orders_res.get("orders", []):
-                                if o.get("orderId") == order_id:
-                                    phone = str(o.get("phone", "")).replace(" ", "").replace("+84", "0")
-                                    break
-                            call_apps_script({"action": "updateStatus", "key": ADMIN_KEY, "orderId": order_id, "status": "Đã nhắn Zalo"})
+                            # Phản hồi Alert Dialog tức thì (<0.05s) cho người dùng
                             answer_telegram_callback(
                                 cb_id,
-                                f"💬 Zalo khách: https://zalo.me/{phone}\n✅ Đã cập nhật trạng thái: Đã nhắn Zalo",
+                                f"💬 Ghi nhận nhắn Zalo đơn {order_id}!\n✅ Trạng thái trên Google Sheet: Đã nhắn Zalo",
                                 show_alert=True
                             )
-                            print(f"[TELEGRAM ZALO] Cập nhật trạng thái: Đã nhắn Zalo cho {order_id}")
+                            
+                            def do_zalo(oid):
+                                try:
+                                    call_apps_script({"action": "updateStatus", "key": ADMIN_KEY, "orderId": oid, "status": "Đã nhắn Zalo"})
+                                    print(f"[TELEGRAM ZALO] Đã cập nhật trạng thái: Đã nhắn Zalo cho {oid}")
+                                except Exception as ex:
+                                    print(f"[ZALO THREAD ERROR] {ex}")
+
+                            threading.Thread(target=do_zalo, args=(order_id,), daemon=True).start()
         except Exception as ex:
             time.sleep(2)
 
