@@ -183,7 +183,7 @@ function handleOrderVN_(data) {
       orderId,
       productName,
       cleanText_(data.name || ""),
-      cleanText_(data.phone || ""),
+      "'" + formatPhoneVN_(data.phone || ""),
       cleanText_(data.address || ""),
       cleanText_(data.province || ""),
       cleanText_(data.district || ""),
@@ -282,7 +282,7 @@ function handleUpdateOrderVN_(data) {
   const mapsLink = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(fullAddress);
 
   if (name) sheet.getRange(targetRow, 4).setValue(name);
-  if (phone) sheet.getRange(targetRow, 5).setValue(phone);
+  if (phone) sheet.getRange(targetRow, 5).setValue("'" + formatPhoneVN_(phone));
   sheet.getRange(targetRow, 6).setValue(address);
   sheet.getRange(targetRow, 7).setValue(province);
   sheet.getRange(targetRow, 8).setValue(district);
@@ -796,6 +796,11 @@ function getConfig_() {
   config.misaAppKey = props.getProperty("MISA_APP_KEY") || config.misaAppKey || "B35CFD2B61F04D678D10264357DEDD0629EC8564366A4A1AB918EAE1632A6A4A";
   config.misaCompanyName = props.getProperty("MISA_COMPANY_NAME") || config.misaCompanyName || "CÔNG TY TNHH BAO TIN ANH PHU GIA DIAMOND";
   config.misaAppUrl = props.getProperty("MISA_APP_URL") || config.misaAppUrl || "https://eshopapp.misa.vn/management/general-order#-1";
+  config.hotline = formatPhoneVN_(config.hotline || "0398138678");
+  config.zalo = formatPhoneVN_(config.zalo || "0398138678");
+  if (config.bankAccount && String(config.bankAccount).replace(/\D/g, "").length === 9) {
+    config.bankAccount = formatPhoneVN_(config.bankAccount);
+  }
 
   return config;
 }
@@ -1145,6 +1150,17 @@ function deleteUser_(username) {
   throw new Error("Không tìm thấy nhân sự " + username);
 }
 
+function formatPhoneVN_(raw) {
+  if (!raw) return "";
+  let p = String(raw).trim().replace(/\D/g, "");
+  if (p.length === 9 && !p.startsWith("0")) {
+    p = "0" + p;
+  } else if (p.startsWith("84") && p.length === 11) {
+    p = "0" + p.slice(2);
+  }
+  return p;
+}
+
 function getOrders_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = getOrCreateOrdersSheet_(ss);
@@ -1158,7 +1174,7 @@ function getOrders_() {
       orderId: r[1],
       product: r[2],
       name: r[3],
-      phone: r[4],
+      phone: formatPhoneVN_(r[4]),
       address: r[5] || "",
       province: r[6] || "",
       district: r[7] || "",

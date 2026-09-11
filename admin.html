@@ -1365,6 +1365,17 @@ const escapeHtml = s => String(s || "").replace(/[&<>"']/g, m => ({
   "'": "&#39;"
 }[m]));
 
+const formatPhoneVN = raw => {
+  if (!raw) return "";
+  let p = String(raw).trim().replace(/\D/g, "");
+  if (p.length === 9 && !p.startsWith("0")) {
+    p = "0" + p;
+  } else if (p.startsWith("84") && p.length === 11) {
+    p = "0" + p.slice(2);
+  }
+  return p;
+};
+
 // Endpoint Google Apps Script được cấu hình ngầm nội bộ
 const APP_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec";
 
@@ -1792,6 +1803,19 @@ function fillForm(config) {
   };
 
   renderPriceEditorTable("tbodyVN", parseTable(config.priceTable || config.priceTableVN));
+
+  if (config.hotline) {
+    const el = document.querySelector('[name="hotline"]');
+    if (el) el.value = formatPhoneVN(config.hotline);
+  }
+  if (config.zalo) {
+    const el = document.querySelector('[name="zalo"]');
+    if (el) el.value = formatPhoneVN(config.zalo);
+  }
+  if (config.bankAccount && String(config.bankAccount).replace(/\D/g, "").length === 9) {
+    const el = document.querySelector('[name="bankAccount"]');
+    if (el) el.value = formatPhoneVN(config.bankAccount);
+  }
 }
 
 // Tải cấu hình từ Sheet
@@ -1877,7 +1901,8 @@ function renderOrdersTable(orders) {
   orders.forEach(o => {
     const tr = document.createElement("tr");
     tr.id = "order-row-" + o.orderId;
-    const phoneHtml = o.phone ? `<a href="tel:${o.phone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${o.phone}</a>` : "";
+    const displayPhone = formatPhoneVN(o.phone);
+    const phoneHtml = displayPhone ? `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${displayPhone}</a>` : "";
     const cleanPrice = String(o.price || "").replace(/[^0-9]/g, "");
     const priceHtml = `<strong style="color:#f87171;">${Number(cleanPrice || 0).toLocaleString("vi-VN")}đ</strong>`;
 
@@ -1908,10 +1933,10 @@ function renderOrdersTable(orders) {
 
     const statusHtml = `<span style="background:${statusBg}; color:${statusColor}; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">${o.status || "Chờ xác nhận"}</span>`;
 
-    const cleanPhoneNum = String(o.phone || "").replace(/\D/g, "");
+    const cleanPhoneNum = displayPhone;
     const actionsHtml = `
       <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${o.phone}')" title="Gọi điện & cập nhật trạng thái">📞 Gọi</button>
+        <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${displayPhone}')" title="Gọi điện & cập nhật trạng thái">📞 Gọi</button>
         <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Mở Zalo & cập nhật trạng thái">💬 Zalo</button>
         <button class="btn-action-edit" onclick="openOrderModal('${o.orderId}')" title="Sửa size, địa chỉ & báo Tele">✏️ Sửa</button>
         <button class="btn-action-eshop" onclick="quickPushEShop('${o.orderId}')" title="Đẩy eShop & Hoàn tất (Xóa tin Tele)">🚀 eShop</button>
@@ -1947,11 +1972,12 @@ function openOrderModal(orderId) {
     return;
   }
 
+  const formattedPhone = formatPhoneVN(order.phone);
   $("#editOrderId").value = order.orderId;
   $("#editOrderCode").value = order.orderId;
   $("#editCustomerName").value = order.name || "";
-  $("#editCustomerPhone").value = order.phone || "";
-  $("#btnCallCustomer").href = "tel:" + (order.phone || "");
+  $("#editCustomerPhone").value = formattedPhone;
+  $("#btnCallCustomer").href = "tel:" + formattedPhone;
 
   const cleanPrice = String(order.price || "").replace(/[^0-9]/g, "");
   $("#editOrderPrice").value = cleanPrice;
@@ -2238,6 +2264,7 @@ async function quickCancelOrder(orderId) {
 }
 
 async function quickCallOrder(orderId, phone) {
+  const validPhone = formatPhoneVN(phone);
   try {
     // Cập nhật trạng thái Sheet
     const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đang gọi điện" });
@@ -2247,14 +2274,15 @@ async function quickCallOrder(orderId, phone) {
       body: JSON.stringify(payload)
     }).then(() => loadOrders()).catch(() => {});
     // Mở ứng dụng gọi điện trên thiết bị
-    window.open(`tel:${phone}`, "_self");
-    showStatus(`📞 Đang gọi ${phone}... Trạng thái cập nhật: Đang gọi điện`);
+    window.open(`tel:${validPhone}`, "_self");
+    showStatus(`📞 Đang gọi ${validPhone}... Trạng thái cập nhật: Đang gọi điện`);
   } catch (e) {
     showStatus(e.message, false);
   }
 }
 
 async function quickZaloOrder(orderId, cleanPhone) {
+  const validPhone = formatPhoneVN(cleanPhone);
   try {
     // Cập nhật trạng thái Sheet
     const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đã nhắn Zalo" });
@@ -2264,8 +2292,8 @@ async function quickZaloOrder(orderId, cleanPhone) {
       body: JSON.stringify(payload)
     }).then(() => loadOrders()).catch(() => {});
     // Mở Zalo chat
-    window.open(`https://zalo.me/${cleanPhone}`, "_blank");
-    showStatus(`💬 Đã mở Zalo chat với ${cleanPhone}... Trạng thái cập nhật: Đã nhắn Zalo`);
+    window.open(`https://zalo.me/${validPhone}`, "_blank");
+    showStatus(`💬 Đã mở Zalo chat với ${validPhone}... Trạng thái cập nhật: Đã nhắn Zalo`);
   } catch (e) {
     showStatus(e.message, false);
   }
