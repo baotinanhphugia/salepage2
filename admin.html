@@ -1357,6 +1357,14 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
 <script>
 const $ = s => document.querySelector(s);
+const escapeHtml = s => String(s || "").replace(/[&<>"']/g, m => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;"
+}[m]));
+
 // Endpoint Google Apps Script được cấu hình ngầm nội bộ
 const APP_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec";
 
