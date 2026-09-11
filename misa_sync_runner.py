@@ -24,7 +24,7 @@ MISA_BRANCH_ID = "a38f9189-ad87-11ef-a35e-005056b28600" # ChiNhanh01
 MISA_STOCK_ID = "485b5d06-306c-11f0-b467-005056b34af7"  # Kho hàng hóa
 MISA_DEFAULT_CUSTOMER = "bf4e7242-a3d4-4ae8-aae5-258b110dbcf6"
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiMiheaDBzBSbSaV9_Fo4JlEQDPU9iEgrRERLun-Abjk1nfw6gY08xNOAUqoEo-fg/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec"
 ADMIN_KEY = "123456"
 TELEGRAM_BOT_TOKEN = "8658895620:AAE06m6t4C2PWSKILT8zAD6ElOZ45Lod3Fk"
 
