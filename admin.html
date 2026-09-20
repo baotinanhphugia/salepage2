@@ -739,6 +739,56 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   border: 1px solid #333342;
 }
 
+/* Product Picker & Search Chips */
+.chip-filter {
+  background: #1a1a26;
+  color: #94a3b8;
+  border: 1px solid #2e2e44;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.chip-filter:hover {
+  background: #252538;
+  color: #fff;
+  border-color: #484869;
+}
+.chip-filter.active {
+  background: rgba(214, 173, 69, 0.22);
+  color: #ffd875;
+  border-color: rgba(214, 173, 69, 0.65);
+  font-weight: 700;
+}
+.picker-product-row:hover td {
+  background: rgba(214, 173, 69, 0.08) !important;
+}
+.picker-highlight {
+  background: rgba(214, 173, 69, 0.35);
+  color: #fff;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+.btn-picker-open {
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: #1e293b;
+  border: 1px solid #475569;
+  color: #fde047;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-picker-open:hover {
+  background: #334155;
+  border-color: var(--gold-primary);
+  transform: scale(1.05);
+}
+
 @media(max-width: 840px) {
   .grid, .grid3 { grid-template-columns: 1fr; }
   .header { flex-direction: column; align-items: flex-start; gap: 14px; }
@@ -919,6 +969,9 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button type="button" class="btn2" onclick="addPriceRow('tbodyVN', {type:'1 Đôi', size:'5mm', code:'MS051', stock:'50', oldPrice:'647895', salePrice:'459999'}, false)">➕ Thêm dòng Size mới</button>
             <button type="button" class="btn2" onclick="resetDefaultPrices('tbodyVN', false)">🔄 Nạp bảng giá mặc định VN</button>
+            <button type="button" class="btn2" onclick="openProductPickerModal()" style="background:#0284c7; color:#fff; font-weight:700; border:none; padding:8px 14px; border-radius:8px;" title="Tìm theo Tên hoặc Mã và xem toàn bộ danh mục MISA">
+              🔍 Tra Cứu Hàng Hóa MISA (Theo Tên & Mã)
+            </button>
             <button type="button" class="btn2" id="btnSyncMisaCatalog" onclick="fetchMisaInventoryFromRunner()" style="background:#059669; color:#fff; font-weight:700; border:none; padding:8px 14px; border-radius:8px;">
               🔄 Tải Hàng Hóa MISA eShop API
             </button>
@@ -1019,6 +1072,53 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           💡 <b>Cách sử dụng:</b> Bạn có thể chọn hoặc gõ mã MISA trực tiếp trong cột <b>"Mã SKU MISA (Lô hàng)"</b> tại tab <b>"Bảng giá & Tồn kho"</b>. Mọi mã bạn chọn sẽ là <b>mã cố định ban đầu</b> được hệ thống tự động gán vào đơn hàng ngay khi khách ấn mua trên website!
         </p>
       </div>
+
+      <!-- BẢNG TRA CỨU & XEM TOÀN BỘ SẢN PHẨM KHO MISA ESHOP (THEO MÃ & TÊN) -->
+      <div style="background:#111118; border:1px solid rgba(214,173,69,0.35); border-radius:14px; padding:18px; margin-top:16px; box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <div>
+            <h3 style="margin:0; font-size:16px; color:var(--gold-light);">🔍 Tra Cứu Toàn Bộ Kho Hàng MISA eShop (Open API)</h3>
+            <p class="small" style="margin:2px 0 0 0;">Tìm kiếm nhanh theo cả <b>Mã SKU</b> và <b>Tên Sản Phẩm</b> thực tế từ kho MISA</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="btn2" onclick="openProductPickerModal()" style="background:#0284c7; color:#fff; font-weight:700; border:none; padding:7px 14px; border-radius:8px;">
+              🔍 Mở Hộp Thoại Tra Cứu
+            </button>
+            <button type="button" class="btn2" onclick="fetchMisaInventoryFromRunner(true)" style="background:#059669; color:#fff; font-weight:700; border:none; padding:7px 14px; border-radius:8px;">
+              🔄 Cập Nhật Mới Nhất
+            </button>
+          </div>
+        </div>
+
+        <!-- Ô tìm kiếm live trong tab MISA -->
+        <div style="position:relative; margin-bottom:12px;">
+          <input type="text" id="misaTabSearchInput" oninput="filterMisaTabCatalog(this.value)" placeholder="🔍 Gõ Mã SKU hoặc Tên sản phẩm (VD: 5ly, 6mm, Bông nụ, MS05, BMOI, Nhẫn, 6 chấu...) để lọc tức thì..." style="width:100%; padding:11px 40px 11px 38px; border-radius:10px; background:#08080c; border:1px solid #2f2f42; color:#fff; font-size:13.5px;">
+          <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:16px; color:#d6ad45;">🔎</span>
+          <button type="button" onclick="clearMisaTabSearch()" id="btnClearMisaTabSearch" style="display:none; position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:#888; cursor:pointer; font-size:14px;">✕</button>
+        </div>
+
+        <!-- Bảng danh sách hàng MISA -->
+        <div style="max-height:360px; overflow-y:auto; border-radius:8px; border:1px solid #262635;">
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <thead style="position:sticky; top:0; background:#181824; z-index:1;">
+              <tr style="color:var(--gold-light); font-weight:700; border-bottom:1px solid #2e2e42;">
+                <th style="padding:9px 12px; width:140px;">Mã SKU MISA</th>
+                <th style="padding:9px 12px;">Tên Hàng Hóa Thực Tế</th>
+                <th style="padding:9px 12px; width:80px; text-align:center;">Đơn vị</th>
+                <th style="padding:9px 12px; width:100px; text-align:center;">Tồn kho</th>
+                <th style="padding:9px 12px; width:120px; text-align:center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="misaTabCatalogTbody">
+              <tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">Đang tải danh mục từ kho MISA eShop...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#9ca3af; flex-wrap:wrap; gap:8px;">
+          <span id="misaTabCatalogCount" style="font-weight:600; color:var(--gold-light);">Đang cập nhật...</span>
+          <span style="color:#6ee7b7;">🟢 Đồng bộ trực tiếp Open API port 8899</span>
+        </div>
+      </div>
     </section>
 
     <!-- ACTION BUTTON -->
@@ -1035,6 +1135,31 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         <p class="small">Dữ liệu đơn hàng đồng bộ trực tiếp từ Google Sheets (Việt Nam & Đài Loan).</p>
       </div>
       <button class="btn2" onclick="loadOrders()">🔄 Làm mới danh sách</button>
+    </div>
+
+    <!-- THANH TÌM KIẾM & LỌC ĐƠN HÀNG THÔNG MINH -->
+    <div style="background:#14141d; padding:12px 16px; border-radius:12px; margin-bottom:16px; border:1px solid #272738; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;">
+      <!-- Ô tìm kiếm đơn -->
+      <div style="position:relative; flex:1; min-width:280px;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--gold-primary);">🔍</span>
+        <input type="text" id="orderSearchInput" oninput="handleOrderSearch(this.value)" placeholder="Tìm kiếm theo Tên khách, SĐT, Mã đơn, Phân loại/Size, Địa chỉ..." style="width:100%; padding:9px 36px 9px 38px; font-size:13.5px; border-radius:8px; background:#0a0a0f; border:1px solid #36364a; color:#fff;">
+        <button type="button" onclick="clearOrderSearch()" id="btnClearOrderSearch" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#888; cursor:pointer; font-size:14px;" title="Xóa tìm kiếm">✕</button>
+      </div>
+
+      <!-- Lọc trạng thái -->
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <label style="font-size:12px; color:#888; margin:0; font-weight:600;">Lọc trạng thái:</label>
+        <select id="orderStatusFilter" onchange="handleOrderSearch($('#orderSearchInput').value)" style="background:#0a0a0f; border:1px solid #36364a; color:#fff; font-size:13px; padding:8px 12px; border-radius:8px; cursor:pointer;">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="Chờ xác nhận">Chờ xác nhận</option>
+          <option value="Đang gọi điện">Đang gọi điện</option>
+          <option value="Đã nhắn Zalo">Đã nhắn Zalo</option>
+          <option value="Đã sửa">Đã sửa</option>
+          <option value="Đã đẩy eShop">Đã đẩy eShop</option>
+          <option value="Đã hủy">Đã hủy</option>
+        </select>
+        <span id="orderSearchCount" style="font-size:13px; color:#d6ad45; font-weight:700; white-space:nowrap; margin-left:6px;"></span>
+      </div>
     </div>
     <div class="table-container">
       <table id="ordersTable">
@@ -1135,10 +1260,11 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           </div>
         </div>
 
-        <div style="margin-top:12px; padding:12px 14px; background:#14141c; border-radius:10px; border:1px solid #2d2d3d;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
             <label style="margin:0; font-weight:700; color:var(--gold-light);">🏷️ Chọn Mã Hàng MISA eShop (Kho Thực Tế)</label>
-            <span style="font-size:11px; color:#888;">Tự động chọn hoặc đổi mã thủ công</span>
+            <button type="button" onclick="openProductPickerForEditOrder()" style="background:linear-gradient(135deg, #d97706, #b45309); color:#fff; font-size:12px; font-weight:700; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(0,0,0,0.4);" title="Tìm theo Tên hoặc Mã và xem toàn bộ danh mục MISA">
+              🔍 Tìm theo Tên / Mã MISA
+            </button>
           </div>
           <select id="editMisaSku" style="background:#0a0a0e; border:1px solid #3b3b4f; color:#fff; font-size:13.5px; font-weight:500;">
             <optgroup label="💎 Bông Nụ Moissanite - 1 Đôi (Mã Bộ)">
@@ -1196,6 +1322,74 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         <button type="button" class="btn-cancel-action" onclick="submitCancelOrder()">❌ Hủy đơn</button>
         <button type="button" class="btn-save-action" onclick="submitSaveOrder()">💾 Lưu & Báo lại Tele</button>
         <button type="button" class="btn-eshop-action" onclick="submitPushEShop()">🚀 Đẩy eShop (Hoàn tất)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TRA CỨU & CHỌN SẢN PHẨM MISA ESHOP (THEO MÃ & TÊN) -->
+  <div id="productPickerModal" class="modal-overlay" style="display:none; z-index:99999;">
+    <div class="modal-card" style="max-width:920px; width:95%; max-height:90vh; display:flex; flex-direction:column; background:#111116; border:1px solid rgba(214,173,69,0.35); border-radius:20px; box-shadow:0 25px 70px rgba(0,0,0,0.9); overflow:hidden;">
+      
+      <!-- Modal Header -->
+      <div class="modal-header" style="padding:18px 24px; border-bottom:1px solid #262635; display:flex; justify-content:space-between; align-items:center; background:#161620;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:26px;">🔍</span>
+          <div>
+            <h3 style="margin:0; font-size:18px; font-weight:800; background:var(--gold-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Tra Cứu & Chọn Hàng Hóa MISA eShop</h3>
+            <p style="margin:2px 0 0 0; font-size:12px; color:#9ca3af;">Tìm kiếm tức thì theo cả <b>Mã SKU</b> và <b>Tên Sản Phẩm</b> thực tế từ kho MISA eShop</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeProductPickerModal()" style="background:none; border:none; color:#9ca3af; font-size:28px; cursor:pointer; line-height:1;">&times;</button>
+      </div>
+
+      <!-- Search & Filters Container -->
+      <div style="padding:16px 24px; background:#13131c; border-bottom:1px solid #232333;">
+        <!-- Ô tìm kiếm thông minh -->
+        <div style="position:relative; margin-bottom:12px;">
+          <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--gold-primary);">🔎</span>
+          <input type="text" id="pickerSearchInput" oninput="handlePickerSearch(this.value)" placeholder="🔍 Nhập Mã SKU hoặc Tên sản phẩm (VD: 5ly, 6mm, Bông nụ, MS05, BMOI, Nhẫn, 6 chấu...)" style="width:100%; padding:13px 44px 13px 44px; font-size:14.5px; border-radius:12px; background:#0c0c12; border:2px solid #38384f; color:#fff; font-weight:500; outline:none; transition:0.2s;" onfocus="this.style.borderColor='var(--gold-primary)'" onblur="this.style.borderColor='#38384f'">
+          <button type="button" onclick="clearPickerSearch()" id="btnClearPickerSearch" style="display:none; position:absolute; right:14px; top:50%; transform:translateY(-50%); background:#262635; border:none; color:#aaa; width:26px; height:26px; border-radius:50%; cursor:pointer; font-size:12px;" title="Xóa tìm kiếm">✕</button>
+        </div>
+
+        <!-- Bộ lọc nhanh danh mục -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:12px; color:#888; font-weight:600; margin-right:4px;">Bộ lọc:</span>
+          <button type="button" class="chip-filter active" id="chipFilterAll" onclick="setPickerFilter('all', this)">💎 Tất cả (<span id="pickerCountTotal">0</span>)</button>
+          <button type="button" class="chip-filter" onclick="setPickerFilter('doi', this)">1 Đôi (Mã Bộ)</button>
+          <button type="button" class="chip-filter" onclick="setPickerFilter('chiec', this)">1 Chiếc (Mã Lẻ)</button>
+          <button type="button" class="chip-filter" onclick="setPickerFilter('6chau', this)">Dòng 6 Chấu</button>
+          <button type="button" class="chip-filter" onclick="setPickerFilter('in_stock', this)">Còn tồn kho (> 0)</button>
+          
+          <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+            <button type="button" class="btn2" onclick="fetchMisaInventoryFromRunner(true)" style="background:#059669; color:#fff; font-size:12px; font-weight:700; border:none; padding:6px 14px; border-radius:8px;">🔄 Tải lại từ MISA</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bảng hiển thị toàn bộ sản phẩm tìm được -->
+      <div style="flex:1; overflow-y:auto; padding:16px 24px; min-height:300px; max-height:55vh;">
+        <div id="pickerStatusNotice" style="font-size:13px; color:#d6ad45; margin-bottom:10px; font-weight:600;"></div>
+        
+        <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+          <thead style="position:sticky; top:0; background:#161622; z-index:2;">
+            <tr style="border-bottom:2px solid #2e2e42; color:#d6ad45; font-weight:700;">
+              <th style="padding:10px 12px; width:150px;">MÃ SKU MISA</th>
+              <th style="padding:10px 12px;">TÊN HÀNG HÓA THỰC TẾ</th>
+              <th style="padding:10px 12px; width:80px; text-align:center;">ĐƠN VỊ</th>
+              <th style="padding:10px 12px; width:100px; text-align:center;">TỒN KHO</th>
+              <th style="padding:10px 12px; width:110px; text-align:center;">THAO TÁC</th>
+            </tr>
+          </thead>
+          <tbody id="pickerProductTbody">
+            <!-- Render danh sách sản phẩm động -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="padding:12px 24px; background:#161620; border-top:1px solid #262635; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12.5px; color:#9ca3af;" id="pickerStatsText">Đang tải sản phẩm...</span>
+        <button type="button" class="btn2" onclick="closeProductPickerModal()" style="background:#374151; color:#fff; border:none; padding:8px 22px; border-radius:8px; font-weight:600;">Đóng</button>
       </div>
     </div>
   </div>
@@ -1554,7 +1748,12 @@ function createPriceRowHtml(item = {}, isTW = false) {
     <tr>
       <td><select class="row-type">${typeOptions}</select></td>
       <td><input class="row-size" value="${size}" placeholder="VD: 5mm"></td>
-      <td><input class="row-code" list="misaInventoryDatalist" value="${code}" placeholder="Chọn/gõ mã MISA" style="color:var(--gold-light); font-weight:700;"></td>
+      <td>
+        <div style="display:flex; gap:4px; align-items:center;">
+          <input class="row-code" list="misaInventoryDatalist" value="${code}" placeholder="Chọn/gõ mã MISA" style="color:var(--gold-light); font-weight:700; flex:1;" title="Nhập mã hoặc bấm nút 🔍 để tìm theo Tên & Mã">
+          <button type="button" class="btn-picker-open" onclick="openProductPickerForInput(this.previousElementSibling)" title="🔍 Tra cứu & Tìm theo Tên/Mã MISA">🔍</button>
+        </div>
+      </td>
       <td><input class="row-stock" type="number" value="${stock}" style="color:#6ee7b7; font-weight:700;"></td>
       <td><input class="row-old-price" value="${oldPrice}" placeholder="VD: 647895"></td>
       <td><input class="row-sale-price" value="${salePrice}" placeholder="VD: 459999" style="color:#fca5a5; font-weight:700;"></td>
@@ -1605,8 +1804,54 @@ function getPriceTableData(tbodyId) {
   })).filter(item => item.size || item.salePrice);
 }
 
+// ================= HÀM BỎ DẤU TIẾNG VIỆT ĐỂ TÌM KIẾM CHÍNH XÁC =================
+function removeVietnameseTones(str) {
+  if (!str) return "";
+  str = str.toString().toLowerCase();
+  str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+  str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+  str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+  str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+  str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+  str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+  str = str.replace(/đ/g, "d");
+  str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, "");
+  str = str.replace(/\u02C6|\u0306|\u031B/g, "");
+  return str.trim();
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Từ điển danh mục hàng hóa MISA ban đầu phong phú (dự phòng khi chưa tải API)
+const BUILT_IN_MISA_ITEMS = [
+  { sku: "BNM6B01", name: "Bông nụ Moissaanite 6mm-S925- BMOI45-1 (1 Đôi)", unit_name: "Cái", stock: 20 },
+  { sku: "BNM4SB01", name: "Bông nụ Moissanite 4.5mm- S925- BMOI42-1 (1 Đôi)", unit_name: "Cái", stock: 20 },
+  { sku: "MS051", name: "Bông nụ Moissanite 5ly-S925 -BMOI144 (1 Đôi)", unit_name: "Cái", stock: 50 },
+  { sku: "MS041", name: "Bông nụ Moissanite 4ly-S925-BMOI143 (1 Đôi)", unit_name: "Cái", stock: 50 },
+  { sku: "MS0681", name: "Bông nụ Moissanite 6ly8-S925-BMOI146 (1 Đôi)", unit_name: "Cái", stock: 30 },
+  { sku: "MS0751", name: "Bông nụ Moissanite 7ly5-S925-BMOI47 (1 Đôi)", unit_name: "Cái", stock: 30 },
+  { sku: "MS06-1", name: "Bông nụ Moissaanite 6mm-S925- BMOI45-1 (1 Chiếc)", unit_name: "Cái", stock: 15 },
+  { sku: "MS 04.5-1", name: "Bông nụ Moissanite 4.5mm- S925- BMOI42-1 (1 Chiếc)", unit_name: "Cái", stock: 15 },
+  { sku: "MS05", name: "Bông nụ Moissanite 5ly-S925 -BMOI144 (1 Chiếc)", unit_name: "Cái", stock: 40 },
+  { sku: "MS04", name: "Bông nụ Moissanite 4ly-S925-BMOI143 (1 Chiếc)", unit_name: "Cái", stock: 40 },
+  { sku: "MS06.8", name: "Bông nụ Moissanite 6ly8-S925-BMOI146 (1 Chiếc)", unit_name: "Cái", stock: 25 },
+  { sku: "MS07.5", name: "Bông nụ Moissanite 7ly5-S925-BMOI47 (1 Chiếc)", unit_name: "Cái", stock: 25 },
+  { sku: "6C48", name: "Bông nụ 6 chấu Moissanite 4ly -S925-BMOI48 (1 Đôi)", unit_name: "Cái", stock: 30 },
+  { sku: "6C50", name: "Bông nụ 6 chấu Moissanite 5ly -S925-BMOI50 (1 Đôi)", unit_name: "Cái", stock: 30 },
+  { sku: "6C52", name: "Bông nụ 6 chấu Moissanite 6Ly -S925-BMOI52 (1 Đôi)", unit_name: "Cái", stock: 30 },
+  { sku: "6C53", name: "Bông nụ 6 chấu Moissanite 6ly3 -S925-BMOI53 (1 Đôi)", unit_name: "Cái", stock: 20 },
+  { sku: "6C54", name: "Bông nụ 6 chấu Moissanite 7ly -S925-BMOI54 (1 Đôi)", unit_name: "Cái", stock: 20 },
+  { sku: "6C56", name: "Bông nụ 6 chấu moissanite 8ly -S925-BMOI56 (1 Đôi)", unit_name: "Cái", stock: 15 },
+  { sku: "HOP NHAN", name: "Hộp đựng trang sức cao cấp Phú Gia Diamond", unit_name: "Chiếc", stock: 500 },
+  { sku: "CARD", name: "Thẻ bảo hành & kiểm định GRA Quốc tế", unit_name: "Tờ", stock: 500 }
+];
+
 // ================= TẢI & ĐỒNG BỘ DANH MỤC HÀNG HÓA TỪ MISA ESHOP API =================
-let misaItemsCatalog = [];
+let misaItemsCatalog = [...BUILT_IN_MISA_ITEMS];
+let pickerTargetInput = null;
+let currentPickerFilter = 'all';
 
 async function fetchMisaInventoryFromRunner(showNotice = true) {
   const statusEl = document.getElementById("misaCatalogStatus");
@@ -1640,6 +1885,14 @@ async function fetchMisaInventoryFromRunner(showNotice = true) {
       window.cachedMisaCatalog = items;
       updateMisaDatalist(items);
       updateMisaModalSelect(items);
+      renderMisaTabCatalog();
+      
+      // Nếu modal picker đang mở thì refresh luôn
+      const pickerModal = document.getElementById("productPickerModal");
+      if (pickerModal && pickerModal.style.display === "flex") {
+        filterAndRenderPickerProducts(document.getElementById("pickerSearchInput")?.value || "");
+      }
+
       if (statusEl) {
         statusEl.innerHTML = `✅ Đã nạp <b>${items.length}</b> mặt hàng từ MISA eShop!`;
         statusEl.style.color = "#a7f3d0";
@@ -1706,6 +1959,248 @@ function updateMisaModalSelect(items) {
     apiGroup.appendChild(opt);
   });
   if (currentVal) sel.value = currentVal;
+}
+
+// ================= MODAL TRA CỨU & CHỌN SẢN PHẨM MISA (THEO MÃ & TÊN) =================
+function openProductPickerModal(targetInput = null) {
+  pickerTargetInput = targetInput;
+  const modal = document.getElementById("productPickerModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+  
+  const input = document.getElementById("pickerSearchInput");
+  if (input) {
+    input.value = "";
+    setTimeout(() => input.focus(), 120);
+  }
+  setPickerFilter('all', document.getElementById("chipFilterAll"));
+}
+
+function openProductPickerForInput(inputEl) {
+  openProductPickerModal(inputEl);
+}
+
+function openProductPickerForEditOrder() {
+  openProductPickerModal((sku, name) => {
+    const sel = document.getElementById("editMisaSku");
+    if (!sel) return;
+    
+    let matchedOpt = Array.from(sel.options).find(o => o.value === sku);
+    if (!matchedOpt) {
+      matchedOpt = document.createElement("option");
+      matchedOpt.value = sku;
+      matchedOpt.innerText = `${sku} - ${name} [MÃ ĐÃ CHỌN]`;
+      matchedOpt.dataset.sku = sku;
+      sel.insertBefore(matchedOpt, sel.firstChild);
+    }
+    sel.value = sku;
+    showStatus(`✅ Đã chọn mã MISA cho đơn: ${sku}`, true, "#modalStatus");
+  });
+}
+
+function closeProductPickerModal() {
+  const modal = document.getElementById("productPickerModal");
+  if (modal) modal.style.display = "none";
+  pickerTargetInput = null;
+}
+
+function setPickerFilter(filterType, btnEl) {
+  currentPickerFilter = filterType;
+  if (btnEl) {
+    document.querySelectorAll("#productPickerModal .chip-filter").forEach(b => b.classList.remove("active"));
+    btnEl.classList.add("active");
+  }
+  const q = document.getElementById("pickerSearchInput")?.value || "";
+  filterAndRenderPickerProducts(q);
+}
+
+function handlePickerSearch(val) {
+  const btnClear = document.getElementById("btnClearPickerSearch");
+  if (btnClear) btnClear.style.display = val ? "block" : "none";
+  filterAndRenderPickerProducts(val);
+}
+
+function clearPickerSearch() {
+  const input = document.getElementById("pickerSearchInput");
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  handlePickerSearch("");
+}
+
+function filterAndRenderPickerProducts(searchQuery = "") {
+  const catalog = (misaItemsCatalog && misaItemsCatalog.length) ? misaItemsCatalog : BUILT_IN_MISA_ITEMS;
+  const qClean = removeVietnameseTones(searchQuery || "").trim();
+  
+  const totalCountEl = document.getElementById("pickerCountTotal");
+  if (totalCountEl) totalCountEl.innerText = catalog.length;
+
+  let filtered = catalog.filter(item => {
+    const sku = item.sku || "";
+    const name = item.name || "";
+    const skuClean = removeVietnameseTones(sku);
+    const nameClean = removeVietnameseTones(name);
+
+    // 1. Áp dụng filter chip
+    if (currentPickerFilter === 'doi') {
+      if (!nameClean.includes("doi") && !nameClean.includes("bo") && !skuClean.includes("1")) return false;
+    } else if (currentPickerFilter === 'chiec') {
+      if (!nameClean.includes("chiec") && !nameClean.includes("le")) return false;
+    } else if (currentPickerFilter === '6chau') {
+      if (!nameClean.includes("6 chau") && !skuClean.startsWith("6c") && !skuClean.includes("6 chau")) return false;
+    } else if (currentPickerFilter === 'in_stock') {
+      if (Number(item.stock || 0) <= 0) return false;
+    }
+
+    // 2. Tìm kiếm theo từ khóa (Cả Mã SKU HOẶC Tên sản phẩm)
+    if (!qClean) return true;
+    return skuClean.includes(qClean) || nameClean.includes(qClean);
+  });
+
+  renderPickerProductTable(filtered, searchQuery);
+}
+
+function renderPickerProductTable(items, searchQuery = "") {
+  const tbody = document.getElementById("pickerProductTbody");
+  const statsEl = document.getElementById("pickerStatsText");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const qClean = removeVietnameseTones(searchQuery || "").trim();
+
+  if (!items || items.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; padding:36px 16px; color:#9ca3af;">
+          <div style="font-size:36px; margin-bottom:10px;">🔍</div>
+          <p style="font-size:15px; font-weight:700; color:#e2e8f0; margin-bottom:6px;">Không tìm thấy sản phẩm nào phù hợp!</p>
+          <p style="font-size:13px; color:#64748b;">Hãy thử từ khóa khác (ví dụ: 5ly, 6mm, Bông nụ, MS05, BMOI, Nhẫn, 6 chấu...) hoặc bấm <b>"Tải lại từ MISA"</b>.</p>
+        </td>
+      </tr>
+    `;
+    if (statsEl) statsEl.innerText = "Tìm thấy 0 sản phẩm";
+    return;
+  }
+
+  const total = (misaItemsCatalog && misaItemsCatalog.length) ? misaItemsCatalog.length : BUILT_IN_MISA_ITEMS.length;
+  if (statsEl) {
+    statsEl.innerHTML = `Đang hiển thị <b>${items.length}</b> / <b>${total}</b> mặt hàng thực tế`;
+  }
+
+  items.forEach(it => {
+    const tr = document.createElement("tr");
+    tr.className = "picker-product-row";
+    tr.style.borderBottom = "1px solid #1e1e2c";
+    tr.style.transition = "background 0.15s ease";
+
+    const stockNum = Number(it.stock || 0);
+    const stockBadge = stockNum > 0 
+      ? `<span style="background:rgba(16,185,129,0.18); color:#6ee7b7; border:1px solid rgba(16,185,129,0.4); padding:3px 8px; border-radius:6px; font-weight:700; font-size:12px;">${stockNum}</span>`
+      : `<span style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:3px 8px; border-radius:6px; font-weight:600; font-size:11px;">0 (Hết)</span>`;
+
+    let displaySku = escapeHtml(it.sku || "");
+    let displayName = escapeHtml(it.name || "");
+    if (qClean && searchQuery) {
+      try {
+        const regex = new RegExp(`(${escapeRegExp(searchQuery)})`, "gi");
+        displaySku = displaySku.replace(regex, `<mark class="picker-highlight">$1</mark>`);
+        displayName = displayName.replace(regex, `<mark class="picker-highlight">$1</mark>`);
+      } catch (err) {}
+    }
+
+    tr.innerHTML = `
+      <td style="padding:11px 12px; font-family:'JetBrains Mono',monospace; font-weight:700; color:#ffd875; font-size:13px;">
+        ${displaySku}
+      </td>
+      <td style="padding:11px 12px; color:#f3f4f6; font-weight:500; line-height:1.4;">
+        ${displayName}
+      </td>
+      <td style="padding:11px 12px; text-align:center; color:#9ca3af; font-size:12px;">
+        ${it.unit_name || "Cái"}
+      </td>
+      <td style="padding:11px 12px; text-align:center;">
+        ${stockBadge}
+      </td>
+      <td style="padding:11px 12px; text-align:center;">
+        <button type="button" class="btn2" onclick="selectPickerProduct('${escapeHtml(it.sku || '')}', '${escapeHtml(it.name || '')}')" style="background:linear-gradient(135deg, #d97706, #b45309); color:#fff; font-size:11.5px; font-weight:700; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.3);">
+          ✅ Chọn
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function selectPickerProduct(sku, name) {
+  if (typeof pickerTargetInput === "function") {
+    pickerTargetInput(sku, name);
+  } else if (pickerTargetInput && pickerTargetInput.tagName === "INPUT") {
+    pickerTargetInput.value = sku;
+    pickerTargetInput.dispatchEvent(new Event("input", { bubbles: true }));
+    pickerTargetInput.dispatchEvent(new Event("change", { bubbles: true }));
+    showStatus(`✅ Đã gắn mã SKU: ${sku} (${name})`, true);
+  }
+  closeProductPickerModal();
+}
+
+// Bảng Live tra cứu trong Tab MISA
+function filterMisaTabCatalog(query = "") {
+  const btnClear = document.getElementById("btnClearMisaTabSearch");
+  if (btnClear) btnClear.style.display = query ? "block" : "none";
+  renderMisaTabCatalog(query);
+}
+
+function clearMisaTabSearch() {
+  const inp = document.getElementById("misaTabSearchInput");
+  if (inp) inp.value = "";
+  filterMisaTabCatalog("");
+}
+
+function renderMisaTabCatalog(query = "") {
+  const tbody = document.getElementById("misaTabCatalogTbody");
+  const countEl = document.getElementById("misaTabCatalogCount");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const catalog = (misaItemsCatalog && misaItemsCatalog.length) ? misaItemsCatalog : BUILT_IN_MISA_ITEMS;
+  const qClean = removeVietnameseTones(query || "").trim();
+
+  let filtered = catalog.filter(it => {
+    if (!qClean) return true;
+    return removeVietnameseTones(it.sku || "").includes(qClean) || removeVietnameseTones(it.name || "").includes(qClean);
+  });
+
+  if (countEl) {
+    countEl.innerText = `Tìm thấy ${filtered.length} / ${catalog.length} mặt hàng MISA`;
+  }
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:#888;">Không tìm thấy mặt hàng nào phù hợp với từ khóa "${escapeHtml(query)}"</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(it => {
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid #1f1f2e";
+    const stockNum = Number(it.stock || 0);
+    const stockBadge = stockNum > 0 
+      ? `<span style="background:rgba(16,185,129,0.18); color:#6ee7b7; padding:2px 6px; border-radius:4px; font-weight:700;">${stockNum}</span>`
+      : `<span style="background:rgba(239,68,68,0.15); color:#fca5a5; padding:2px 6px; border-radius:4px;">0</span>`;
+
+    tr.innerHTML = `
+      <td style="padding:9px 12px; font-family:'JetBrains Mono',monospace; font-weight:700; color:#ffd875;">${escapeHtml(it.sku)}</td>
+      <td style="padding:9px 12px; color:#f3f4f6; line-height:1.4;">${escapeHtml(it.name)}</td>
+      <td style="padding:9px 12px; text-align:center; color:#9ca3af;">${it.unit_name || 'Cái'}</td>
+      <td style="padding:9px 12px; text-align:center;">${stockBadge}</td>
+      <td style="padding:9px 12px; text-align:center;">
+        <button type="button" class="btn2" onclick="openProductPickerModal()" style="background:#1e293b; color:#ffd875; border:1px solid #475569; font-size:11.5px; padding:4px 9px; border-radius:5px; cursor:pointer;">
+          🔍 Chi tiết
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 // Xử lý Đăng nhập
@@ -2017,7 +2512,8 @@ async function loadOrders() {
     if (!data.ok) throw new Error(data.error || "Không tải được danh sách đơn hàng!");
     
     currentOrdersList = data.orders || [];
-    renderOrdersTable(currentOrdersList);
+    const searchVal = $("#orderSearchInput") ? $("#orderSearchInput").value : "";
+    handleOrderSearch(searchVal);
 
     showTabFromCode("orders");
     showStatus(`Đã tải xong danh sách đơn hàng (${currentOrdersList.length} đơn gần nhất).`);
@@ -2029,22 +2525,101 @@ async function loadOrders() {
   }
 }
 
-function renderOrdersTable(orders) {
+function handleOrderSearch(query = "") {
+  const btnClear = $("#btnClearOrderSearch");
+  if (btnClear) btnClear.style.display = query ? "block" : "none";
+
+  const statusFilter = $("#orderStatusFilter") ? $("#orderStatusFilter").value : "all";
+  const countEl = $("#orderSearchCount");
+
+  const qClean = removeVietnameseTones(query || "").trim();
+
+  const filtered = currentOrdersList.filter(o => {
+    // 1. Lọc trạng thái
+    if (statusFilter && statusFilter !== "all") {
+      const oStatus = (o.status || "Chờ xác nhận").trim();
+      if (oStatus !== statusFilter) return false;
+    }
+
+    // 2. Tìm kiếm theo từ khóa (Tên khách, SĐT, Mã đơn, Địa chỉ, Size, Ghi chú, SKU MISA)
+    if (!qClean) return true;
+
+    const searchFields = [
+      o.orderId || "",
+      o.name || "",
+      formatPhoneVN(o.phone || ""),
+      o.phone || "",
+      o.address || "",
+      o.fullAddress || "",
+      o.province || "",
+      o.district || "",
+      o.ward || "",
+      o.variant || "",
+      o.size || "",
+      o.note || "",
+      o.misaSku || ""
+    ].map(f => removeVietnameseTones(String(f))).join(" ");
+
+    return searchFields.includes(qClean);
+  });
+
+  if (countEl) {
+    if (query || (statusFilter && statusFilter !== "all")) {
+      countEl.innerText = `(Tìm thấy ${filtered.length} / ${currentOrdersList.length} đơn)`;
+    } else {
+      countEl.innerText = `(Tổng: ${currentOrdersList.length} đơn)`;
+    }
+  }
+
+  renderOrdersTable(filtered, query);
+}
+
+function clearOrderSearch() {
+  const inp = $("#orderSearchInput");
+  if (inp) {
+    inp.value = "";
+    inp.focus();
+  }
+  handleOrderSearch("");
+}
+
+function renderOrdersTable(orders, searchQuery = "") {
   const tbody = $("#ordersTable tbody");
   tbody.innerHTML = "";
   
   if (!orders || orders.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='10' style='text-align:center; padding:24px; color:#888;'>Chưa có đơn hàng nào.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='10' style='text-align:center; padding:24px; color:#888;'>Không tìm thấy đơn hàng nào phù hợp.</td></tr>";
     return;
   }
+
+  const qClean = removeVietnameseTones(searchQuery || "").trim();
 
   orders.forEach(o => {
     const tr = document.createElement("tr");
     tr.id = "order-row-" + o.orderId;
     const displayPhone = formatPhoneVN(o.phone);
-    const phoneHtml = displayPhone ? `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${displayPhone}</a>` : "";
+    let phoneHtml = displayPhone ? `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${displayPhone}</a>` : "";
     const cleanPrice = String(o.price || "").replace(/[^0-9]/g, "");
     const priceHtml = `<strong style="color:#f87171;">${Number(cleanPrice || 0).toLocaleString("vi-VN")}đ</strong>`;
+
+    let displayOrderId = escapeHtml(o.orderId || "");
+    let displayName = escapeHtml(o.name || "Khách ẩn danh");
+    let displayAddr = escapeHtml(o.fullAddress || o.address || "Chưa nhập");
+    let displayVariant = escapeHtml(`${o.variant || "1 Đôi"} (${o.size || "5mm"})`);
+
+    if (qClean && searchQuery) {
+      try {
+        const regex = new RegExp(`(${escapeRegExp(searchQuery)})`, "gi");
+        displayOrderId = displayOrderId.replace(regex, `<mark class="picker-highlight">$1</mark>`);
+        displayName = displayName.replace(regex, `<mark class="picker-highlight">$1</mark>`);
+        displayAddr = displayAddr.replace(regex, `<mark class="picker-highlight">$1</mark>`);
+        displayVariant = displayVariant.replace(regex, `<mark class="picker-highlight">$1</mark>`);
+        if (displayPhone && regex.test(displayPhone)) {
+          const highlightedPhone = displayPhone.replace(regex, `<mark class="picker-highlight">$1</mark>`);
+          phoneHtml = `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${highlightedPhone}</a>`;
+        }
+      } catch (err) {}
+    }
 
     let statusBg = "rgba(16,185,129,0.15)";
     let statusColor = "#6ee7b7";
@@ -2086,11 +2661,11 @@ function renderOrdersTable(orders) {
 
     const cols = [
       o.createdAt,
-      `<span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600;">${o.orderId}</span>`,
-      `<strong style="color:#fff;">${o.name || "Khách ẩn danh"}</strong>`,
+      `<span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600;">${displayOrderId}</span>`,
+      `<strong style="color:#fff;">${displayName}</strong>`,
       phoneHtml,
-      o.fullAddress || o.address || "Chưa nhập",
-      `${o.variant || "1 Đôi"} (${o.size || "5mm"})`,
+      displayAddr,
+      displayVariant,
       o.quantity || "1",
       priceHtml,
       statusHtml,
@@ -2738,6 +3313,7 @@ function openLanding(page = "index.html") {
 // Khởi chạy khi load trang
 window.addEventListener("DOMContentLoaded", () => {
   renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN);
+  renderMisaTabCatalog();
 
   const savedUser = sessionStorage.getItem("PGD_AUTH_USER_VN");
   const savedPass = sessionStorage.getItem("PGD_AUTH_PASS_VN");
