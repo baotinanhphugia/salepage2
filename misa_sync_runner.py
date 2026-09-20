@@ -116,47 +116,81 @@ def get_misa_token():
         print(f"[TOKEN] Đã cấp mới Token MISA thành công (hết hạn sau 30 phút).")
         return _cached_token
 
-# --- LẤY DANH SÁCH HÀNG HÓA TỪ MISA ESHOP OPEN API ---
-def fetch_misa_inventory_items(search="", skip=0, take=200):
+# --- LẤY DANH SÁCH HÀNG HÓA TỪ MISA ESHOP OPEN API (ĐẦY ĐỦ TẤT CẢ CÁC TRANG) ---
+def fetch_misa_inventory_items(search="", max_items=2000):
     try:
         token = get_misa_token()
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
-        payload = {"skip": skip, "take": take}
-        if search:
-            payload["filter"] = search
-        req = urllib.request.Request(
-            "https://eshopapp.misa.vn/api/platform/inventoryitems/list",
-            data=json.dumps(payload).encode("utf-8"),
-            headers=headers,
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            res = json.loads(resp.read().decode("utf-8"))
-            data_field = res.get("Data", {})
-            if isinstance(data_field, dict):
-                raw_list = data_field.get("DictionaryData", []) or []
-            elif isinstance(data_field, list):
-                raw_list = data_field
-            else:
-                raw_list = []
+        
+        all_items = []
+        page = 1
+        page_size = 100
+        
+        while True:
+            payload = {"page": page, "page_size": page_size}
+            if search:
+                payload["keyword"] = str(search).strip()
+                
+            req = urllib.request.Request(
+                "https://eshopapp.misa.vn/api/platform/inventoryitems/list",
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                data_field = res.get("Data", {})
+                if isinstance(data_field, dict):
+                    raw_list = data_field.get("DictionaryData", []) or []
+                    total = data_field.get("Total", len(raw_list))
+                elif isinstance(data_field, list):
+                    raw_list = data_field
+                    total = len(raw_list)
+                else:
+                    raw_list = []
+                    total = 0
 
-            standardized = []
-            for it in raw_list:
-                sku = it.get("sku_code") or it.get("inventory_item_code") or it.get("sku") or it.get("code") or ""
-                name = it.get("name") or it.get("inventory_item_name") or ""
-                iid = it.get("id") or it.get("inventory_item_id") or ""
-                uid = it.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061"
-                uname = it.get("unit_name") or "Cái"
-                stock = it.get("on_hand", it.get("inventory_qty", 0))
-                standardized.append({
-                    "id": iid,
-                    "sku": sku,
-                    "name": name,
-                    "unit_id": uid,
-                    "unit_name": uname,
-                    "stock": stock
-                })
-            return standardized
+                for it in raw_list:
+                    if it.get("is_inactive") is True:
+                        continue
+                        
+                    sku = it.get("sku_code") or it.get("inventory_item_code") or it.get("sku") or it.get("code") or ""
+                    name = it.get("name") or it.get("inventory_item_name") or ""
+                    iid = it.get("id") or it.get("inventory_item_id") or ""
+                    itype = it.get("type", 1)
+
+                    # Bổ sung thông tin từ điển MISA_INVENTORY nếu có
+                    ref_info = MISA_INVENTORY.get(sku, {})
+                    uid = ref_info.get("unit_id") or it.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061"
+                    uname = ref_info.get("unit_name") or it.get("unit_name")
+                    if not uname:
+                        name_lower = name.lower()
+                        if itype == 3 or "đôi" in name_lower or "bộ" in name_lower:
+                            uname = "Đôi"
+                        elif "hộp" in name_lower:
+                            uname = "Hộp"
+                        elif "thẻ" in name_lower or "card" in name_lower:
+                            uname = "Thẻ"
+                        else:
+                            uname = "Cái"
+
+                    stock = it.get("on_hand", it.get("inventory_qty", ref_info.get("stock", 100)))
+                    all_items.append({
+                        "id": iid,
+                        "sku": sku,
+                        "name": name,
+                        "type": itype,
+                        "unit_id": uid,
+                        "unit_name": uname,
+                        "stock": stock
+                    })
+
+                if not raw_list or len(raw_list) < page_size or len(all_items) >= total or len(all_items) >= max_items:
+                    break
+                page += 1
+
+        print(f"[MISA INVENTORY] Đã nạp thành công {len(all_items)} mặt hàng từ kho MISA eShop (qua {page} trang).")
+        return all_items
     except Exception as e:
         print(f"[MISA INVENTORY FETCH ERROR] {e}")
         return []

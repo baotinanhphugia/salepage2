@@ -1826,26 +1826,438 @@ function escapeRegExp(string) {
 
 // Từ điển danh mục hàng hóa MISA ban đầu phong phú (dự phòng khi chưa tải API)
 const BUILT_IN_MISA_ITEMS = [
-  { sku: "BNM6B01", name: "Bông nụ Moissaanite 6mm-S925- BMOI45-1 (1 Đôi)", unit_name: "Cái", stock: 20 },
-  { sku: "BNM4SB01", name: "Bông nụ Moissanite 4.5mm- S925- BMOI42-1 (1 Đôi)", unit_name: "Cái", stock: 20 },
-  { sku: "MS051", name: "Bông nụ Moissanite 5ly-S925 -BMOI144 (1 Đôi)", unit_name: "Cái", stock: 50 },
-  { sku: "MS041", name: "Bông nụ Moissanite 4ly-S925-BMOI143 (1 Đôi)", unit_name: "Cái", stock: 50 },
-  { sku: "MS0681", name: "Bông nụ Moissanite 6ly8-S925-BMOI146 (1 Đôi)", unit_name: "Cái", stock: 30 },
-  { sku: "MS0751", name: "Bông nụ Moissanite 7ly5-S925-BMOI47 (1 Đôi)", unit_name: "Cái", stock: 30 },
-  { sku: "MS06-1", name: "Bông nụ Moissaanite 6mm-S925- BMOI45-1 (1 Chiếc)", unit_name: "Cái", stock: 15 },
-  { sku: "MS 04.5-1", name: "Bông nụ Moissanite 4.5mm- S925- BMOI42-1 (1 Chiếc)", unit_name: "Cái", stock: 15 },
-  { sku: "MS05", name: "Bông nụ Moissanite 5ly-S925 -BMOI144 (1 Chiếc)", unit_name: "Cái", stock: 40 },
-  { sku: "MS04", name: "Bông nụ Moissanite 4ly-S925-BMOI143 (1 Chiếc)", unit_name: "Cái", stock: 40 },
-  { sku: "MS06.8", name: "Bông nụ Moissanite 6ly8-S925-BMOI146 (1 Chiếc)", unit_name: "Cái", stock: 25 },
-  { sku: "MS07.5", name: "Bông nụ Moissanite 7ly5-S925-BMOI47 (1 Chiếc)", unit_name: "Cái", stock: 25 },
-  { sku: "6C48", name: "Bông nụ 6 chấu Moissanite 4ly -S925-BMOI48 (1 Đôi)", unit_name: "Cái", stock: 30 },
-  { sku: "6C50", name: "Bông nụ 6 chấu Moissanite 5ly -S925-BMOI50 (1 Đôi)", unit_name: "Cái", stock: 30 },
-  { sku: "6C52", name: "Bông nụ 6 chấu Moissanite 6Ly -S925-BMOI52 (1 Đôi)", unit_name: "Cái", stock: 30 },
-  { sku: "6C53", name: "Bông nụ 6 chấu Moissanite 6ly3 -S925-BMOI53 (1 Đôi)", unit_name: "Cái", stock: 20 },
-  { sku: "6C54", name: "Bông nụ 6 chấu Moissanite 7ly -S925-BMOI54 (1 Đôi)", unit_name: "Cái", stock: 20 },
-  { sku: "6C56", name: "Bông nụ 6 chấu moissanite 8ly -S925-BMOI56 (1 Đôi)", unit_name: "Cái", stock: 15 },
-  { sku: "HOP NHAN", name: "Hộp đựng trang sức cao cấp Phú Gia Diamond", unit_name: "Chiếc", stock: 500 },
-  { sku: "CARD", name: "Thẻ bảo hành & kiểm định GRA Quốc tế", unit_name: "Tờ", stock: 500 }
+  {
+    "sku": "CPMH",
+    "name": "Chi phí mua hàng",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS07.5",
+    "name": "Bông nụ Moissanite 7ly5-S925-BMOI47",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS06.8",
+    "name": "Bông nụ Moissanite 6ly8-S925-BMOI146",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS06",
+    "name": "Bông nụ Moissanite 6ly-S925-BMOI145",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS05",
+    "name": "Bông nụ Moissanite 5ly-S925 -BMOI144",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS04",
+    "name": "Bông nụ Moissanite 4ly-S925-BMOI143",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS04.5",
+    "name": "Bông nụ Moissanite 4ly5-S925-BMOI142",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN03",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN04",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN05",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN06",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN07",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN08",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN09",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "LT01",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "LT02",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN01",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MSN02",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "DT01",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "DT02",
+    "name": "Bạc trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6c56",
+    "name": "Bông nụ 6 chấu moissanite 8ly -S925-BMOI56",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6C54",
+    "name": "Bông nụ 6 chấu Moissanite 7ly -S925-BMOI54",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6C53",
+    "name": "Bông nụ 6 chấu Moissanite 6ly3 -S925-BMOI53",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6C52",
+    "name": "Bông nụ 6 chấu Moissanite 6Ly -S925-BMOI52",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6C50",
+    "name": "Bông nụ 6 chấu Moissanite 5ly -S925-BMOI50",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6C48",
+    "name": "Bông nụ 6 chấu Moissanite 4ly -S925-BMOI48",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BT143 - 5ly",
+    "name": "Bông tai Moissanite -5ly -S925-BMOI43",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "Bốn Lá 39",
+    "name": "Bông tai full Moissanite Bốn lá 3ly5 -S925-BMOI39",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "Đồng Tiền 34",
+    "name": "Bông tai Full Moissanite Đồng tiền -S925 -BMOI34",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS041",
+    "name": "1 Đôi - Bông nụ Moissanite 4ly-S925-BMOI143",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS0451",
+    "name": "1 Đôi - Bông nụ Moissanite 4ly5-S925-BMOI142",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "MS051",
+    "name": "1 Đôi -Bông nụ Moissanite 5ly-S925 -BMOI144",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS061",
+    "name": "1 Đôi - Bông nụ Moissanite 6ly-S925-BMOI145",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "MS0681",
+    "name": "1 Đôi - Bông nụ Moissanite 6ly8-S925-BMOI146",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS0751",
+    "name": "1 Đôi - Bông nụ Moissanite 7ly5-S925-BMOI47",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6 chấu 48",
+    "name": "1 Đôi -Bông nụ 6 chấu Moissanite 4ly -S925-BMOI48",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6 chấu 50",
+    "name": "1 Đôi - Bông nụ 6 chấu Moissanite 5ly -S925-BMOI50",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6 chấu 52",
+    "name": "1 Đôi - Bông nụ 6 chấu Moissanite 6Ly -S925-BMOI52",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6 chấu 53",
+    "name": "1 Đôi- Bông nụ 6 chấu Moissanite 6ly3 -S925-BMOI53",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6 chấu 54",
+    "name": "1 Đôi - Bông nụ 6 chấu Moissanite 7ly -S925-BMOI54",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "6 chấu 56",
+    "name": "1 Đôi - Bông nụ 6 chấu moissanite 8ly -S925-BMOI56",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "CARD",
+    "name": "IN CARD",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "HOP NHAN",
+    "name": "Hộp giấy đựng trang sức",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS06-1",
+    "name": "Bông nụ Moissaanite 6mm-S925- BMOI45-1",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "MS 04.5-1",
+    "name": "Bông nụ Moissanite 4.5mm- S925- BMOI42-1",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BNM4SB01",
+    "name": "1Đôi -Bông nụ Moissanite 4.5mm- S925- BMOI42-1",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BNM6B01",
+    "name": "1 Đôi - Bông nụ Moissaanite 6mm-S925- BMOI45-1",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "CKTM",
+    "name": "Chiết khấu thương mại",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "4C-4mm-NK",
+    "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu(đá 4mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "4C-4.5mm-NK",
+    "name": "Bông tai bạc 925 mạ rhodium đinh đá moissanite 4 chấu(đá 4.5mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "4C-5mm-NK",
+    "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 5mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "4C-6mm-NK",
+    "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 6mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "4C-7mm-NK",
+    "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "4C-7.5mm-NK",
+    "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7.5mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BTT-4mm-NK",
+    "name": "Bông tai tròn bạc 925 đinh đá moissanite (bản rộng 4mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BTT-4.5mm-NK",
+    "name": "Bông tai tròn bạc 925 đính đá moissanite (bản rộng 4.5mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BTT-5mm-NK",
+    "name": "Bông tai tròn bạc 925 đính đá moissanite (bản rộng 5mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BTNS-4mm-NK",
+    "name": "Bông tai hình ngôi sao bạc 925 mạ rhodium (4mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BTNS-5mm-NK",
+    "name": "Bông tai hình ngôi sao bạc 925 mạ rhodium (5mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "BTNS-6mm-NK",
+    "name": "Bông tai hình ngôi sao bạc 925 mạ rhodium (6mm)",
+    "unit_name": "Cái",
+    "stock": 100
+  },
+  {
+    "sku": "NK 4C -4LY",
+    "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu(đá 4mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NK 4C-4.5LY",
+    "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đinh đá moissanite 4 chấu(đá 4.5mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NK 4C -5LY",
+    "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 5mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NK 4C -6LY",
+    "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 6mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NK 4C -7LY",
+    "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NK 4C-7.5LY",
+    "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7.5mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NS -4LY -NK",
+    "name": "1 ĐÔI - Bông tai hình ngôi sao bạc 925 mạ rhodium (4mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NS -5LY -NK",
+    "name": "1 ĐÔI - Bông tai hình ngôi sao bạc 925 mạ rhodium (5mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "NS - 6LY -NK",
+    "name": "1 ĐÔI - Bông tai hình ngôi sao bạc 925 mạ rhodium (6mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "BTT -4LY -NK",
+    "name": "1 ĐÔI - Bông tai tròn bạc 925 đinh đá moissanite (bản rộng 4mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "BTT -4.5LY -NK",
+    "name": "1 ĐÔI - Bông tai tròn bạc 925 đính đá moissanite (bản rộng 4.5mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  },
+  {
+    "sku": "BTT -5LY -NK",
+    "name": "1 ĐÔI - Bông tai tròn bạc 925 đính đá moissanite (bản rộng 5mm)",
+    "unit_name": "Đôi",
+    "stock": 100
+  }
 ];
 
 // ================= TẢI & ĐỒNG BỘ DANH MỤC HÀNG HÓA TỪ MISA ESHOP API =================
@@ -1907,7 +2319,7 @@ async function fetchMisaInventoryFromRunner(showNotice = true) {
             action: "saveMisaInventoryCache",
             username: currentAuthUsername,
             password: currentAuthPassword,
-            items: items.slice(0, 100)
+            items: items.slice(0, 500)
           })
         }).catch(err => console.log("Cache save error:", err));
       }
