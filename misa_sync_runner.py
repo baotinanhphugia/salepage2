@@ -132,12 +132,19 @@ def fetch_misa_inventory_items(search="", skip=0, take=200):
         )
         with urllib.request.urlopen(req, timeout=15) as resp:
             res = json.loads(resp.read().decode("utf-8"))
-            raw_list = res.get("Data", []) or []
+            data_field = res.get("Data", {})
+            if isinstance(data_field, dict):
+                raw_list = data_field.get("DictionaryData", []) or []
+            elif isinstance(data_field, list):
+                raw_list = data_field
+            else:
+                raw_list = []
+
             standardized = []
             for it in raw_list:
-                sku = it.get("inventory_item_code") or it.get("sku") or it.get("code") or ""
-                name = it.get("inventory_item_name") or it.get("name") or ""
-                iid = it.get("inventory_item_id") or it.get("id") or ""
+                sku = it.get("sku_code") or it.get("inventory_item_code") or it.get("sku") or it.get("code") or ""
+                name = it.get("name") or it.get("inventory_item_name") or ""
+                iid = it.get("id") or it.get("inventory_item_id") or ""
                 uid = it.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061"
                 uname = it.get("unit_name") or "Cái"
                 stock = it.get("on_hand", it.get("inventory_qty", 0))
