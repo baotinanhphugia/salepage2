@@ -1001,17 +1001,17 @@ button#btnSubmit {
 const API_URL = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec";
 const DEFAULT_PRICE_TABLE = [
   {type:"1 Chiếc",size:"4mm",code:"MS04",stock:"106",oldPrice:"295000",salePrice:"229999"},
-  {type:"1 Chiếc",size:"4.5mm",code:"MS04.5",stock:"2",oldPrice:"315000",salePrice:"249000"},
+  {type:"1 Chiếc",size:"4.5mm",code:"MS 04.5-1",stock:"2",oldPrice:"315000",salePrice:"249000"},
   {type:"1 Chiếc",size:"5mm",code:"MS05",stock:"105",oldPrice:"332000",salePrice:"259000"},
-  {type:"1 Chiếc",size:"6mm",code:"MS06",stock:"50",oldPrice:"444000",salePrice:"305999"},
-  {type:"1 Chiếc",size:"6.8mm",code:"MS06.8",stock:"31",oldPrice:"556000",salePrice:""},
+  {type:"1 Chiếc",size:"6mm",code:"MS06-1",stock:"50",oldPrice:"444000",salePrice:"305999"},
+  {type:"1 Chiếc",size:"6.8mm",code:"MS06.8",stock:"31",oldPrice:"556000",salePrice:"369000"},
   {type:"1 Chiếc",size:"7.5mm",code:"MS07.5",stock:"41",oldPrice:"700000",salePrice:"409999"},
-  {type:"1 Đôi",size:"4mm",code:"MS04*2",stock:"56",oldPrice:"600303",salePrice:"399999"},
-  {type:"1 Đôi",size:"4.5mm",code:"MS04.5*2",stock:"3",oldPrice:"616216",salePrice:"439999"},
-  {type:"1 Đôi",size:"5mm",code:"MS05*2",stock:"46",oldPrice:"647895",salePrice:"459999"},
-  {type:"1 Đôi",size:"6mm",code:"MS06*2",stock:"25",oldPrice:"804872",salePrice:"549999"},
-  {type:"1 Đôi",size:"6.8mm",code:"MS06.8*2",stock:"6",oldPrice:"953721",salePrice:"659999"},
-  {type:"1 Đôi",size:"7.5mm",code:"MS07.5*2",stock:"111",oldPrice:"1204000",salePrice:"759999"}
+  {type:"1 Đôi",size:"4mm",code:"MS041",stock:"56",oldPrice:"600303",salePrice:"399999"},
+  {type:"1 Đôi",size:"4.5mm",code:"BNM4SB01",stock:"3",oldPrice:"616216",salePrice:"439999"},
+  {type:"1 Đôi",size:"5mm",code:"MS051",stock:"46",oldPrice:"647895",salePrice:"459999"},
+  {type:"1 Đôi",size:"6mm",code:"BNM6B01",stock:"25",oldPrice:"804872",salePrice:"549999"},
+  {type:"1 Đôi",size:"6.8mm",code:"MS0681",stock:"6",oldPrice:"953721",salePrice:"659999"},
+  {type:"1 Đôi",size:"7.5mm",code:"MS0751",stock:"111",oldPrice:"1204000",salePrice:"759999"}
 ];
 let priceTable = [...DEFAULT_PRICE_TABLE];
 
@@ -1110,6 +1110,14 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   data.price = data.price || document.querySelector('[name="price"]')?.value || "459999";
   data.source = location.href;
   data.adminUrl = location.href.replace(/index\.html.*/, "admin.html");
+
+  // Gán mã SKU MISA cố định của lô hàng tương ứng với phân loại & kích cỡ đã chọn
+  const vSelected = data.variant || document.getElementById("variantSelect")?.value || "1 Đôi";
+  const sSelected = data.size || document.getElementById("sizeSelect")?.value || "5mm";
+  const matchedItem = priceTable.find(i => i.type === vSelected && i.size === sSelected);
+  if (matchedItem && matchedItem.code) {
+    data.misaSku = matchedItem.code;
+  }
 
   try{
     await fetch(API_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});

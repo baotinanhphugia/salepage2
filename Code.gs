@@ -83,6 +83,13 @@ function doPost(e) {
       return json_({ ok: true });
     }
 
+    // 3.1 Lưu cache danh mục hàng hóa MISA eShop (Chỉ Admin)
+    if (data.action === "saveMisaInventoryCache") {
+      checkAdminRole_(data.username, data.password || data.key);
+      updateConfigSingleKey_("misaInventoryCache", JSON.stringify(data.items || []));
+      return json_({ ok: true, count: (data.items || []).length });
+    }
+
     // 4. Sửa đơn hàng (Admin & CSKH - Xoá tin cũ trên Telegram, gửi lại tin mới cập nhật)
     if (data.action === "updateOrder") {
       checkStaffAuth_(data.username, data.password || data.key);
@@ -167,6 +174,15 @@ function handleOrderVN_(data) {
     const orderId = "PGD-VN-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyyyMMdd-HHmmss");
     const createdAt = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
 
+    // Xác định mã MISA cố định ban đầu của lô hàng (từ web gửi lên, từ cấu hình bảng giá, hoặc autoDetect)
+    let misaSku = String(data.misaSku || stockResult.sku || "").trim();
+    if (!misaSku) {
+      misaSku = autoDetectMisaSku_(data.size, data.variant);
+    }
+    const cleanUserNote = cleanText_(data.note || "");
+    const initialTags = `[MISA: ${misaSku}] [Hộp: Có] [Thẻ: Có]`;
+    const finalNote = cleanUserNote ? `${cleanUserNote} | ${initialTags}` : initialTags;
+
     const fullAddress = [data.address, data.ward, data.district, data.province]
       .map(cleanText_)
       .filter(Boolean)
@@ -194,7 +210,7 @@ function handleOrderVN_(data) {
       cleanText_(data.combo || ""),
       cleanText_(data.payment || "COD"),
       priceFormatted,
-      cleanText_(data.note || ""),
+      finalNote,
       mapsLink,
       "Chờ xác nhận",
       "", // Cột 19: TelegramMsgId
@@ -215,6 +231,7 @@ function handleOrderVN_(data) {
 📍 Địa chỉ: ${escapeHtml_(fullAddress)}
 🗺 Google Maps: ${escapeHtml_(mapsLink)}
 💍 Sản phẩm: ${escapeHtml_(productName)}
+🏷️ Mã MISA (Lô hàng): <code>${escapeHtml_(misaSku)}</code>
 📦 Phân loại: ${escapeHtml_(cleanText_(data.variant || ""))}
 📏 Kích cỡ đá: ${escapeHtml_(cleanText_(data.size || ""))}
 🔢 Số lượng: ${escapeHtml_(cleanText_(data.quantity || "1"))}
@@ -222,7 +239,7 @@ function handleOrderVN_(data) {
 💳 Thanh toán: ${escapeHtml_(cleanText_(data.payment || "COD"))}
 💰 Tổng thu COD: <b>${escapeHtml_(priceFormatted)}</b>
 📦 Kho còn: ${escapeHtml_(stockResult.stockLeft)}
-📝 Ghi chú: ${escapeHtml_(cleanText_(data.note || "Không có"))}
+📝 Ghi chú: ${escapeHtml_(finalNote)}
 🕒 Thời gian: ${escapeHtml_(createdAt)}`;
 
     const msgId = safeSendTelegram_(message, orderId, cleanPhone, data.adminUrl);
@@ -749,17 +766,17 @@ function defaultConfigVN_() {
     shortDescription: "Bạc thật S925, Moissanite sáng đẹp, full kiểm định GRA, tặng hộp cao cấp.",
     priceTable: `[
   {"type":"1 Chiếc","size":"4mm","code":"MS04","stock":"106","oldPrice":"295000","salePrice":"229999"},
-  {"type":"1 Chiếc","size":"4.5mm","code":"MS04.5","stock":"2","oldPrice":"315000","salePrice":"249000"},
+  {"type":"1 Chiếc","size":"4.5mm","code":"MS 04.5-1","stock":"2","oldPrice":"315000","salePrice":"249000"},
   {"type":"1 Chiếc","size":"5mm","code":"MS05","stock":"105","oldPrice":"332000","salePrice":"259000"},
-  {"type":"1 Chiếc","size":"6mm","code":"MS06","stock":"50","oldPrice":"444000","salePrice":"305999"},
+  {"type":"1 Chiếc","size":"6mm","code":"MS06-1","stock":"50","oldPrice":"444000","salePrice":"305999"},
   {"type":"1 Chiếc","size":"6.8mm","code":"MS06.8","stock":"31","oldPrice":"556000","salePrice":"369000"},
   {"type":"1 Chiếc","size":"7.5mm","code":"MS07.5","stock":"41","oldPrice":"700000","salePrice":"409999"},
-  {"type":"1 Đôi","size":"4mm","code":"MS04*2","stock":"56","oldPrice":"600303","salePrice":"399999"},
-  {"type":"1 Đôi","size":"4.5mm","code":"MS04.5*2","stock":"3","oldPrice":"616216","salePrice":"439999"},
-  {"type":"1 Đôi","size":"5mm","code":"MS05*2","stock":"46","oldPrice":"647895","salePrice":"459999"},
-  {"type":"1 Đôi","size":"6mm","code":"MS06*2","stock":"25","oldPrice":"804872","salePrice":"549999"},
-  {"type":"1 Đôi","size":"6.8mm","code":"MS06.8*2","stock":"6","oldPrice":"953721","salePrice":"659999"},
-  {"type":"1 Đôi","size":"7.5mm","code":"MS07.5*2","stock":"111","oldPrice":"1204000","salePrice":"759999"}
+  {"type":"1 Đôi","size":"4mm","code":"MS041","stock":"56","oldPrice":"600303","salePrice":"399999"},
+  {"type":"1 Đôi","size":"4.5mm","code":"BNM4SB01","stock":"3","oldPrice":"616216","salePrice":"439999"},
+  {"type":"1 Đôi","size":"5mm","code":"MS051","stock":"46","oldPrice":"647895","salePrice":"459999"},
+  {"type":"1 Đôi","size":"6mm","code":"BNM6B01","stock":"25","oldPrice":"804872","salePrice":"549999"},
+  {"type":"1 Đôi","size":"6.8mm","code":"MS0681","stock":"6","oldPrice":"953721","salePrice":"659999"},
+  {"type":"1 Đôi","size":"7.5mm","code":"MS0751","stock":"111","oldPrice":"1204000","salePrice":"759999"}
 ]`,
     bankName: "MB Bank",
     bankAccount: "0398138678",
@@ -853,14 +870,14 @@ function updateStockVN_(data, config) {
   const item = table.find(row => String(row.type || "").trim() === variant && String(row.size || "").trim() === size);
 
   if (!item) {
-    return { price: config.salePrice || "459999", stockLeft: "Không theo dõi" };
+    return { price: config.salePrice || "459999", stockLeft: "Không theo dõi", sku: "" };
   }
 
   const price = item.salePrice || item.oldPrice || config.salePrice || "459999";
   const currentStock = Number(String(item.stock || "").replace(/\D/g, ""));
 
   if (!Number.isFinite(currentStock) || item.stock === "") {
-    return { price, stockLeft: "Không theo dõi" };
+    return { price, stockLeft: "Không theo dõi", sku: item.code || "" };
   }
 
   if (currentStock < quantity) {
@@ -870,7 +887,7 @@ function updateStockVN_(data, config) {
   item.stock = String(currentStock - quantity);
   updateConfigSingleKey_("priceTable", JSON.stringify(table, null, 2));
 
-  return { price, stockLeft: item.stock };
+  return { price, stockLeft: item.stock, sku: item.code || "" };
 }
 
 function updateConfigSingleKey_(key, value) {
@@ -1161,6 +1178,18 @@ function formatPhoneVN_(raw) {
   return p;
 }
 
+function autoDetectMisaSku_(size, variant) {
+  const v = String(variant || "1 Đôi").toLowerCase();
+  const s = String(size || "5mm").toLowerCase();
+  const isPair = v.includes("đôi");
+  if (s.includes("6.8")) return isPair ? "MS0681" : "MS06.8";
+  if (s.includes("7.5")) return isPair ? "MS0751" : "MS07.5";
+  if (s.includes("6")) return isPair ? "BNM6B01" : "MS06-1";
+  if (s.includes("4.5")) return isPair ? "BNM4SB01" : "MS 04.5-1";
+  if (s.includes("4")) return isPair ? "MS041" : "MS04";
+  return isPair ? "MS051" : "MS05";
+}
+
 function getOrders_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = getOrCreateOrdersSheet_(ss);
@@ -1169,6 +1198,15 @@ function getOrders_() {
 
   for (let i = Math.max(1, values.length - 80); i < values.length; i++) {
     const r = values[i];
+    const noteStr = String(r[15] || "");
+    let misaSku = "";
+    const mMatch = noteStr.match(/\[MISA:\s*([^\]|]+)/);
+    if (mMatch) {
+      misaSku = mMatch[1].trim();
+    } else {
+      misaSku = autoDetectMisaSku_(r[10], r[9]);
+    }
+
     rows.unshift({
       createdAt: r[0],
       orderId: r[1],
@@ -1186,7 +1224,8 @@ function getOrders_() {
       combo: r[12] || "",
       payment: r[13] || "COD",
       price: r[14] || "",
-      note: r[15] || "",
+      note: noteStr,
+      misaSku: misaSku,
       mapsLink: r[16] || "",
       status: r[17] || "Chờ xác nhận",
       telegramMsgId: r[18] || "",

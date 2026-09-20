@@ -116,6 +116,90 @@ def get_misa_token():
         print(f"[TOKEN] Đã cấp mới Token MISA thành công (hết hạn sau 30 phút).")
         return _cached_token
 
+# --- LẤY DANH SÁCH HÀNG HÓA TỪ MISA ESHOP OPEN API ---
+def fetch_misa_inventory_items(search="", skip=0, take=200):
+    try:
+        token = get_misa_token()
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+        payload = {"skip": skip, "take": take}
+        if search:
+            payload["filter"] = search
+        req = urllib.request.Request(
+            "https://eshopapp.misa.vn/api/platform/inventoryitems/list",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            raw_list = res.get("Data", []) or []
+            standardized = []
+            for it in raw_list:
+                sku = it.get("inventory_item_code") or it.get("sku") or it.get("code") or ""
+                name = it.get("inventory_item_name") or it.get("name") or ""
+                iid = it.get("inventory_item_id") or it.get("id") or ""
+                uid = it.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061"
+                uname = it.get("unit_name") or "Cái"
+                stock = it.get("on_hand", it.get("inventory_qty", 0))
+                standardized.append({
+                    "id": iid,
+                    "sku": sku,
+                    "name": name,
+                    "unit_id": uid,
+                    "unit_name": uname,
+                    "stock": stock
+                })
+            return standardized
+    except Exception as e:
+        print(f"[MISA INVENTORY FETCH ERROR] {e}")
+        return []
+
+def lookup_misa_item(sku_or_code, is_pair_hint=False):
+    if not sku_or_code:
+        return None
+    code_clean = str(sku_or_code).strip()
+    
+    # 1. Tra trong từ điển có sẵn
+    if code_clean in MISA_INVENTORY:
+        return MISA_INVENTORY[code_clean]
+    
+    # 2. Xử lý hậu tố mã (ví dụ MS05*2 -> tìm MS05)
+    base_code = code_clean.replace("*2", "").strip()
+    if base_code in MISA_INVENTORY:
+        item = dict(MISA_INVENTORY[base_code])
+        if "*2" in code_clean or is_pair_hint:
+            item["is_pair"] = True
+        return item
+        
+    # 3. Tra cứu trực tiếp từ API MISA eShop theo filter mã
+    print(f"[MISA LOOKUP] Đang tra cứu mã hàng mới từ MISA eShop API: {base_code}...")
+    found_items = fetch_misa_inventory_items(search=base_code)
+    matched = None
+    for it in found_items:
+        it_sku = it.get("sku", "").strip()
+        if it_sku.lower() == base_code.lower() or it_sku.lower() == code_clean.lower():
+            matched = it
+            break
+    if not matched and found_items:
+        matched = found_items[0]
+        
+    if matched:
+        is_pair = ("*2" in code_clean) or is_pair_hint or ("đôi" in matched.get("name", "").lower()) or ("bộ" in matched.get("name", "").lower())
+        built_item = {
+            "id": matched["id"],
+            "sku": matched["sku"],
+            "name": matched["name"],
+            "unit_id": matched.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061",
+            "unit_name": matched.get("unit_name") or "Cái",
+            "is_pair": is_pair
+        }
+        MISA_INVENTORY[code_clean] = built_item
+        print(f"[MISA LOOKUP] ✅ Đã tìm thấy và map mã MISA mới: {code_clean} -> {built_item['name']}")
+        return built_item
+        
+    print(f"[MISA LOOKUP] ⚠️ Không tìm thấy mã {code_clean} trên MISA, sử dụng mặc định.")
+    return None
+
 # --- QUẢN LÝ KHÁCH HÀNG MISA (TỰ ĐỘNG LƯU / TÌM KHÁCH HÀNG) ---
 def ensure_misa_customer(name, phone, address, province, district, ward):
     token = get_misa_token()
@@ -261,9 +345,10 @@ def push_order_to_misa(order):
             misa_sku = m_sku.group(1).strip()
 
     matched_item = None
-    if misa_sku and misa_sku in MISA_INVENTORY:
-        matched_item = MISA_INVENTORY[misa_sku]
-    else:
+    is_pair_req = "đôi" in str(order.get("variant", "1 Đôi")).lower()
+    if misa_sku:
+        matched_item = lookup_misa_item(misa_sku, is_pair_hint=is_pair_req)
+    if not matched_item:
         size_str = str(order.get("size", "5mm")).strip()
         variant = str(order.get("variant", "1 Đôi")).strip()
         size_key = "5mm"
@@ -272,8 +357,8 @@ def push_order_to_misa(order):
                 size_key = k
                 break
         sku_map = SIZE_TO_SKU.get(size_key, SIZE_TO_SKU["5mm"])
-        chosen_sku = sku_map.get("1 Đôi" if "đôi" in variant.lower() else "1 Chiếc", "BNM6B01")
-        matched_item = MISA_INVENTORY.get(chosen_sku, DEFAULT_ITEM)
+        chosen_sku = sku_map.get("1 Đôi" if is_pair_req else "1 Chiếc", "BNM6B01")
+        matched_item = lookup_misa_item(chosen_sku, is_pair_hint=is_pair_req) or DEFAULT_ITEM
 
     # 2. Tính toán đơn giá & số lượng
     raw_price = str(order.get("price", "459000"))
@@ -638,6 +723,15 @@ class LocalServerHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({"status": "healthy", "service": "MISA Sync Runner"}).encode())
+            return
+        if parsed.path in ["/items", "/misa/items", "/inventory"]:
+            qs = parse_qs(parsed.query)
+            search = (qs.get("search") or [""])[0]
+            items = fetch_misa_inventory_items(search=search)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps({"ok": True, "items": items, "total": len(items)}, ensure_ascii=False).encode('utf-8'))
             return
         self.send_response(404)
         self.end_headers()

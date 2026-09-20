@@ -903,21 +903,30 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         <table class="price-editor-table" id="tableVN">
           <thead>
             <tr>
-              <th style="width:130px;">Phân loại</th>
-              <th style="width:110px;">Size đá</th>
-              <th style="width:110px;">Mã SKU</th>
-              <th style="width:110px;">Tồn kho</th>
+              <th style="width:120px;">Phân loại</th>
+              <th style="width:100px;">Size đá</th>
+              <th style="width:160px;">Mã SKU MISA (Lô hàng)</th>
+              <th style="width:100px;">Tồn kho</th>
               <th>Giá gốc (VNĐ)</th>
               <th>Giá bán ưu đãi (VNĐ)</th>
-              <th style="width:60px; text-align:center;">Xóa</th>
+              <th style="width:50px; text-align:center;">Xóa</th>
             </tr>
           </thead>
           <tbody id="tbodyVN"></tbody>
         </table>
 
-        <div class="table-toolbar">
-          <button type="button" class="btn2" onclick="addPriceRow('tbodyVN', {type:'1 Đôi', size:'5mm', code:'MS05*2', stock:'50', oldPrice:'647895', salePrice:'459999'}, false)">➕ Thêm dòng Size mới</button>
-          <button type="button" class="btn2" onclick="resetDefaultPrices('tbodyVN', false)">🔄 Nạp bảng giá mặc định VN</button>
+        <div class="table-toolbar" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:12px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn2" onclick="addPriceRow('tbodyVN', {type:'1 Đôi', size:'5mm', code:'MS051', stock:'50', oldPrice:'647895', salePrice:'459999'}, false)">➕ Thêm dòng Size mới</button>
+            <button type="button" class="btn2" onclick="resetDefaultPrices('tbodyVN', false)">🔄 Nạp bảng giá mặc định VN</button>
+            <button type="button" class="btn2" id="btnSyncMisaCatalog" onclick="fetchMisaInventoryFromRunner()" style="background:#059669; color:#fff; font-weight:700; border:none; padding:8px 14px; border-radius:8px;">
+              🔄 Tải Hàng Hóa MISA eShop API
+            </button>
+          </div>
+          <span id="misaCatalogStatus" style="font-size:12.5px; color:#a7f3d0; font-weight:600;"></span>
+        </div>
+      </div>
+      <datalist id="misaInventoryDatalist"></datalist>
     </section>
 
     <!-- TAB 2: SHOP & CHUYỂN KHOẢN -->
@@ -992,6 +1001,22 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <div style="background:#161622; border:1px solid rgba(37,99,235,0.3); border-radius:12px; padding:14px;">
         <p style="font-size:13px; color:#93c5fd; line-height:1.6;">
           💡 <b>Quy trình hoạt động:</b> Khi nhân viên chốt đơn xong trên trang Admin hoặc trên Telegram &rarr; Bấm <b>[ 🚀 Đẩy eShop ]</b> &rarr; Đơn hàng sẽ tự động bay sang mục <b>Đơn đặt hàng (Chờ duyệt)</b> trên MISA eShop, đồng thời tin nhắn trên Telegram sẽ <b>tự động được xóa sạch</b> (Inbox Zero)!
+        </p>
+      </div>
+
+      <!-- PHẦN QUẢN LÝ MÃ HÀNG TỪNG LÔ MISA -->
+      <div style="background:#13151f; border:1px solid #2d2f45; border-radius:12px; padding:16px; margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <div>
+            <h3 style="margin:0; font-size:16px; color:var(--gold-light);">🏷️ Gắn Mã Sản Phẩm MISA eShop Theo Từng Lô Hàng</h3>
+            <p class="small" style="margin:4px 0 0 0;">Mỗi lô hàng nhập về MISA eShop có thể có mã khác nhau. Quản trị viên gắn mã MISA tương ứng cho từng kích cỡ & phân loại.</p>
+          </div>
+          <button type="button" class="btn2" onclick="fetchMisaInventoryFromRunner()" style="background:#059669; color:#fff; font-weight:700; border:none; padding:8px 16px; border-radius:8px;">
+            🔄 Tải Hàng Hóa MISA eShop API
+          </button>
+        </div>
+        <p class="small" style="color:#94a3b8; line-height:1.6;">
+          💡 <b>Cách sử dụng:</b> Bạn có thể chọn hoặc gõ mã MISA trực tiếp trong cột <b>"Mã SKU MISA (Lô hàng)"</b> tại tab <b>"Bảng giá & Tồn kho"</b>. Mọi mã bạn chọn sẽ là <b>mã cố định ban đầu</b> được hệ thống tự động gán vào đơn hàng ngay khi khách ấn mua trên website!
         </p>
       </div>
     </section>
@@ -1529,7 +1554,7 @@ function createPriceRowHtml(item = {}, isTW = false) {
     <tr>
       <td><select class="row-type">${typeOptions}</select></td>
       <td><input class="row-size" value="${size}" placeholder="VD: 5mm"></td>
-      <td><input class="row-code" value="${code}" placeholder="VD: MS05"></td>
+      <td><input class="row-code" list="misaInventoryDatalist" value="${code}" placeholder="Chọn/gõ mã MISA" style="color:var(--gold-light); font-weight:700;"></td>
       <td><input class="row-stock" type="number" value="${stock}" style="color:#6ee7b7; font-weight:700;"></td>
       <td><input class="row-old-price" value="${oldPrice}" placeholder="VD: 647895"></td>
       <td><input class="row-sale-price" value="${salePrice}" placeholder="VD: 459999" style="color:#fca5a5; font-weight:700;"></td>
@@ -1578,6 +1603,109 @@ function getPriceTableData(tbodyId) {
     oldPrice: tr.querySelector(".row-old-price")?.value.trim() || "",
     salePrice: tr.querySelector(".row-sale-price")?.value.trim() || ""
   })).filter(item => item.size || item.salePrice);
+}
+
+// ================= TẢI & ĐỒNG BỘ DANH MỤC HÀNG HÓA TỪ MISA ESHOP API =================
+let misaItemsCatalog = [];
+
+async function fetchMisaInventoryFromRunner(showNotice = true) {
+  const statusEl = document.getElementById("misaCatalogStatus");
+  const btn = document.getElementById("btnSyncMisaCatalog");
+  if (statusEl) {
+    statusEl.innerText = "⏳ Đang kết nối MISA Open API...";
+    statusEl.style.color = "#93c5fd";
+  }
+  if (btn) btn.disabled = true;
+
+  try {
+    let items = [];
+    try {
+      const resp = await fetch("http://127.0.0.1:8899/items", { method: "GET" });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.ok && Array.isArray(data.items)) {
+          items = data.items;
+        }
+      }
+    } catch (e) {
+      console.log("Local runner not reached directly, checking cached catalog from Apps Script...");
+    }
+
+    if (!items.length && window.cachedMisaCatalog && window.cachedMisaCatalog.length) {
+      items = window.cachedMisaCatalog;
+    }
+
+    if (items.length) {
+      misaItemsCatalog = items;
+      window.cachedMisaCatalog = items;
+      updateMisaDatalist(items);
+      updateMisaModalSelect(items);
+      if (statusEl) {
+        statusEl.innerHTML = `✅ Đã nạp <b>${items.length}</b> mặt hàng từ MISA eShop!`;
+        statusEl.style.color = "#a7f3d0";
+      }
+
+      // Lưu cache lên Google Sheet nếu là Admin
+      if (currentAuthUser && currentAuthUser.role === "Admin" && currentAuthPassword) {
+        fetch(APP_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "saveMisaInventoryCache",
+            username: currentAuthUsername,
+            password: currentAuthPassword,
+            items: items.slice(0, 100)
+          })
+        }).catch(err => console.log("Cache save error:", err));
+      }
+      if (showNotice) showStatus(`✅ Đã đồng bộ thành công ${items.length} mặt hàng từ MISA eShop!`, true);
+    } else {
+      if (statusEl) {
+        statusEl.innerHTML = `⚠️ Chưa kết nối được MISA Runner (127.0.0.1:8899). Đang dùng từ điển sẵn có.`;
+        statusEl.style.color = "#fcd34d";
+      }
+      if (showNotice) showStatus("⚠️ Chưa kết nối được MISA Runner (127.0.0.1:8899). Đang dùng từ điển sẵn có.", false);
+    }
+  } catch (err) {
+    console.error("fetchMisaInventory error:", err);
+    if (statusEl) statusEl.innerText = "❌ Lỗi: " + err.message;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function updateMisaDatalist(items) {
+  const datalist = document.getElementById("misaInventoryDatalist");
+  if (!datalist || !items) return;
+  datalist.innerHTML = "";
+  items.forEach(it => {
+    const opt = document.createElement("option");
+    opt.value = it.sku;
+    opt.label = `${it.name} (Tồn: ${it.stock || 0} ${it.unit_name || 'Cái'})`;
+    datalist.appendChild(opt);
+  });
+}
+
+function updateMisaModalSelect(items) {
+  const sel = document.getElementById("editMisaSku");
+  if (!sel || !items || !items.length) return;
+  const currentVal = sel.value;
+  
+  let apiGroup = sel.querySelector("optgroup[label*='MISA eShop API']");
+  if (!apiGroup) {
+    apiGroup = document.createElement("optgroup");
+    apiGroup.label = "🛒 Danh mục từ MISA eShop Open API (Trực tiếp)";
+    sel.insertBefore(apiGroup, sel.firstChild);
+  }
+  apiGroup.innerHTML = "";
+  items.forEach(it => {
+    const opt = document.createElement("option");
+    opt.value = it.sku;
+    opt.innerText = `${it.sku} - ${it.name} [Tồn: ${it.stock || 0}]`;
+    opt.dataset.sku = it.sku;
+    apiGroup.appendChild(opt);
+  });
+  if (currentVal) sel.value = currentVal;
 }
 
 // Xử lý Đăng nhập
@@ -1816,6 +1944,18 @@ function fillForm(config) {
     const el = document.querySelector('[name="bankAccount"]');
     if (el) el.value = formatPhoneVN(config.bankAccount);
   }
+
+  if (config.misaInventoryCache) {
+    try {
+      const parsedCache = typeof config.misaInventoryCache === "string" ? JSON.parse(config.misaInventoryCache) : config.misaInventoryCache;
+      if (Array.isArray(parsedCache) && parsedCache.length) {
+        window.cachedMisaCatalog = parsedCache;
+        updateMisaDatalist(parsedCache);
+        updateMisaModalSelect(parsedCache);
+      }
+    } catch(e) {}
+  }
+  setTimeout(() => fetchMisaInventoryFromRunner(false), 500);
 }
 
 // Tải cấu hình từ Sheet
@@ -2006,9 +2146,26 @@ function openOrderModal(orderId) {
     if (mMatch) targetSku = mMatch[1].trim();
   }
   if (!targetSku) {
-    targetSku = autoDetectMisaSku($("#editOrderSize").value, $("#editOrderVariant").value);
+    const pTable = getPriceTableData("tbodyVN");
+    const matched = pTable.find(it => it.type === $("#editOrderVariant").value && it.size === $("#editOrderSize").value);
+    if (matched && matched.code) {
+      targetSku = matched.code;
+    } else {
+      targetSku = autoDetectMisaSku($("#editOrderSize").value, $("#editOrderVariant").value);
+    }
   }
-  $("#editMisaSku").value = targetSku;
+  
+  if (targetSku) {
+    let optFound = Array.from($("#editMisaSku").options).some(o => o.value === targetSku);
+    if (!optFound) {
+      const newOpt = document.createElement("option");
+      newOpt.value = targetSku;
+      newOpt.text = `${targetSku} (Mã lô theo đơn)`;
+      newOpt.selected = true;
+      $("#editMisaSku").appendChild(newOpt);
+    }
+    $("#editMisaSku").value = targetSku;
+  }
 
   clearStatus("#modalStatus");
   $("#orderEditModal").style.display = "flex";
