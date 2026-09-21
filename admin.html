@@ -795,6 +795,15 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   .tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 6px; }
   .tab { flex-shrink: 0; }
 }
+
+@keyframes pulseGlow {
+  0% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.live-pulse-dot {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
 </style>
 </head>
 <body>
@@ -1134,7 +1143,10 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         <h2>📦 Danh sách Đơn hàng Mới</h2>
         <p class="small">Dữ liệu đơn hàng đồng bộ trực tiếp từ Google Sheets (Việt Nam & Đài Loan).</p>
       </div>
-      <button class="btn2" onclick="loadOrders()">🔄 Làm mới danh sách</button>
+      <div id="orderAutoSyncBadge" style="display:flex; align-items:center; gap:8px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); padding:6px 14px; border-radius:20px; font-size:12.5px; color:#6ee7b7; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+        <span class="live-pulse-dot" style="display:inline-block; width:8px; height:8px; background:#10b981; border-radius:50%;"></span>
+        <span id="orderAutoSyncText">Tự động đồng bộ: <b>Đang hoạt động</b></span>
+      </div>
     </div>
 
     <!-- THANH TÌM KIẾM & LỌC ĐƠN HÀNG THÔNG MINH -->
@@ -1178,7 +1190,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           </tr>
         </thead>
         <tbody>
-          <tr><td colspan="10" style="text-align:center; padding:24px; color:#888;">Chưa tải danh sách đơn hàng. Nhấn "Làm mới danh sách" để xem.</td></tr>
+          <tr><td colspan="10" style="text-align:center; padding:24px; color:#888;">⏳ Đang tự động tải danh sách đơn hàng từ hệ thống...</td></tr>
         </tbody>
       </table>
     </div>
@@ -2661,6 +2673,11 @@ async function handleLogin(event) {
     sessionStorage.setItem("PGD_AUTH_USER_VN", username);
     sessionStorage.setItem("PGD_AUTH_PASS_VN", password);
     sessionStorage.setItem("PGD_AUTH_INFO_VN", JSON.stringify(currentAuthUser));
+    try {
+      localStorage.setItem("PGD_AUTH_USER_VN", username);
+      localStorage.setItem("PGD_AUTH_PASS_VN", password);
+      localStorage.setItem("PGD_AUTH_INFO_VN", JSON.stringify(currentAuthUser));
+    } catch (e) {}
 
     setAuthView(true);
     if (data.config && currentAuthUser.role === "Admin") {
@@ -2668,11 +2685,20 @@ async function handleLogin(event) {
     }
     showStatus(`Xin chào ${currentAuthUser.fullName || username}! Đăng nhập thành công.`, true);
 
-    // Tự động tải đơn nếu mở từ link Telegram
+    // Kích hoạt chu kỳ tự động request đơn hàng
+    startOrderAutoSync();
+
+    // Tự động tải đơn nếu mở từ link Telegram hoặc là CSKH/Admin
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("orderId")) {
       showTabFromCode("orders");
       setTimeout(loadOrders, 300);
+    } else if (currentAuthUser.role !== "Admin") {
+      showTabFromCode("orders");
+      loadOrders(true);
+    } else {
+      // Đối với Admin: Tự động tải ngầm danh sách đơn sẵn sàng
+      loadOrders(true);
     }
 
   } catch (err) {
@@ -2751,10 +2777,19 @@ async function handleChangePassword(event) {
 // Xử lý Đăng xuất
 function handleLogout() {
   if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?")) {
+    if (orderAutoSyncTimer) {
+      clearInterval(orderAutoSyncTimer);
+      orderAutoSyncTimer = null;
+    }
     currentAuthUsername = "";
     currentAuthPassword = "";
     currentAuthUser = null;
     sessionStorage.clear();
+    try {
+      localStorage.removeItem("PGD_AUTH_USER_VN");
+      localStorage.removeItem("PGD_AUTH_PASS_VN");
+      localStorage.removeItem("PGD_AUTH_INFO_VN");
+    } catch (e) {}
     const uInput = $("#inputUsername");
     const pInput = $("#inputPassword");
     if (uInput) uInput.value = "";
@@ -2782,6 +2817,11 @@ function showTab(id) {
   if (id === "users") {
     loadUsers();
   }
+  if (id === "orders") {
+    // Tự động request lấy đơn hàng mới nhất và bật polling
+    loadOrders(true);
+    startOrderAutoSync();
+  }
 }
 
 function showTabFromCode(id) {
@@ -2795,6 +2835,10 @@ function showTabFromCode(id) {
 
   if (id === "users") {
     loadUsers();
+  }
+  if (id === "orders") {
+    loadOrders(true);
+    startOrderAutoSync();
   }
 }
 
@@ -2909,11 +2953,70 @@ $("#configForm").addEventListener("submit", async e => {
 });
 
 let currentOrdersList = [];
+let orderAutoSyncTimer = null;
+let isFetchingOrders = false;
+let previousOrderCount = 0;
 
-// Tải danh sách đơn hàng
-async function loadOrders() {
+// Âm thanh thông báo nhẹ khi có đơn hàng mới (Dùng Web Audio API)
+function playNewOrderChime() {
   try {
-    showStatus("Đang tải danh sách đơn hàng...");
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // Nốt D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // Nốt A5
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (e) {}
+}
+
+// Cập nhật trạng thái hiển thị trên huy hiệu tự động đồng bộ
+function updateAutoSyncStatus(htmlText, isSyncing = false) {
+  const textEl = document.getElementById("orderAutoSyncText");
+  if (!textEl) return;
+  if (isSyncing) {
+    textEl.innerHTML = `Tự động đồng bộ: <span style="color:#93c5fd;">Đang quét đơn mới...</span>`;
+  } else if (htmlText) {
+    textEl.innerHTML = htmlText;
+  }
+}
+
+// Khởi chạy tiến trình tự động quét đơn ngầm (Polling mỗi 20s)
+function startOrderAutoSync() {
+  if (orderAutoSyncTimer) clearInterval(orderAutoSyncTimer);
+  orderAutoSyncTimer = setInterval(() => {
+    if (currentAuthPassword && !isFetchingOrders) {
+      const ordersPanel = document.getElementById("orders");
+      const isOrdersActive = ordersPanel && ordersPanel.classList.contains("active");
+      const isStaff = (currentAuthUser && (currentAuthUser.role === "CSKH" || currentAuthUser.role === "Sale" || currentAuthUser.role === "Kho"));
+      // Tự động quét khi đang ở tab Đơn hàng hoặc là nhân viên CSKH
+      if (isOrdersActive || isStaff) {
+        loadOrders(true);
+      }
+    }
+  }, 20000);
+}
+
+// Tải danh sách đơn hàng (hỗ trợ silent=true cho chế độ tự động request ngầm)
+async function loadOrders(silent = false) {
+  if (isFetchingOrders) return;
+  isFetchingOrders = true;
+
+  try {
+    if (!silent) {
+      showStatus("Đang tải danh sách đơn hàng...");
+      updateAutoSyncStatus(`Tự động đồng bộ: <span style="color:#93c5fd;">Đang tải dữ liệu...</span>`, true);
+    } else {
+      updateAutoSyncStatus(null, true);
+    }
+
     const payload = authPayload({ action: "orders" });
     const res = await fetch(APP_ENDPOINT, {
       method: "POST",
@@ -2923,17 +3026,42 @@ async function loadOrders() {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Không tải được danh sách đơn hàng!");
     
-    currentOrdersList = data.orders || [];
+    const newOrders = data.orders || [];
+
+    // Kiểm tra nếu có đơn mới xuất hiện trong phiên
+    if (previousOrderCount > 0 && newOrders.length > previousOrderCount) {
+      playNewOrderChime();
+      const diff = newOrders.length - previousOrderCount;
+      showStatus(`🎉 Có ${diff} đơn hàng mới từ khách!`, true);
+    }
+    previousOrderCount = newOrders.length;
+    currentOrdersList = newOrders;
+
+    // Lưu cache cục bộ để lần sau mở trang hiển thị ngay tức thì 0 giây
+    try {
+      localStorage.setItem("PGD_ORDERS_CACHE_VN", JSON.stringify(currentOrdersList));
+    } catch (e) {}
+
     const searchVal = $("#orderSearchInput") ? $("#orderSearchInput").value : "";
     handleOrderSearch(searchVal);
 
-    showTabFromCode("orders");
-    showStatus(`Đã tải xong danh sách đơn hàng (${currentOrdersList.length} đơn gần nhất).`);
+    if (!silent) {
+      showTabFromCode("orders");
+      showStatus(`Đã tải xong danh sách đơn hàng (${currentOrdersList.length} đơn gần nhất).`);
+    }
+
+    const nowStr = new Date().toLocaleTimeString("vi-VN");
+    updateAutoSyncStatus(`Tự động đồng bộ: <b>Vừa xong (${nowStr})</b>`);
 
     // Kiểm tra nếu có tham số orderId từ Telegram mở sang
     checkUrlDeepLink();
   } catch (e) {
-    showStatus(e.message, false);
+    if (!silent) {
+      showStatus(e.message, false);
+      updateAutoSyncStatus(`Tự động đồng bộ: <span style="color:#f87171;">Lỗi kết nối</span>`);
+    }
+  } finally {
+    isFetchingOrders = false;
   }
 }
 
@@ -3727,9 +3855,27 @@ window.addEventListener("DOMContentLoaded", () => {
   renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN);
   renderMisaTabCatalog();
 
-  const savedUser = sessionStorage.getItem("PGD_AUTH_USER_VN");
-  const savedPass = sessionStorage.getItem("PGD_AUTH_PASS_VN");
-  const savedInfo = sessionStorage.getItem("PGD_AUTH_INFO_VN");
+  // 1. Nạp ngay danh sách đơn hàng từ cache localStorage để hiển thị tức thì 0 giây
+  try {
+    const cachedOrdersJson = localStorage.getItem("PGD_ORDERS_CACHE_VN");
+    if (cachedOrdersJson) {
+      const cachedOrders = JSON.parse(cachedOrdersJson);
+      if (Array.isArray(cachedOrders) && cachedOrders.length > 0) {
+        currentOrdersList = cachedOrders;
+        previousOrderCount = currentOrdersList.length;
+        renderOrdersTable(currentOrdersList);
+        const autoSyncEl = document.getElementById("orderAutoSyncText");
+        if (autoSyncEl) {
+          autoSyncEl.innerHTML = `Tự động đồng bộ: <b>Bản lưu gần nhất (${cachedOrders.length} đơn)</b>`;
+        }
+      }
+    }
+  } catch (e) {}
+
+  // 2. Kiểm tra thông tin phiên đăng nhập (hỗ trợ cả sessionStorage & localStorage)
+  let savedUser = sessionStorage.getItem("PGD_AUTH_USER_VN") || localStorage.getItem("PGD_AUTH_USER_VN");
+  let savedPass = sessionStorage.getItem("PGD_AUTH_PASS_VN") || localStorage.getItem("PGD_AUTH_PASS_VN");
+  let savedInfo = sessionStorage.getItem("PGD_AUTH_INFO_VN") || localStorage.getItem("PGD_AUTH_INFO_VN");
   
   if (savedInfo) {
     try {
