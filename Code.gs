@@ -829,15 +829,17 @@ function getPublicConfigVN_() {
     currency: "VND",
     currencySymbol: "đ",
     shopName: cfg.shopName || "Phú Gia Diamond",
-    productName: cfg.productName || "Bông nụ bạc S925 Moissanite GRA",
-    salePrice: cfg.salePrice || "459999",
-    oldPrice: cfg.oldPrice || "647895",
-    discountText: cfg.discountText || "Flash Sale",
-    stockLeft: cfg.stockLeft || "17",
-    soldCount: cfg.soldCount || "1238",
-    priceTable: parsePriceTable_(cfg.priceTable),
+    productName: cfg.productNameVN || cfg.productName || "Bông nụ bạc S925 Moissanite GRA",
+    salePrice: cfg.salePriceVN || cfg.salePrice || "459999",
+    oldPrice: cfg.oldPriceVN || cfg.oldPrice || "647895",
+    discountText: cfg.discountTextVN || cfg.discountText || "Flash Sale",
+    stockLeft: cfg.stockLeftVN || cfg.stockLeft || "17",
+    soldCount: cfg.soldCountVN || cfg.soldCount || "1238",
+    priceTable: parsePriceTable_(cfg.priceTable || cfg.priceTableVN),
+    shortDescription: cfg.shortDescriptionVN || cfg.shortDescription || "Bạc thật S925, Moissanite sáng đẹp, full kiểm định GRA, tặng hộp cao cấp.",
     hotline: cfg.hotline || "0398138678",
-    zalo: cfg.zalo || "0398138678"
+    zalo: cfg.zalo || "0398138678",
+    facebookPixelId: cfg.facebookPixelId || ""
   };
 }
 
@@ -847,6 +849,16 @@ function saveConfig_(config) {
   sheet.appendRow(["key", "value"]);
 
   const all = Object.assign(defaultConfigVN_(), config);
+  // Đồng bộ song song cả 2 key
+  if (all.salePriceVN && !all.salePrice) all.salePrice = all.salePriceVN;
+  if (all.salePrice && !all.salePriceVN) all.salePriceVN = all.salePrice;
+  if (all.oldPriceVN && !all.oldPrice) all.oldPrice = all.oldPriceVN;
+  if (all.oldPrice && !all.oldPriceVN) all.oldPriceVN = all.oldPrice;
+  if (all.productNameVN && !all.productName) all.productName = all.productNameVN;
+  if (all.productName && !all.productNameVN) all.productNameVN = all.productName;
+  if (all.priceTable && !all.priceTableVN) all.priceTableVN = all.priceTable;
+  if (all.priceTableVN && !all.priceTable) all.priceTable = all.priceTableVN;
+
   const privateKeys = [
     "telegramBotToken", "telegramChatId", "adminEmail", "newAdminKey", "adminUrl",
     "misaAppId", "misaAppKey", "misaCompanyName", "misaAppUrl"

@@ -1307,7 +1307,7 @@ async function loadSiteConfig(){
   if(!API_URL || API_URL.includes("DÁN_LINK")) return;
 
   try{
-    const res = await fetch(API_URL + "?action=config&market=VN");
+    const res = await fetch(API_URL + "?action=config&market=VN&_t=" + Date.now());
     const cfg = await res.json();
     if(!cfg || !cfg.ok) return;
 
@@ -1456,6 +1456,11 @@ if(phoneEl){
 }
 
 initPricing();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", loadSiteConfig);
+} else {
+  loadSiteConfig();
+}
 window.addEventListener("load", loadSiteConfig);
 
 </script>

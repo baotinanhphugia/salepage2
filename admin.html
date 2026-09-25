@@ -1617,17 +1617,17 @@ let currentAuthUser = null;
 // BẢNG GIÁ MẪU MẶC ĐỊNH
 const DEFAULT_PRICES_VN = [
   {"type":"1 Chiếc","size":"4mm","code":"MS04","stock":"106","oldPrice":"295000","salePrice":"229999"},
-  {"type":"1 Chiếc","size":"4.5mm","code":"MS04.5","stock":"2","oldPrice":"315000","salePrice":"249000"},
+  {"type":"1 Chiếc","size":"4.5mm","code":"MS 04.5-1","stock":"2","oldPrice":"315000","salePrice":"249000"},
   {"type":"1 Chiếc","size":"5mm","code":"MS05","stock":"105","oldPrice":"332000","salePrice":"259000"},
-  {"type":"1 Chiếc","size":"6mm","code":"MS06","stock":"50","oldPrice":"444000","salePrice":"305999"},
+  {"type":"1 Chiếc","size":"6mm","code":"MS06-1","stock":"50","oldPrice":"444000","salePrice":"305999"},
   {"type":"1 Chiếc","size":"6.8mm","code":"MS06.8","stock":"31","oldPrice":"556000","salePrice":"369000"},
   {"type":"1 Chiếc","size":"7.5mm","code":"MS07.5","stock":"41","oldPrice":"700000","salePrice":"409999"},
-  {"type":"1 Đôi","size":"4mm","code":"MS04*2","stock":"56","oldPrice":"600303","salePrice":"399999"},
-  {"type":"1 Đôi","size":"4.5mm","code":"MS04.5*2","stock":"3","oldPrice":"616216","salePrice":"439999"},
-  {"type":"1 Đôi","size":"5mm","code":"MS05*2","stock":"46","oldPrice":"647895","salePrice":"459999"},
-  {"type":"1 Đôi","size":"6mm","code":"MS06*2","stock":"25","oldPrice":"804872","salePrice":"549999"},
-  {"type":"1 Đôi","size":"6.8mm","code":"MS06.8*2","stock":"6","oldPrice":"953721","salePrice":"659999"},
-  {"type":"1 Đôi","size":"7.5mm","code":"MS07.5*2","stock":"111","oldPrice":"1204000","salePrice":"759999"}
+  {"type":"1 Đôi","size":"4mm","code":"MS041","stock":"56","oldPrice":"600303","salePrice":"399999"},
+  {"type":"1 Đôi","size":"4.5mm","code":"BNM4SB01","stock":"3","oldPrice":"616216","salePrice":"439999"},
+  {"type":"1 Đôi","size":"5mm","code":"MS051","stock":"46","oldPrice":"647895","salePrice":"459999"},
+  {"type":"1 Đôi","size":"6mm","code":"BNM6B01","stock":"25","oldPrice":"804872","salePrice":"549999"},
+  {"type":"1 Đôi","size":"6.8mm","code":"MS0681","stock":"6","oldPrice":"953721","salePrice":"659999"},
+  {"type":"1 Đôi","size":"7.5mm","code":"MS0751","stock":"111","oldPrice":"1204000","salePrice":"759999"}
 ];
 
 const DEFAULT_PRICES_TW = [
@@ -2856,14 +2856,36 @@ function authPayload(extra = {}) {
 
 function formToObject() {
   const data = Object.fromEntries(new FormData($("#configForm")).entries());
-  data.priceTable = JSON.stringify(getPriceTableData("tbodyVN"));
+  const pTable = getPriceTableData("tbodyVN");
+  data.priceTable = JSON.stringify(pTable);
+  data.priceTableVN = JSON.stringify(pTable);
+
+  // Đảm bảo tương thích ngược 2 chiều: cả key có hậu tố VN và key chuẩn không hậu tố VN
+  if (data.salePriceVN) data.salePrice = data.salePriceVN;
+  if (data.oldPriceVN) data.oldPrice = data.oldPriceVN;
+  if (data.productNameVN) data.productName = data.productNameVN;
+  if (data.discountTextVN) data.discountText = data.discountTextVN;
+  if (data.stockLeftVN) data.stockLeft = data.stockLeftVN;
+  if (data.soldCountVN) data.soldCount = data.soldCountVN;
+  if (data.shortDescriptionVN) data.shortDescription = data.shortDescriptionVN;
+
   return data;
 }
 
 function fillForm(config) {
   if (!config) return;
 
-  Object.entries(config).forEach(([k, v]) => {
+  // Hỗ trợ đọc cả key chuẩn và key có hậu tố VN
+  const normalizedConfig = { ...config };
+  if (!normalizedConfig.productNameVN && normalizedConfig.productName) normalizedConfig.productNameVN = normalizedConfig.productName;
+  if (!normalizedConfig.salePriceVN && normalizedConfig.salePrice) normalizedConfig.salePriceVN = normalizedConfig.salePrice;
+  if (!normalizedConfig.oldPriceVN && normalizedConfig.oldPrice) normalizedConfig.oldPriceVN = normalizedConfig.oldPrice;
+  if (!normalizedConfig.discountTextVN && normalizedConfig.discountText) normalizedConfig.discountTextVN = normalizedConfig.discountText;
+  if (!normalizedConfig.stockLeftVN && normalizedConfig.stockLeft) normalizedConfig.stockLeftVN = normalizedConfig.stockLeft;
+  if (!normalizedConfig.soldCountVN && normalizedConfig.soldCount) normalizedConfig.soldCountVN = normalizedConfig.soldCount;
+  if (!normalizedConfig.shortDescriptionVN && normalizedConfig.shortDescription) normalizedConfig.shortDescriptionVN = normalizedConfig.shortDescription;
+
+  Object.entries(normalizedConfig).forEach(([k, v]) => {
     const el = document.querySelector(`[name="${k}"]`);
     if (el) {
       el.value = v !== undefined && v !== null ? v : "";
