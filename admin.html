@@ -2995,6 +2995,17 @@ $("#configForm").addEventListener("submit", async e => {
     if (!data.ok) throw new Error(data.error || "Lưu thất bại!");
 
     showStatus("Đã lưu toàn bộ cấu hình & Bảng giá vào Google Sheets thành công.");
+    
+    // Lưu ngay cấu hình vào LocalStorage của trình duyệt để Landing page nhận diện tức thì 0ms
+    try {
+      localStorage.setItem("PGD_SITE_CONFIG_VN", JSON.stringify(configData));
+      localStorage.setItem("PGD_SITE_CONFIG_UPDATED_AT", String(Date.now()));
+      if (typeof BroadcastChannel !== "undefined") {
+        const bc = new BroadcastChannel("pgd_config_channel");
+        bc.postMessage({ type: "CONFIG_UPDATED", config: configData });
+      }
+    } catch(e) {}
+
     if (inlineStatus) {
       inlineStatus.style.background = "rgba(16, 185, 129, 0.2)";
       inlineStatus.style.color = "#6ee7b7";

@@ -1302,8 +1302,101 @@ addressEl?.addEventListener("input", () => {
 
 
 
+/* ===== ÁP DỤNG CẤU HÌNH LÊN TRANG LANDING PAGE ===== */
+function applyConfigData(c){
+  if(!c) return;
+
+  // 1. Tên sản phẩm
+  const prodName = c.productName || c.productNameVN;
+  if(prodName){
+    document.title = prodName;
+    document.querySelectorAll(".title").forEach(el => el.innerText = prodName);
+  }
+
+  // 2. Bảng giá chi tiết từng size
+  if(c.priceTable || c.priceTableVN){
+    priceTable = parsePriceTable(c.priceTable || c.priceTableVN);
+    renderPriceTable();
+    syncSizeOptions();
+  }
+
+  // 3. Giá bán mặc định & Giá gốc mặc định
+  const saleVal = c.salePrice || c.salePriceVN;
+  const oldVal = c.oldPrice || c.oldPriceVN;
+  if(saleVal){
+    setDisplayedPrices(saleVal, oldVal || "");
+  } else {
+    updateSelectedPrice();
+  }
+
+  // 4. Text giảm giá
+  const discText = c.discountText || c.discountTextVN;
+  if(discText){
+    document.querySelectorAll(".sale").forEach(el=>{
+      el.innerText = discText;
+    });
+  }
+
+  // 5. Tồn kho / Số lượng còn lại
+  const stockVal = c.stockLeft !== undefined ? c.stockLeft : c.stockLeftVN;
+  if(stockVal !== undefined && stockVal !== null && stockVal !== ""){
+    const stockNum = Number(stockVal);
+    const stockEl = document.getElementById("stockLeft");
+    if(stockEl) stockEl.innerText = stockNum;
+    const stockFill = document.getElementById("stockFill");
+    if(stockFill){
+      const percent = Math.min(100, Math.max(12, Math.round((stockNum / 50) * 100)));
+      stockFill.style.width = percent + "%";
+    }
+  }
+
+  // 6. Số lượng đã bán
+  const soldVal = c.soldCount || c.soldCountVN;
+  if(soldVal !== undefined && soldVal !== null && soldVal !== ""){
+    const soldNum = Number(soldVal);
+    soldBase = soldNum;
+    const soldEl = document.getElementById("soldCount");
+    if(soldEl) soldEl.innerText = soldNum.toLocaleString("vi-VN");
+    
+    const kCount = (soldNum >= 1000) ? (soldNum / 1000).toFixed(1).replace(".0", "") + "K+" : soldNum + "+";
+    const metaSoldEl = document.getElementById("metaSoldCount");
+    if(metaSoldEl) metaSoldEl.innerText = `Đã bán ${kCount}`;
+    const shopStatSoldEl = document.getElementById("shopStatSoldCount");
+    if(shopStatSoldEl) shopStatSoldEl.innerText = kCount;
+  }
+
+  // 7. Flash sale (phút)
+  if(c.flashMinutes){
+    const mins = Number(c.flashMinutes);
+    if(mins > 0){
+      remain = mins * 60;
+      tick();
+    }
+  }
+
+  // 8. Tên shop
+  if(c.shopName){
+    document.querySelectorAll("h2").forEach(h=>{
+      if(h.innerText.includes("Phú Gia Diamond")) h.innerText = c.shopName;
+    });
+  }
+
+  // 9. Meta Pixel
+  if(c.facebookPixelId){
+    initMetaPixel(c.facebookPixelId);
+  }
+}
+
 /* ===== Load cấu hình từ Admin Google Sheet ===== */
 async function loadSiteConfig(){
+  // Nạp tức thì từ cache localStorage (0ms) để màn hình không bị giật
+  try {
+    const cachedCfg = localStorage.getItem("PGD_SITE_CONFIG_VN");
+    if(cachedCfg){
+      applyConfigData(JSON.parse(cachedCfg));
+    }
+  } catch(e) {}
+
   if(!API_URL || API_URL.includes("DÁN_LINK")) return;
 
   try{
@@ -1312,86 +1405,12 @@ async function loadSiteConfig(){
     if(!cfg || !cfg.ok) return;
 
     const c = cfg.config || {};
+    applyConfigData(c);
 
-    // 1. Tên sản phẩm
-    const prodName = c.productName || c.productNameVN;
-    if(prodName){
-      document.title = prodName;
-      document.querySelectorAll(".title").forEach(el => el.innerText = prodName);
-    }
-
-    // 2. Bảng giá chi tiết từng size
-    if(c.priceTable || c.priceTableVN){
-      priceTable = parsePriceTable(c.priceTable || c.priceTableVN);
-      renderPriceTable();
-      syncSizeOptions();
-    }
-
-    // 3. Giá bán mặc định & Giá gốc mặc định
-    const saleVal = c.salePrice || c.salePriceVN;
-    const oldVal = c.oldPrice || c.oldPriceVN;
-    if(saleVal){
-      setDisplayedPrices(saleVal, oldVal || "");
-    } else {
-      updateSelectedPrice();
-    }
-
-    // 4. Text giảm giá
-    const discText = c.discountText || c.discountTextVN;
-    if(discText){
-      document.querySelectorAll(".sale").forEach(el=>{
-        el.innerText = discText;
-      });
-    }
-
-    // 5. Tồn kho / Số lượng còn lại
-    const stockVal = c.stockLeft !== undefined ? c.stockLeft : c.stockLeftVN;
-    if(stockVal !== undefined && stockVal !== null && stockVal !== ""){
-      const stockNum = Number(stockVal);
-      const stockEl = document.getElementById("stockLeft");
-      if(stockEl) stockEl.innerText = stockNum;
-      const stockFill = document.getElementById("stockFill");
-      if(stockFill){
-        const percent = Math.min(100, Math.max(12, Math.round((stockNum / 50) * 100)));
-        stockFill.style.width = percent + "%";
-      }
-    }
-
-    // 6. Số lượng đã bán
-    const soldVal = c.soldCount || c.soldCountVN;
-    if(soldVal !== undefined && soldVal !== null && soldVal !== ""){
-      const soldNum = Number(soldVal);
-      soldBase = soldNum;
-      const soldEl = document.getElementById("soldCount");
-      if(soldEl) soldEl.innerText = soldNum.toLocaleString("vi-VN");
-      
-      const kCount = (soldNum >= 1000) ? (soldNum / 1000).toFixed(1).replace(".0", "") + "K+" : soldNum + "+";
-      const metaSoldEl = document.getElementById("metaSoldCount");
-      if(metaSoldEl) metaSoldEl.innerText = `Đã bán ${kCount}`;
-      const shopStatSoldEl = document.getElementById("shopStatSoldCount");
-      if(shopStatSoldEl) shopStatSoldEl.innerText = kCount;
-    }
-
-    // 7. Flash sale (phút)
-    if(c.flashMinutes){
-      const mins = Number(c.flashMinutes);
-      if(mins > 0){
-        remain = mins * 60;
-        tick();
-      }
-    }
-
-    // 8. Tên shop
-    if(c.shopName){
-      document.querySelectorAll("h2").forEach(h=>{
-        if(h.innerText.includes("Phú Gia Diamond")) h.innerText = c.shopName;
-      });
-    }
-
-    // 9. Meta Pixel
-    if(c.facebookPixelId){
-      initMetaPixel(c.facebookPixelId);
-    }
+    // Lưu vào cache
+    try {
+      localStorage.setItem("PGD_SITE_CONFIG_VN", JSON.stringify(c));
+    } catch(e) {}
 
   }catch(e){
     console.log("Không tải được cấu hình admin", e);
@@ -1494,6 +1513,25 @@ if (document.readyState === "loading") {
   loadSiteConfig();
 }
 window.addEventListener("load", loadSiteConfig);
+
+// Lắng nghe cập nhật trực tiếp tức thì 0ms từ trang Admin (ngay khi Admin bấm Lưu)
+try {
+  if (typeof BroadcastChannel !== "undefined") {
+    const bc = new BroadcastChannel("pgd_config_channel");
+    bc.onmessage = (event) => {
+      if (event.data && event.data.type === "CONFIG_UPDATED" && event.data.config) {
+        console.log("⚡ Cập nhật cấu hình tức thì từ Admin qua BroadcastChannel");
+        applyConfigData(event.data.config);
+      }
+    };
+  }
+  window.addEventListener("storage", (e) => {
+    if (e.key === "PGD_SITE_CONFIG_VN" && e.newValue) {
+      console.log("⚡ Cập nhật cấu hình tức thì từ Admin qua Storage Event");
+      try { applyConfigData(JSON.parse(e.newValue)); } catch(err) {}
+    }
+  });
+} catch(e) {}
 
 </script>
 </body>
