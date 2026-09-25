@@ -716,7 +716,7 @@ button#btnSubmit {
 <section class="priceBox">
   <div><span class="price">459.999đ</span><span class="old">647.895đ</span><span class="sale">Flash Sale</span></div>
   <div class="title">Bông nụ bạc S925 kim cương Moissanite cao cấp full kiểm định GRA</div>
-  <div class="meta"><span class="star">★</span><b>4.9/5</b><span>(mẫu hiển thị)</span><span>|</span><span>Đã bán 1.2K+</span></div>
+  <div class="meta"><span class="star">★</span><b>4.9/5</b><span>(mẫu hiển thị)</span><span>|</span><span id="metaSoldCount">Đã bán 1.2K+</span></div>
 </section>
 
 <div class="row tag">🏆 Sản phẩm nổi bật • Bông tai Moissanite bán chạy</div>
@@ -791,7 +791,7 @@ button#btnSubmit {
   </div>
   <div class="shopStats">
     <div><b>50+</b>Mặt hàng</div>
-    <div><b>1.2K+</b>Đã bán</div>
+    <div><b id="shopStatSoldCount">1.2K+</b>Đã bán</div>
     <div><b>99%</b>Phản hồi</div>
     <div><b>24h</b>Xử lý</div>
   </div>
@@ -1105,8 +1105,8 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   btn.disabled = true;
   btn.innerText = "ĐANG GỬI ĐƠN...";
   const fd = new FormData(e.target);
-  const data = Object.fromEntries(fd.entries());
-  data.product = "Bông nụ bạc S925 kim cương Moissanite cao cấp";
+  const currentTitle = document.querySelector('.title')?.innerText || "Bông nụ bạc S925 4 chấu kim cương Moissanite cao cấp full kiểm định GRA";
+  data.product = currentTitle;
   data.price = data.price || document.querySelector('[name="price"]')?.value || "459999";
   data.source = location.href;
   data.adminUrl = location.href.replace(/index\.html.*/, "admin.html");
@@ -1313,50 +1313,82 @@ async function loadSiteConfig(){
 
     const c = cfg.config || {};
 
-    const setText = (selector, value) => {
-      if(value === undefined || value === null || value === "") return;
-      document.querySelectorAll(selector).forEach(el => el.innerText = value);
-    };
-
-    if(c.productName){
-      document.title = c.productName;
-      const titleEl = document.querySelector(".title");
-      if(titleEl) titleEl.innerText = c.productName;
+    // 1. Tên sản phẩm
+    const prodName = c.productName || c.productNameVN;
+    if(prodName){
+      document.title = prodName;
+      document.querySelectorAll(".title").forEach(el => el.innerText = prodName);
     }
 
-    if(c.salePrice){
-      setDisplayedPrices(c.salePrice, c.oldPrice || "");
-    }
-
-    if(c.discountText){
-      document.querySelectorAll(".sale").forEach(el=>{
-        el.innerText = c.discountText;
-      });
-    }
-
-    if(c.stockLeft){
-      const stock = document.getElementById("stockLeft");
-      if(stock) stock.innerText = c.stockLeft;
-    }
-
-    if(c.priceTable){
-      priceTable = parsePriceTable(c.priceTable);
+    // 2. Bảng giá chi tiết từng size
+    if(c.priceTable || c.priceTableVN){
+      priceTable = parsePriceTable(c.priceTable || c.priceTableVN);
       renderPriceTable();
       syncSizeOptions();
+    }
+
+    // 3. Giá bán mặc định & Giá gốc mặc định
+    const saleVal = c.salePrice || c.salePriceVN;
+    const oldVal = c.oldPrice || c.oldPriceVN;
+    if(saleVal){
+      setDisplayedPrices(saleVal, oldVal || "");
+    } else {
       updateSelectedPrice();
     }
 
-    if(c.soldCount){
-      const sold = document.getElementById("soldCount");
-      if(sold) sold.innerText = Number(c.soldCount).toLocaleString("vi-VN");
+    // 4. Text giảm giá
+    const discText = c.discountText || c.discountTextVN;
+    if(discText){
+      document.querySelectorAll(".sale").forEach(el=>{
+        el.innerText = discText;
+      });
     }
 
+    // 5. Tồn kho / Số lượng còn lại
+    const stockVal = c.stockLeft !== undefined ? c.stockLeft : c.stockLeftVN;
+    if(stockVal !== undefined && stockVal !== null && stockVal !== ""){
+      const stockNum = Number(stockVal);
+      const stockEl = document.getElementById("stockLeft");
+      if(stockEl) stockEl.innerText = stockNum;
+      const stockFill = document.getElementById("stockFill");
+      if(stockFill){
+        const percent = Math.min(100, Math.max(12, Math.round((stockNum / 50) * 100)));
+        stockFill.style.width = percent + "%";
+      }
+    }
+
+    // 6. Số lượng đã bán
+    const soldVal = c.soldCount || c.soldCountVN;
+    if(soldVal !== undefined && soldVal !== null && soldVal !== ""){
+      const soldNum = Number(soldVal);
+      soldBase = soldNum;
+      const soldEl = document.getElementById("soldCount");
+      if(soldEl) soldEl.innerText = soldNum.toLocaleString("vi-VN");
+      
+      const kCount = (soldNum >= 1000) ? (soldNum / 1000).toFixed(1).replace(".0", "") + "K+" : soldNum + "+";
+      const metaSoldEl = document.getElementById("metaSoldCount");
+      if(metaSoldEl) metaSoldEl.innerText = `Đã bán ${kCount}`;
+      const shopStatSoldEl = document.getElementById("shopStatSoldCount");
+      if(shopStatSoldEl) shopStatSoldEl.innerText = kCount;
+    }
+
+    // 7. Flash sale (phút)
+    if(c.flashMinutes){
+      const mins = Number(c.flashMinutes);
+      if(mins > 0){
+        remain = mins * 60;
+        tick();
+      }
+    }
+
+    // 8. Tên shop
     if(c.shopName){
       document.querySelectorAll("h2").forEach(h=>{
         if(h.innerText.includes("Phú Gia Diamond")) h.innerText = c.shopName;
       });
     }
 
+    // 9. Meta Pixel
     if(c.facebookPixelId){
       initMetaPixel(c.facebookPixelId);
     }

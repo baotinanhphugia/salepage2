@@ -1131,8 +1131,12 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     </section>
 
     <!-- ACTION BUTTON -->
-    <div class="card" style="text-align: right;">
-      <button type="submit" style="padding: 14px 30px; font-size: 15px;">💾 LƯU TOÀN BỘ CẤU HÌNH & BẢNG GIÁ VÀO GOOGLE SHEETS</button>
+    <div class="card" style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end; width:100%;">
+        <span id="saveConfigStatus" style="display:none; font-size:14px; font-weight:700; padding:8px 14px; border-radius:8px;"></span>
+        <button type="submit" id="btnSubmitConfig" style="padding: 14px 30px; font-size: 15px;">💾 LƯU TOÀN BỘ CẤU HÌNH & BẢNG GIÁ VÀO GOOGLE SHEETS</button>
+      </div>
+      <small style="color:var(--text-muted); font-size:12px;">Mọi thay đổi (giá, tồn kho, tên sản phẩm, bảng giá các size) sẽ lập tức phản ánh sang trang Bán Hàng (index.html).</small>
     </div>
   </form>
 
@@ -2843,12 +2847,18 @@ function showTabFromCode(id) {
 }
 
 function authPayload(extra = {}) {
-  if (!currentAuthPassword) throw new Error("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!");
-  const staff = (currentAuthUser && currentAuthUser.fullName) ? currentAuthUser.fullName : (currentAuthUsername || "Admin");
+  const pass = currentAuthPassword || sessionStorage.getItem("PGD_AUTH_PASS_VN") || localStorage.getItem("PGD_AUTH_PASS_VN");
+  const user = currentAuthUsername || sessionStorage.getItem("PGD_AUTH_USER_VN") || localStorage.getItem("PGD_AUTH_USER_VN") || "admin";
+  if (!pass) throw new Error("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!");
+  
+  if (!currentAuthPassword) currentAuthPassword = pass;
+  if (!currentAuthUsername) currentAuthUsername = user;
+
+  const staff = (currentAuthUser && currentAuthUser.fullName) ? currentAuthUser.fullName : (user || "Admin");
   return {
-    username: currentAuthUsername,
-    password: currentAuthPassword,
-    key: currentAuthPassword,
+    username: user,
+    password: pass,
+    key: pass,
     staffName: staff,
     ...extra
   };
@@ -2952,7 +2962,23 @@ async function loadConfig() {
 // Lưu cấu hình
 $("#configForm").addEventListener("submit", async e => {
   e.preventDefault();
+  const btn = $("#btnSubmitConfig");
+  const inlineStatus = $("#saveConfigStatus");
+  const origBtnText = btn ? btn.innerHTML : "💾 LƯU TOÀN BỘ CẤU HÌNH & BẢNG GIÁ VÀO GOOGLE SHEETS";
+
   try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = "<span>⏳ ĐANG LƯU DỮ LIỆU...</span>";
+    }
+    if (inlineStatus) {
+      inlineStatus.style.display = "inline-block";
+      inlineStatus.style.background = "rgba(217, 119, 6, 0.2)";
+      inlineStatus.style.color = "#fcd34d";
+      inlineStatus.style.border = "1px solid rgba(217, 119, 6, 0.4)";
+      inlineStatus.innerText = "⏳ Đang kết nối Google Sheets...";
+    }
+
     const configData = formToObject();
     const payload = authPayload({
       action: "saveConfig",
@@ -2969,8 +2995,28 @@ $("#configForm").addEventListener("submit", async e => {
     if (!data.ok) throw new Error(data.error || "Lưu thất bại!");
 
     showStatus("Đã lưu toàn bộ cấu hình & Bảng giá vào Google Sheets thành công.");
+    if (inlineStatus) {
+      inlineStatus.style.background = "rgba(16, 185, 129, 0.2)";
+      inlineStatus.style.color = "#6ee7b7";
+      inlineStatus.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+      inlineStatus.innerText = "✅ ĐÃ LƯU THÀNH CÔNG!";
+      setTimeout(() => {
+        if (inlineStatus) inlineStatus.style.display = "none";
+      }, 5000);
+    }
   } catch (err) {
     showStatus(err.message, false);
+    if (inlineStatus) {
+      inlineStatus.style.background = "rgba(239, 68, 68, 0.2)";
+      inlineStatus.style.color = "#fca5a5";
+      inlineStatus.style.border = "1px solid rgba(239, 68, 68, 0.4)";
+      inlineStatus.innerText = "❌ Lỗi: " + err.message;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origBtnText;
+    }
   }
 });
 
