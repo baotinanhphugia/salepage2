@@ -1103,54 +1103,154 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   const btn = document.getElementById("btnSubmit");
   const msg = document.getElementById("msg");
   btn.disabled = true;
-  btn.innerText = "ĐANG GỬI ĐƠN...";
+  btn.innerText = "⏳ ĐANG GỬI ĐƠN HÀNG...";
+  msg.innerText = "";
+
   const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd.entries());
+
+  // Thu thập và làm sạch thông tin đặt hàng
+  data.name = (data.name || document.querySelector('[name="name"]')?.value || "").trim();
+  data.phone = (data.phone || document.querySelector('[name="phone"]')?.value || "").trim();
+  data.address = (data.address || document.querySelector('[name="address"]')?.value || "").trim();
+  data.province = (data.province || document.querySelector('[name="province"]')?.value || "").trim();
+
+  // Tự động nhận diện Tỉnh / Thành phố từ ô Địa chỉ nếu người dùng chưa chọn hoặc chọn sót
+  if (!data.province && data.address) {
+    const rawLower = data.address.toLowerCase();
+    for (const prov of VN_PROVINCES) {
+      const cleanProv = prov.toLowerCase().replace("tp. ", "").replace("tỉnh ", "").trim();
+      if (rawLower.includes(cleanProv)) {
+        data.province = prov;
+        const pSel = document.getElementById("provinceSelect");
+        if (pSel) pSel.value = prov;
+        break;
+      }
+    }
+  }
+
+  // Kiểm tra tính hợp lệ của thông tin trước khi gửi
+  if (!data.name || data.name.length < 2) {
+    msg.style.color = "#f87171";
+    msg.innerText = "⚠️ Vui lòng nhập họ và tên người nhận đầy đủ.";
+    btn.disabled = false;
+    btn.innerText = "ĐẶT MUA NGAY";
+    document.querySelector('[name="name"]')?.focus();
+    return;
+  }
+
+  const cleanPhone = data.phone.replace(/[\s\-\.]/g, "");
+  const vnPhoneRegex = /^(0[3|5|7|8|9]|84[3|5|7|8|9])[0-9]{8}$/;
+  if (!vnPhoneRegex.test(cleanPhone)) {
+    msg.style.color = "#f87171";
+    msg.innerText = "⚠️ Số điện thoại không hợp lệ (10 số, bắt đầu bằng 03, 05, 07, 08, 09).";
+    btn.disabled = false;
+    btn.innerText = "ĐẶT MUA NGAY";
+    document.querySelector('[name="phone"]')?.focus();
+    return;
+  }
+  data.phone = cleanPhone;
+
+  if (!data.address || data.address.length < 3) {
+    msg.style.color = "#f87171";
+    msg.innerText = "⚠️ Vui lòng nhập địa chỉ nhận hàng chi tiết (số nhà, đường, thôn/xóm...).";
+    btn.disabled = false;
+    btn.innerText = "ĐẶT MUA NGAY";
+    document.querySelector('[name="address"]')?.focus();
+    return;
+  }
+
+  data.variant = data.variant || document.getElementById("variantSelect")?.value || "1 Đôi";
+  data.size = data.size || document.getElementById("sizeSelect")?.value || "5mm";
+  data.quantity = data.quantity || document.querySelector('[name="quantity"]')?.value || "1";
+  data.payment = data.payment || "Thanh toán COD";
+  data.combo = data.combo || document.querySelector('[name="combo"]:checked')?.value || "Mua theo bảng giá size + Freeship";
+
   const currentTitle = document.querySelector('.title')?.innerText || "Bông nụ bạc S925 4 chấu kim cương Moissanite cao cấp full kiểm định GRA";
   data.product = currentTitle;
-  data.price = data.price || document.querySelector('[name="price"]')?.value || "459999";
+  data.price = document.querySelector('[name="price"]')?.value || data.price || "459999";
   data.source = location.href;
   data.adminUrl = location.href.replace(/index\.html.*/, "admin.html");
 
   // Gán mã SKU MISA cố định của lô hàng tương ứng với phân loại & kích cỡ đã chọn
-  const vSelected = data.variant || document.getElementById("variantSelect")?.value || "1 Đôi";
-  const sSelected = data.size || document.getElementById("sizeSelect")?.value || "5mm";
-  const matchedItem = priceTable.find(i => i.type === vSelected && i.size === sSelected);
+  const matchedItem = priceTable.find(i => i.type === data.variant && i.size === data.size);
   if (matchedItem && matchedItem.code) {
     data.misaSku = matchedItem.code;
   }
 
-  try{
-    await fetch(API_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});
-    isOrderSubmitted = true;
-    msg.style.color = "#a7f3d0";
-    msg.innerText = "✅ Đặt hàng thành công! Shop sẽ liên hệ gửi hàng sớm nhất.";
-    
-    // Hiển thị Popup xác nhận đặt hàng thành công
-    showOrderSuccessModal(data);
+  try {
+    let orderSuccess = false;
+    let serverErr = "";
 
-    // Bắn sự kiện Purchase & Lead cho Meta Pixel
-    if(window.fbq && currentPixelId){
-      const orderVal = Number(String(data.price || "459999").replace(/\D/g,"")) || 459999;
-      fbq('track', 'Purchase', {
-        content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
-        content_category: data.variant || '1 Đôi',
-        value: orderVal,
-        currency: 'VND'
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(data)
       });
-      fbq('track', 'Lead', {
-        content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
-        value: orderVal,
-        currency: 'VND'
+      const raw = await res.text();
+      try {
+        const j = JSON.parse(raw);
+        if (j && j.ok) {
+          orderSuccess = true;
+        } else if (j && j.error) {
+          serverErr = j.error;
+        }
+      } catch(_) {
+        orderSuccess = true;
+      }
+    } catch(netErr) {
+      // Dự phòng no-cors nếu CORS bị hạn chế
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(data)
       });
-      console.log("🎯 Meta Pixel Event: Purchase & Lead fired (" + orderVal + " VND)");
+      orderSuccess = true;
     }
 
-    e.target.reset();
-    syncSizeOptions();
-    updateSelectedPrice();
-    btn.innerText = "ĐÃ GỬI THÀNH CÔNG";
-  }catch(err){
-    msg.innerText = "Lỗi gửi đơn. Vui lòng thử lại.";
+    if (serverErr) {
+      msg.style.color = "#f87171";
+      msg.innerText = "❌ " + serverErr;
+      btn.disabled = false;
+      btn.innerText = "ĐẶT MUA NGAY";
+      return;
+    }
+
+    if (orderSuccess) {
+      isOrderSubmitted = true;
+      msg.style.color = "#a7f3d0";
+      msg.innerText = "✅ Đặt hàng thành công! Shop sẽ liên hệ gửi hàng sớm nhất.";
+      
+      // Hiển thị Popup xác nhận đặt hàng thành công đầy đủ thông tin
+      showOrderSuccessModal(data);
+
+      // Bắn sự kiện Purchase & Lead cho Meta Pixel
+      if(window.fbq && currentPixelId){
+        const orderVal = Number(String(data.price || "459999").replace(/\D/g,"")) || 459999;
+        fbq('track', 'Purchase', {
+          content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
+          content_category: data.variant || '1 Đôi',
+          value: orderVal,
+          currency: 'VND'
+        });
+        fbq('track', 'Lead', {
+          content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
+          value: orderVal,
+          currency: 'VND'
+        });
+        console.log("🎯 Meta Pixel Event: Purchase & Lead fired (" + orderVal + " VND)");
+      }
+
+      e.target.reset();
+      syncSizeOptions();
+      updateSelectedPrice();
+      btn.innerText = "ĐÃ GỬI THÀNH CÔNG";
+    }
+  } catch(err) {
+    msg.style.color = "#f87171";
+    msg.innerText = "Lỗi gửi đơn. Vui lòng thử lại hoặc gọi Hotline hỗ trợ!";
     btn.innerText = "ĐẶT MUA NGAY";
   }
 

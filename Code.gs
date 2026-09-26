@@ -183,10 +183,15 @@ function handleOrderVN_(data) {
     const initialTags = `[MISA: ${misaSku}] [Hộp: Có] [Thẻ: Có]`;
     const finalNote = cleanUserNote ? `${cleanUserNote} | ${initialTags}` : initialTags;
 
-    const fullAddress = [data.address, data.ward, data.district, data.province]
-      .map(cleanText_)
-      .filter(Boolean)
-      .join(", ");
+    let addrParts = [data.address, data.ward, data.district].map(cleanText_).filter(Boolean);
+    const provStr = cleanText_(data.province || "");
+    if (provStr) {
+      const fullSoFar = addrParts.join(", ").toLowerCase();
+      if (!fullSoFar.includes(provStr.toLowerCase())) {
+        addrParts.push(provStr);
+      }
+    }
+    const fullAddress = addrParts.join(", ");
     const mapsLink = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(fullAddress);
 
     const productName = cleanText_(data.product || config.productName || "Bông nụ bạc S925 Moissanite GRA");
@@ -295,7 +300,14 @@ function handleUpdateOrderVN_(data) {
   if (staffName && !note.includes("[NV:")) {
     note = note ? `${note} [NV: ${staffName}]` : `[NV: ${staffName}]`;
   }
-  const fullAddress = [address, ward, district, province].filter(Boolean).join(", ");
+  let addrParts = [address, ward, district].filter(Boolean);
+  if (province) {
+    const fullSoFar = addrParts.join(", ").toLowerCase();
+    if (!fullSoFar.includes(province.toLowerCase())) {
+      addrParts.push(province);
+    }
+  }
+  const fullAddress = addrParts.join(", ");
   const mapsLink = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(fullAddress);
 
   if (name) sheet.getRange(targetRow, 4).setValue(name);
