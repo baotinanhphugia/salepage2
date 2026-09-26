@@ -1385,6 +1385,14 @@ function applyConfigData(c){
   if(c.facebookPixelId){
     initMetaPixel(c.facebookPixelId);
   }
+
+  // 10. Hotline & Hỗ trợ
+  if(c.hotline){
+    document.querySelectorAll(".osm-btn-call").forEach(a => {
+      a.href = "tel:" + c.hotline;
+      a.innerText = "📞 Hotline hỗ trợ 24/7: " + c.hotline;
+    });
+  }
 }
 
 /* ===== Load cấu hình từ Admin Google Sheet ===== */

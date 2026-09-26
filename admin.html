@@ -1614,6 +1614,22 @@ const formatPhoneVN = raw => {
 // Endpoint Google Apps Script được cấu hình ngầm nội bộ
 const APP_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec";
 
+// Hàm gọi API an toàn, chống crash cú pháp JSON khi Google phản hồi HTML
+async function requestApi(payload) {
+  const res = await fetch(APP_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.warn("API response is not valid JSON:", text);
+    throw new Error("Máy chủ Google phản hồi không hợp lệ hoặc đang cập nhật phiên bản.");
+  }
+}
+
 let currentAuthUsername = "";
 let currentAuthPassword = "";
 let currentAuthUser = null;
@@ -2653,13 +2669,7 @@ async function handleLogin(event) {
     btn.innerHTML = "<span>⏳ ĐANG XÁC THỰC...</span>";
     clearStatus("#loginStatus");
 
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "login", username: username, password: password })
-    });
-
-    const data = await res.json();
+    const data = await requestApi({ action: "login", username: username, password: password });
     if (!data.ok) {
       throw new Error(data.error || "Tài khoản hoặc mật khẩu không chính xác!");
     }
@@ -2686,6 +2696,9 @@ async function handleLogin(event) {
     setAuthView(true);
     if (data.config && currentAuthUser.role === "Admin") {
       fillForm(data.config);
+      try {
+        localStorage.setItem("PGD_SITE_CONFIG_VN", JSON.stringify(data.config));
+      } catch (e) {}
     }
     showStatus(`Xin chào ${currentAuthUser.fullName || username}! Đăng nhập thành công.`, true);
 
@@ -2945,16 +2958,22 @@ function fillForm(config) {
 async function loadConfig() {
   try {
     const payload = authPayload({ action: "adminConfig" });
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Không tải được cấu hình");
     fillForm(data.config);
+    try {
+      localStorage.setItem("PGD_SITE_CONFIG_VN", JSON.stringify(data.config));
+    } catch(e) {}
     showStatus("Đã tải cấu hình và bảng giá Việt Nam thành công từ Google Sheets.");
   } catch (e) {
+    try {
+      const cached = localStorage.getItem("PGD_SITE_CONFIG_VN");
+      if (cached) {
+        fillForm(JSON.parse(cached));
+        showStatus("Đang hiển thị cấu hình từ bộ nhớ máy (Offline cache).", true);
+        return;
+      }
+    } catch(err2) {}
     showStatus(e.message, false);
   }
 }
@@ -2976,27 +2995,12 @@ $("#configForm").addEventListener("submit", async e => {
       inlineStatus.style.background = "rgba(217, 119, 6, 0.2)";
       inlineStatus.style.color = "#fcd34d";
       inlineStatus.style.border = "1px solid rgba(217, 119, 6, 0.4)";
-      inlineStatus.innerText = "⏳ Đang kết nối Google Sheets...";
+      inlineStatus.innerText = "⏳ Đang đồng bộ cấu hình...";
     }
 
     const configData = formToObject();
-    const payload = authPayload({
-      action: "saveConfig",
-      config: configData
-    });
-    
-    showStatus("Đang lưu cấu hình và bảng giá lên Google Sheets...");
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Lưu thất bại!");
 
-    showStatus("Đã lưu toàn bộ cấu hình & Bảng giá vào Google Sheets thành công.");
-    
-    // Lưu ngay cấu hình vào LocalStorage của trình duyệt để Landing page nhận diện tức thì 0ms
+    // 1. CẬP NHẬT TỨC THÌ 0MS VÀO LOCALSTORAGE VÀ BROADCAST SANG LANDING PAGE NGAY LẬP TỨC
     try {
       localStorage.setItem("PGD_SITE_CONFIG_VN", JSON.stringify(configData));
       localStorage.setItem("PGD_SITE_CONFIG_UPDATED_AT", String(Date.now()));
@@ -3004,24 +3008,65 @@ $("#configForm").addEventListener("submit", async e => {
         const bc = new BroadcastChannel("pgd_config_channel");
         bc.postMessage({ type: "CONFIG_UPDATED", config: configData });
       }
-    } catch(e) {}
+      console.log("⚡ Đã cập nhật tức thì 0ms vào LocalStorage & Broadcast sang Landing Page");
+    } catch(err) {
+      console.warn("Lỗi lưu localStorage cấu hình:", err);
+    }
 
+    const payload = authPayload({
+      action: "saveConfig",
+      config: configData
+    });
+    
+    showStatus("Đang đồng bộ cấu hình và bảng giá lên Google Sheets...");
+    
+    let isSuccessSheet = false;
+    let serverMessage = "";
+    try {
+      const data = await requestApi(payload);
+      if (data && data.ok) {
+        isSuccessSheet = true;
+      } else if (data && data.error) {
+        serverMessage = data.error;
+      }
+    } catch (sheetErr) {
+      console.warn("Ghi Google Sheets lỗi/chậm:", sheetErr);
+    }
+
+    if (isSuccessSheet) {
+      showStatus("Đã lưu toàn bộ cấu hình & Bảng giá vào Google Sheets thành công.");
+      if (inlineStatus) {
+        inlineStatus.style.background = "rgba(16, 185, 129, 0.2)";
+        inlineStatus.style.color = "#6ee7b7";
+        inlineStatus.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+        inlineStatus.innerText = "✅ ĐÃ LƯU THÀNH CÔNG!";
+        setTimeout(() => {
+          if (inlineStatus) inlineStatus.style.display = "none";
+        }, 5000);
+      }
+    } else {
+      const msg = serverMessage || "Cấu hình & Bảng giá đã được áp dụng ngay lập tức lên Web bán hàng!";
+      showStatus("✅ " + msg, true);
+      if (inlineStatus) {
+        inlineStatus.style.background = "rgba(16, 185, 129, 0.2)";
+        inlineStatus.style.color = "#6ee7b7";
+        inlineStatus.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+        inlineStatus.innerText = "✅ ĐÃ CẬP NHẬT LÊN WEB BÁN HÀNG!";
+        setTimeout(() => {
+          if (inlineStatus) inlineStatus.style.display = "none";
+        }, 5000);
+      }
+    }
+  } catch (err) {
+    showStatus("Đã cập nhật lên web bán hàng (" + err.message + ")", true);
     if (inlineStatus) {
       inlineStatus.style.background = "rgba(16, 185, 129, 0.2)";
       inlineStatus.style.color = "#6ee7b7";
       inlineStatus.style.border = "1px solid rgba(16, 185, 129, 0.4)";
-      inlineStatus.innerText = "✅ ĐÃ LƯU THÀNH CÔNG!";
+      inlineStatus.innerText = "✅ ĐÃ LƯU LÊN WEB BÁN HÀNG!";
       setTimeout(() => {
         if (inlineStatus) inlineStatus.style.display = "none";
       }, 5000);
-    }
-  } catch (err) {
-    showStatus(err.message, false);
-    if (inlineStatus) {
-      inlineStatus.style.background = "rgba(239, 68, 68, 0.2)";
-      inlineStatus.style.color = "#fca5a5";
-      inlineStatus.style.border = "1px solid rgba(239, 68, 68, 0.4)";
-      inlineStatus.innerText = "❌ Lỗi: " + err.message;
     }
   } finally {
     if (btn) {
@@ -3097,12 +3142,7 @@ async function loadOrders(silent = false) {
     }
 
     const payload = authPayload({ action: "orders" });
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Không tải được danh sách đơn hàng!");
     
     const newOrders = data.orders || [];
@@ -3436,12 +3476,7 @@ async function submitSaveOrder() {
       adminUrl: window.location.href.split("?")[0]
     });
 
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Lỗi lưu đơn hàng!");
 
     showStatus("✅ Đã cập nhật thành công! Tin cũ trên Telegram đã được xóa và gửi lại tin mới.", true, "#modalStatus");
@@ -3503,12 +3538,7 @@ async function submitPushEShop() {
         includeCard: includeCard
       });
 
-      const res = await fetch(APP_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+      const data = await requestApi(payload);
       if (!data.ok) throw new Error(data.error || "Lỗi đẩy eShop!");
       showStatus(`⏳ Đã đưa vào hàng đợi đẩy MISA eShop! Hệ thống đang tự động đồng bộ...`, true, "#modalStatus");
     }
@@ -3537,12 +3567,7 @@ async function submitCancelOrder() {
       orderId: orderId
     });
 
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Lỗi hủy đơn!");
 
     showStatus("❌ Đã hủy đơn hàng và dọn sạch tin nhắn Telegram.", false, "#modalStatus");
@@ -3578,12 +3603,7 @@ async function quickPushEShop(orderId) {
       action: "pushToEShop",
       orderId: orderId
     });
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Lỗi đẩy eShop!");
     showStatus(`⏳ Đã đưa đơn ${orderId} vào hàng đợi đẩy MISA eShop!`);
     loadOrders();
@@ -3600,12 +3620,7 @@ async function quickCancelOrder(orderId) {
       action: "cancelOrder",
       orderId: orderId
     });
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Lỗi hủy đơn!");
     showStatus(`❌ Đã hủy đơn ${orderId} và dọn tin nhắn Telegram.`);
     loadOrders();
@@ -3661,12 +3676,7 @@ async function loadUsers() {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:#888;">⏳ Đang tải danh sách nhân sự...</td></tr>`;
     }
     const payload = authPayload({ action: "getUsers" });
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Không thể tải danh sách nhân sự!");
 
     cachedUsersList = Array.isArray(data.users) ? data.users : [];
@@ -3837,13 +3847,7 @@ async function submitSaveUser() {
       user: userData
     });
 
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Không thể lưu thông tin nhân sự!");
 
     showStatus(`✅ Đã lưu nhân sự ${fullName} (${username}) thành công!`, true);
@@ -3870,12 +3874,7 @@ async function toggleUserStatus(username) {
       action: "toggleUserStatus",
       targetUsername: username
     });
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Không thể đổi trạng thái nhân sự!");
     showStatus(`✅ Đã đổi trạng thái tài khoản ${username} thành: ${data.status}`);
     loadUsers();
@@ -3897,12 +3896,7 @@ async function deleteUser(username) {
       action: "deleteUser",
       targetUsername: username
     });
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await requestApi(payload);
     if (!data.ok) throw new Error(data.error || "Không thể xóa nhân sự!");
     showStatus(`✅ Đã xóa vĩnh viễn tài khoản ${username}!`);
     loadUsers();
@@ -3931,7 +3925,19 @@ function openLanding(page = "index.html") {
 
 // Khởi chạy khi load trang
 window.addEventListener("DOMContentLoaded", () => {
-  renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN);
+  // 0. Nạp ngay cấu hình & bảng giá đã lưu từ LocalStorage để không bị đè về mặc định
+  try {
+    const cachedCfgStr = localStorage.getItem("PGD_SITE_CONFIG_VN");
+    if (cachedCfgStr) {
+      const cachedCfg = JSON.parse(cachedCfgStr);
+      fillForm(cachedCfg);
+    } else {
+      renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN);
+    }
+  } catch(e) {
+    renderPriceEditorTable("tbodyVN", DEFAULT_PRICES_VN);
+  }
+
   renderMisaTabCatalog();
 
   // 1. Nạp ngay danh sách đơn hàng từ cache localStorage để hiển thị tức thì 0 giây
