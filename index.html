@@ -20,13 +20,35 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 
 let currentPixelId = "";
+let pendingInitiateCheckout = null;
+
 function initMetaPixel(pixelId){
   const cleanId = String(pixelId || "").trim();
   if(!cleanId || cleanId === "YOUR_PIXEL_ID" || cleanId === currentPixelId) return;
   currentPixelId = cleanId;
   fbq('init', cleanId);
   fbq('track', 'PageView');
+
+  // Tự động kích hoạt ViewContent cho sản phẩm
+  try {
+    const curPrice = Number(String(document.querySelector('[name="price"]')?.value || "459999").replace(/\D/g,"")) || 459999;
+    const curTitle = document.querySelector('.title')?.innerText || "Bông nụ bạc S925 kim cương Moissanite cao cấp full kiểm định GRA";
+    fbq('track', 'ViewContent', {
+      content_name: curTitle,
+      content_category: 'Trang sức Moissanite',
+      content_type: 'product',
+      value: curPrice,
+      currency: 'VND'
+    });
+  } catch(_) {}
+
   console.log("🎯 Meta Pixel Initialized:", cleanId);
+
+  // Bắn sự kiện InitiateCheckout nếu khách đã tương tác trước khi Pixel tải xong
+  if(pendingInitiateCheckout && typeof trackInitiateCheckout === "function"){
+    trackInitiateCheckout(pendingInitiateCheckout);
+    pendingInitiateCheckout = null;
+  }
 }
 </script>
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
@@ -1229,14 +1251,19 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
       // Bắn sự kiện Purchase & Lead cho Meta Pixel
       if(window.fbq && currentPixelId){
         const orderVal = Number(String(data.price || "459999").replace(/\D/g,"")) || 459999;
+        const currentTitle = data.product || document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
         fbq('track', 'Purchase', {
-          content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
-          content_category: data.variant || '1 Đôi',
+          content_name: currentTitle,
+          content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
+          content_ids: [data.misaSku || data.size || 'MOISSANITE'],
+          content_type: 'product',
           value: orderVal,
-          currency: 'VND'
+          currency: 'VND',
+          num_items: Number(data.quantity || 1)
         });
         fbq('track', 'Lead', {
-          content_name: data.product || 'Bông nụ bạc S925 kim cương Moissanite',
+          content_name: currentTitle,
+          content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
           value: orderVal,
           currency: 'VND'
         });
@@ -1529,15 +1556,21 @@ async function loadSiteConfig(){
 let hasTrackedCheckout = false;
 function trackInitiateCheckout(triggerSource){
   if(hasTrackedCheckout) return;
-  hasTrackedCheckout = true;
   const currentPrice = Number(String(document.querySelector('[name="price"]')?.value || "459999").replace(/\D/g,"")) || 459999;
+  const currentTitle = document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
   if(window.fbq && currentPixelId){
+    hasTrackedCheckout = true;
     fbq('track', 'InitiateCheckout', {
-      content_name: 'Bông nụ bạc S925 kim cương Moissanite',
+      content_name: currentTitle,
+      content_category: 'Trang sức Moissanite',
+      content_type: 'product',
       value: currentPrice,
       currency: 'VND'
     });
     console.log("🎯 Meta Pixel Event: InitiateCheckout (" + triggerSource + ")");
+  } else {
+    // Nếu Pixel ID đang nạp từ Google Sheet, lưu lại trigger để bắn ngay khi Pixel sẵn sàng
+    pendingInitiateCheckout = triggerSource;
   }
 }
 
