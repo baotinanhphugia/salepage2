@@ -1192,7 +1192,14 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   data.product = currentTitle;
   data.price = document.querySelector('[name="price"]')?.value || data.price || "459999";
   data.source = location.href;
-  data.adminUrl = location.href.replace(/index\.html.*/, "admin.html");
+  // Bóc tách nguồn quảng cáo Facebook Ads (UTM parameters) đã lưu
+  const utm = getSavedUtmParams();
+  data.utm_source = utm.utm_source || "";
+  data.utm_medium = utm.utm_medium || "";
+  data.utm_campaign = utm.utm_campaign || "";
+  data.utm_content = utm.utm_content || "";
+  data.utm_term = utm.utm_term || "";
+  data.fbclid = utm.fbclid || "";
 
   // Gán mã SKU MISA cố định của lô hàng tương ứng với phân loại & kích cỡ đã chọn
   const matchedItem = priceTable.find(i => i.type === data.variant && i.size === data.size);
@@ -1591,6 +1598,41 @@ if(orderSection && 'IntersectionObserver' in window){
   observer.observe(orderSection);
 }
 
+/* ===== THEO DÕI NGUỒN QUẢNG CÁO FACEBOOK ADS (UTM TRACKING) ===== */
+function captureUtmParams() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "gclid"];
+    let hasUtm = false;
+    const utmObj = {};
+    utmKeys.forEach(k => {
+      const val = urlParams.get(k);
+      if (val) {
+        utmObj[k] = val.trim();
+        hasUtm = true;
+      }
+    });
+    if (hasUtm) {
+      sessionStorage.setItem("PGD_UTM_PARAMS", JSON.stringify(utmObj));
+      try {
+        localStorage.setItem("PGD_LAST_UTM_PARAMS", JSON.stringify(utmObj));
+      } catch(e) {}
+      console.log("🎯 Đã nhận diện UTM Facebook Ads:", utmObj);
+    }
+  } catch(e) {}
+}
+
+function getSavedUtmParams() {
+  try {
+    const s = sessionStorage.getItem("PGD_UTM_PARAMS");
+    if (s) return JSON.parse(s);
+    const l = localStorage.getItem("PGD_LAST_UTM_PARAMS");
+    if (l) return JSON.parse(l);
+  } catch(e) {}
+  return {};
+}
+captureUtmParams();
+
 /* ===== CƠ CHẾ BẮT LEAD RƠI RỚT (ABANDONMENT RECOVERY) ===== */
 let leadCaptureTimer = null;
 let lastCapturedPhone = "";
@@ -1611,6 +1653,7 @@ function tryCaptureAbandonedLead(){
 
   if(!vnPhoneRegex.test(rawPhone) || rawPhone === lastCapturedPhone) return;
 
+  const utm = getSavedUtmParams();
   const leadPayload = {
     action: "abandonedLead",
     market: "VN",
@@ -1621,7 +1664,13 @@ function tryCaptureAbandonedLead(){
     variant: variantSelect ? variantSelect.value : "1 Đôi",
     size: sizeSelect ? sizeSelect.value : "5mm",
     product: document.querySelector('.title')?.innerText || "Bông nụ bạc S925 kim cương Moissanite",
-    source: location.href
+    source: location.href,
+    utm_source: utm.utm_source || "",
+    utm_medium: utm.utm_medium || "",
+    utm_campaign: utm.utm_campaign || "",
+    utm_content: utm.utm_content || "",
+    utm_term: utm.utm_term || "",
+    fbclid: utm.fbclid || ""
   };
 
   lastCapturedPhone = rawPhone;

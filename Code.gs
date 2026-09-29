@@ -133,10 +133,101 @@ function doPost(e) {
       return json_({ ok: true, orderId: data.orderId, status: data.status });
     }
 
-    // 8. Khách đặt hàng từ Landing Page Việt Nam
+    // 8. Lead rơi rớt từ Landing Page (khách nhập SĐT nhưng chưa hoàn tất đặt hàng)
+    if (data.action === "abandonedLead") {
+      return handleAbandonedLeadVN_(data);
+    }
+
+    // 9. Khách đặt hàng từ Landing Page Việt Nam
     return handleOrderVN_(data);
   } catch (err) {
     return json_({ ok: false, error: err.message || err.toString() });
+  }
+}
+
+/**
+ * Xử lý Khách rơi rớt (Abandoned Lead) - Tự động ghi Sheet & Báo CSKH gọi chốt đơn
+ */
+function handleAbandonedLeadVN_(data) {
+  const rawPhone = String(data.phone || "").replace(/[\s\-\.]/g, "");
+  const vnPhoneRegex = /^(0[3|5|7|8|9]|84[3|5|7|8|9])[0-9]{8}$/;
+
+  if (!vnPhoneRegex.test(rawPhone)) {
+    return json_({ ok: false, error: "Số điện thoại không hợp lệ" });
+  }
+
+  // Chống Spam / trùng lead trong 10 phút
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "abandoned_lead_" + rawPhone;
+  if (cache.get(cacheKey)) {
+    return json_({ ok: true, note: "Lead đã được ghi nhận trước đó" });
+  }
+  cache.put(cacheKey, "captured", 600);
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(8000);
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = getOrCreateOrdersSheet_(ss);
+    const createdAt = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
+    const leadId = "LEAD-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyMMdd-HHmmss");
+
+    const utmSource = cleanText_(data.utm_source || "");
+    const utmMedium = cleanText_(data.utm_medium || "");
+    const utmCampaign = cleanText_(data.utm_campaign || "");
+    const utmContent = cleanText_(data.utm_content || "");
+    const utmTerm = cleanText_(data.utm_term || "");
+
+    let adsTag = "";
+    if (utmSource || utmCampaign || utmContent) {
+      adsTag = `[Ads: ${utmSource || "Facebook"} | Camp: ${utmCampaign || "Chiến dịch"} | Ad: ${utmContent || "Mẫu QC"}]`;
+    }
+    const finalNote = `[Lead rơi rớt] Khách chưa bấm Hoàn tất đặt hàng ${adsTag}`.trim();
+
+    const cleanPhone = formatPhoneVN_(rawPhone);
+    const rawDigits = cleanPhone.replace(/\D/g, "");
+
+    sheet.appendRow([
+      createdAt,
+      leadId,
+      cleanText_(data.product || "Bông nụ bạc S925 Moissanite GRA"),
+      cleanText_(data.name || "Khách quan tâm (Lead)"),
+      "'" + cleanPhone,
+      cleanText_(data.address || ""),
+      cleanText_(data.province || ""),
+      "", "",
+      cleanText_(data.variant || "1 Đôi"),
+      cleanText_(data.size || "5mm"),
+      "1",
+      "",
+      "COD",
+      "",
+      finalNote,
+      "",
+      "Khách rớt Lead",
+      "", ""
+    ]);
+
+    // Báo thông báo nhanh qua Telegram để CSKH gọi lại cứu đơn
+    let adsTele = "";
+    if (utmSource || utmCampaign || utmContent) {
+      adsTele = `\n🎯 <b>Chiến dịch Ads:</b> <code>${escapeHtml_(utmCampaign || "Tự nhiên")}</code> | Mẫu: <code>${escapeHtml_(utmContent || "N/A")}</code>`;
+    }
+    const leadMsg =
+`⚠️ <b>CẢNH BÁO: KHÁCH RƠI RỚT GIỎ HÀNG (LEAD)</b>
+🧾 Mã Lead: <code>${escapeHtml_(leadId)}</code>
+👤 Khách: <b>${escapeHtml_(cleanText_(data.name || "Khách để lại SĐT"))}</b>
+📞 SĐT: <code>${escapeHtml_(cleanPhone)}</code>
+💬 Zalo: <a href="https://zalo.me/${escapeHtml_(rawDigits)}">https://zalo.me/${escapeHtml_(rawDigits)}</a>
+📦 Sản phẩm xem: ${escapeHtml_(cleanText_(data.variant || "1 Đôi"))} (${escapeHtml_(cleanText_(data.size || "5mm"))})${adsTele}
+🕒 Thời gian: ${escapeHtml_(createdAt)}
+👉 <i>CSKH vui lòng gọi ngay để tư vấn chốt đơn cho khách!</i>`;
+
+    safeSendQuickNotice_(leadMsg);
+    return json_({ ok: true, leadId });
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -179,8 +270,23 @@ function handleOrderVN_(data) {
     if (!misaSku) {
       misaSku = autoDetectMisaSku_(data.size, data.variant);
     }
+
+    // Bóc tách UTM Parameters (Facebook Ads Tracking)
+    const utmSource = cleanText_(data.utm_source || "");
+    const utmMedium = cleanText_(data.utm_medium || "");
+    const utmCampaign = cleanText_(data.utm_campaign || "");
+    const utmContent = cleanText_(data.utm_content || "");
+    const utmTerm = cleanText_(data.utm_term || "");
+    const fbclid = cleanText_(data.fbclid || "");
+
+    let adsTag = "";
+    if (utmSource || utmCampaign || utmContent) {
+      adsTag = `[Ads: ${utmSource || "Facebook"} | Camp: ${utmCampaign || "Tự nhiên"} | Ad: ${utmContent || "N/A"}]`;
+    }
+
     const cleanUserNote = cleanText_(data.note || "");
-    const initialTags = `[MISA: ${misaSku}] [Hộp: Có] [Thẻ: Có]`;
+    let initialTags = `[MISA: ${misaSku}] [Hộp: Có] [Thẻ: Có]`;
+    if (adsTag) initialTags += ` ${adsTag}`;
     const finalNote = cleanUserNote ? `${cleanUserNote} | ${initialTags}` : initialTags;
 
     let addrParts = [data.address, data.ward, data.district].map(cleanText_).filter(Boolean);
@@ -226,6 +332,16 @@ function handleOrderVN_(data) {
 
     const cleanPhone = cleanText_(data.phone || "");
     const rawPhoneDigits = cleanPhone.replace(/\D/g, "");
+
+    // Soạn thông tin chi tiết nguồn Facebook Ads cho Telegram
+    let adsInfoTelegram = "";
+    if (utmSource || utmCampaign || utmContent) {
+      adsInfoTelegram = `\n🎯 <b>Nguồn Ads:</b> ${escapeHtml_(utmSource || "Facebook Ads")}${utmMedium ? ` (<code>${escapeHtml_(utmMedium)}</code>)` : ""}` +
+        (utmCampaign ? `\n📢 <b>Chiến dịch:</b> <code>${escapeHtml_(utmCampaign)}</code>` : "") +
+        (utmContent ? `\n🖼️ <b>Mẫu QC:</b> <code>${escapeHtml_(utmContent)}</code>` : "") +
+        (utmTerm ? `\n🔍 <b>Từ khóa:</b> <code>${escapeHtml_(utmTerm)}</code>` : "");
+    }
+
     // Bắn tin nhắn Telegram kèm cụm nút bấm kết hợp - SĐT thẻ code tự copy + Link Zalo màu xanh
     const message =
 `💎 🇻🇳 <b>ĐƠN HÀNG MỚI (VIỆT NAM) - PHÚ GIA DIAMOND</b>
@@ -234,7 +350,7 @@ function handleOrderVN_(data) {
 📞 Số điện thoại: <code>${escapeHtml_(cleanPhone)}</code> <i>(Chạm số để sao chép)</i>
 💬 Link Zalo: <a href="https://zalo.me/${escapeHtml_(rawPhoneDigits)}">https://zalo.me/${escapeHtml_(rawPhoneDigits)}</a>
 📍 Địa chỉ: ${escapeHtml_(fullAddress)}
-🗺 Google Maps: ${escapeHtml_(mapsLink)}
+🗺 Google Maps: ${escapeHtml_(mapsLink)}${adsInfoTelegram}
 💍 Sản phẩm: ${escapeHtml_(productName)}
 🏷️ Mã MISA (Lô hàng): <code>${escapeHtml_(misaSku)}</code>
 📦 Phân loại: ${escapeHtml_(cleanText_(data.variant || ""))}
@@ -1231,6 +1347,16 @@ function getOrders_() {
       misaSku = autoDetectMisaSku_(r[10], r[9]);
     }
 
+    let ads = null;
+    const adsMatch = noteStr.match(/\[Ads:\s*([^\]|]+)\s*\|\s*Camp:\s*([^\]|]+)(?:\s*\|\s*Ad:\s*([^\]]+))?\]/);
+    if (adsMatch) {
+      ads = {
+        source: adsMatch[1].trim(),
+        campaign: adsMatch[2].trim(),
+        ad: (adsMatch[3] || "").trim()
+      };
+    }
+
     rows.unshift({
       createdAt: r[0],
       orderId: r[1],
@@ -1250,6 +1376,7 @@ function getOrders_() {
       price: r[14] || "",
       note: noteStr,
       misaSku: misaSku,
+      ads: ads,
       mapsLink: r[16] || "",
       status: r[17] || "Chờ xác nhận",
       telegramMsgId: r[18] || "",
