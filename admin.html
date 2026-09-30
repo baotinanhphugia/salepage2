@@ -863,6 +863,10 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <button type="submit" id="loginBtn" class="login-btn">
         <span>🔐 ĐĂNG NHẬP HỆ THỐNG</span>
       </button>
+
+      <div style="margin-top:16px;padding:10px 14px;background:rgba(214,173,69,0.08);border:1px dashed rgba(214,173,69,0.3);border-radius:12px;font-size:12px;color:var(--text-muted);line-height:1.5;text-align:center;">
+        💡 <strong style="color:var(--gold-light);">Mẹo:</strong> Nếu trình duyệt đang đăng nhập nhiều Gmail, hãy mở trang trong <strong style="color:#fff;">Cửa sổ ẩn danh (Ctrl+Shift+N / Cmd+Shift+N)</strong> để đăng nhập nhanh và ổn định nhất.
+      </div>
     </form>
 
     <!-- FORM 2: ĐỔI MẬT KHẨU TRỰC TIẾP -->
@@ -1642,27 +1646,35 @@ const formatPhoneVN = raw => {
 // Endpoint Google Apps Script được cấu hình ngầm nội bộ
 const APP_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec";
 
-// Hàm gọi API an toàn, chống crash cú pháp JSON khi Google phản hồi HTML
-async function requestApi(payload) {
+// Hàm gọi API an toàn, chống crash cú pháp JSON khi Google phản hồi HTML & tự động thử lại
+async function requestApi(payload, retryCount = 1) {
   let res;
+  let text = "";
   try {
     res = await fetch(APP_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
-      credentials: "omit"
+      body: JSON.stringify(payload)
     });
+    text = await res.text();
   } catch (netErr) {
+    if (retryCount > 0) {
+      console.warn("Đang thử lại kết nối API sau 1.2s...", netErr);
+      await new Promise(r => setTimeout(r, 1200));
+      return requestApi(payload, retryCount - 1);
+    }
     console.error("Lỗi kết nối API:", netErr);
-    throw new Error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng!");
+    throw new Error("Không thể kết nối đến máy chủ Google. Vui lòng kiểm tra lại mạng hoặc mở trang bằng <b>Cửa sổ ẩn danh (Incognito)</b>!");
   }
 
-  const text = await res.text();
   try {
     return JSON.parse(text);
   } catch (err) {
     console.warn("API response is not valid JSON:", text);
-    throw new Error("Máy chủ Google phản hồi không hợp lệ hoặc đang cập nhật phiên bản.");
+    if (text.includes("Không tìm thấy trang") || text.includes("Rất tiếc") || text.includes("drive.google.com") || text.includes("ppConfig")) {
+      throw new Error("Trình duyệt đang bị xung đột đa tài khoản Google!<br><span style='font-size:12.5px;display:inline-block;margin-top:5px;line-height:1.4;'>👉 Vui lòng mở trang này trong <b>Cửa sổ ẩn danh (Ctrl+Shift+N / Cmd+Shift+N)</b> để đăng nhập ngay 100%.</span>");
+    }
+    throw new Error("Máy chủ Google đang bận hoặc phản hồi chậm. Vui lòng bấm đăng nhập lại sau giây lát!");
   }
 }
 
