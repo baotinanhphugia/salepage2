@@ -27,15 +27,15 @@ if(c.facebookPixelId){
 
 Cấu hình production trả về `1591460902714248`. Không tìm thấy Pixel ID khác trong repo.
 
-### Lỗi cần dọn dẹp
+### Đã sửa trong bản production
 
-`index.html` dòng 54 vẫn có placeholder cho trường hợp trình duyệt không chạy JavaScript:
+`index.html` đã thay placeholder ở thẻ `noscript` bằng Pixel ID thật:
 
 ```html
-https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1
+https://www.facebook.com/tr?id=1591460902714248&ev=PageView&noscript=1
 ```
 
-Điều này không giải thích việc Ads Manager đang ghi nhận 68 kết quả ViewContent, vì phần JavaScript chính vẫn chạy. Tuy nhiên nên thay placeholder bằng Pixel ID thật hoặc bỏ phần noscript nếu chỉ dùng cấu hình động.
+Điều này không giải thích việc Ads Manager ghi nhận 68 kết quả ViewContent; phần JavaScript chính vẫn chạy. Bản production cũng đã kiểm tra Pixel ID phải là chuỗi số hợp lệ trước khi khởi tạo.
 
 ### Event hiện tại
 
@@ -131,7 +131,7 @@ Sau khi sửa, kết quả phải có dạng `Leads`, và Cost per result phải
 
 ## 6. Lưu ý kỹ thuật
 
-Repo đang có fallback `no-cors`: nếu request API gặp lỗi mạng, frontend vẫn coi request là thành công rồi bắn `Purchase` và `Lead`. Cơ chế này có thể làm đếm dư Lead/Purchase trong một số lỗi mạng; nên xử lý riêng sau khi xác nhận event Lead đã chạy đúng.
+Bản production đã bỏ fallback `no-cors` không thể xác minh phản hồi. Frontend chỉ hiển thị thành công và bắn `Lead`/`Purchase` khi backend trả về `ok: true`; mỗi đơn dùng `orderId` làm `eventID` và khóa `sessionStorage` để chống bắn trùng. Cần chạy một đơn test có kiểm soát trong Events Manager trước khi đăng bản nháp Ads.
 
 ## 7. Xác nhận trực tiếp từ Events Manager
 
