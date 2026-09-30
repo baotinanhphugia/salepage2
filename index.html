@@ -19,12 +19,18 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 
+const META_PIXEL_ID = "1591460902714248";
 let currentPixelId = "";
 let pendingInitiateCheckout = null;
+const metaEventsFired = new Set();
+
+function isValidMetaPixelId(pixelId){
+  return /^\d{10,20}$/.test(String(pixelId || "").trim());
+}
 
 function initMetaPixel(pixelId){
   const cleanId = String(pixelId || "").trim();
-  if(!cleanId || cleanId === "YOUR_PIXEL_ID" || cleanId === currentPixelId) return;
+  if(!isValidMetaPixelId(cleanId) || cleanId === "YOUR_PIXEL_ID" || cleanId === currentPixelId) return;
   currentPixelId = cleanId;
   fbq('init', cleanId);
   fbq('track', 'PageView');
@@ -51,7 +57,7 @@ function initMetaPixel(pixelId){
   }
 }
 </script>
-<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1591460902714248&ev=PageView&noscript=1"/></noscript>
 <!-- End Meta Pixel Base Code -->
 <style>
 /* ===== TỐI ƯU HIỂN THỊ CHỐNG TRÀN VÀ VỠ CHỮ TRÊN ĐIỆN THOẠI ===== */
@@ -1210,6 +1216,7 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   try {
     let orderSuccess = false;
     let serverErr = "";
+    let serverOrderId = "";
 
     try {
       const res = await fetch(API_URL, {
@@ -1220,23 +1227,19 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
       const raw = await res.text();
       try {
         const j = JSON.parse(raw);
-        if (j && j.ok) {
+        if (j && j.ok === true) {
           orderSuccess = true;
+          serverOrderId = String(j.orderId || j.leadId || "").trim();
         } else if (j && j.error) {
           serverErr = j.error;
+        } else {
+          serverErr = "Máy chủ chưa xác nhận đơn hàng. Vui lòng thử lại.";
         }
       } catch(_) {
-        orderSuccess = true;
+        serverErr = "Không đọc được xác nhận từ máy chủ. Vui lòng thử lại.";
       }
     } catch(netErr) {
-      // Dự phòng no-cors nếu CORS bị hạn chế
-      await fetch(API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(data)
-      });
-      orderSuccess = true;
+      serverErr = "Không kết nối được máy chủ. Vui lòng kiểm tra mạng rồi thử lại.";
     }
 
     if (serverErr) {
@@ -1255,8 +1258,13 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
       // Hiển thị Popup xác nhận đặt hàng thành công đầy đủ thông tin
       showOrderSuccessModal(data);
 
-      // Bắn sự kiện Purchase & Lead cho Meta Pixel
-      if(window.fbq && currentPixelId){
+      // Chỉ bắn sau khi backend trả về ok:true; dùng orderId làm khóa chống trùng.
+      const eventId = serverOrderId || ("PGD-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
+      const dedupeKey = "PGD_META_EVENTS_" + eventId;
+      let alreadyTracked = false;
+      try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
+      if(window.fbq && currentPixelId && !alreadyTracked){
+        try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
         const orderVal = Number(String(data.price || "459999").replace(/\D/g,"")) || 459999;
         const currentTitle = data.product || document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
         fbq('track', 'Purchase', {
@@ -1267,13 +1275,13 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
           value: orderVal,
           currency: 'VND',
           num_items: Number(data.quantity || 1)
-        });
+        }, {eventID: eventId + '-purchase'});
         fbq('track', 'Lead', {
           content_name: currentTitle,
           content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
           value: orderVal,
           currency: 'VND'
-        });
+        }, {eventID: eventId + '-lead'});
         console.log("🎯 Meta Pixel Event: Purchase & Lead fired (" + orderVal + " VND)");
       }
 
@@ -1726,4 +1734,3 @@ try {
 </script>
 </body>
 </html>
-
