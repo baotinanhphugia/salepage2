@@ -1644,11 +1644,19 @@ const APP_ENDPOINT = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyG
 
 // Hàm gọi API an toàn, chống crash cú pháp JSON khi Google phản hồi HTML
 async function requestApi(payload) {
-  const res = await fetch(APP_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload)
-  });
+  let res;
+  try {
+    res = await fetch(APP_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+      credentials: "omit"
+    });
+  } catch (netErr) {
+    console.error("Lỗi kết nối API:", netErr);
+    throw new Error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng!");
+  }
+
   const text = await res.text();
   try {
     return JSON.parse(text);
@@ -2372,15 +2380,11 @@ async function fetchMisaInventoryFromRunner(showNotice = true) {
 
       // Lưu cache lên Google Sheet nếu là Admin
       if (currentAuthUser && currentAuthUser.role === "Admin" && currentAuthPassword) {
-        fetch(APP_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action: "saveMisaInventoryCache",
-            username: currentAuthUsername,
-            password: currentAuthPassword,
-            items: items.slice(0, 500)
-          })
+        requestApi({
+          action: "saveMisaInventoryCache",
+          username: currentAuthUsername,
+          password: currentAuthPassword,
+          items: items.slice(0, 500)
         }).catch(err => console.log("Cache save error:", err));
       }
       if (showNotice) showStatus(`✅ Đã đồng bộ thành công ${items.length} mặt hàng từ MISA eShop!`, true);
@@ -2782,18 +2786,12 @@ async function handleChangePassword(event) {
     btn.innerHTML = "<span>⏳ ĐANG XỬ LÝ...</span>";
     clearStatus("#loginStatus");
 
-    const res = await fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "changePassword",
-        username: username,
-        currentPassword: oldPass,
-        newPassword: newPass
-      })
+    const data = await requestApi({
+      action: "changePassword",
+      username: username,
+      currentPassword: oldPass,
+      newPassword: newPass
     });
-
-    const data = await res.json();
     if (!data.ok) {
       throw new Error(data.error || "Không thể đổi mật khẩu!");
     }
@@ -3697,11 +3695,7 @@ async function quickCallOrder(orderId, phone) {
   try {
     // Cập nhật trạng thái Sheet
     const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đang gọi điện" });
-    fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    }).then(() => loadOrders()).catch(() => {});
+    requestApi(payload).then(() => loadOrders()).catch(() => {});
     // Mở ứng dụng gọi điện trên thiết bị
     window.open(`tel:${validPhone}`, "_self");
     showStatus(`📞 Đang gọi ${validPhone}... Trạng thái cập nhật: Đang gọi điện`);
@@ -3715,11 +3709,7 @@ async function quickZaloOrder(orderId, cleanPhone) {
   try {
     // Cập nhật trạng thái Sheet
     const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đã nhắn Zalo" });
-    fetch(APP_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    }).then(() => loadOrders()).catch(() => {});
+    requestApi(payload).then(() => loadOrders()).catch(() => {});
     // Mở Zalo chat
     window.open(`https://zalo.me/${validPhone}`, "_blank");
     showStatus(`💬 Đã mở Zalo chat với ${validPhone}... Trạng thái cập nhật: Đã nhắn Zalo`);
