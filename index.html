@@ -56,6 +56,9 @@ function initMetaPixel(pixelId){
     pendingInitiateCheckout = null;
   }
 }
+
+// Khởi chạy Pixel ngay lập tức 0ms từ đầu trang (chống mất dữ liệu khách dùng mạng 4G/di động)
+initMetaPixel(META_PIXEL_ID);
 </script>
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1591460902714248&ev=PageView&noscript=1"/></noscript>
 <!-- End Meta Pixel Base Code -->
@@ -993,8 +996,8 @@ button#btnSubmit {
 </section>
 
 <div class="bottom">
-  <a>🏪<br>Cửa hàng</a>
-  <a>💬<br>Trò chuyện</a>
+  <a href="tel:0398138678" class="bottom-hotline">📞<br>Gọi Hotline</a>
+  <a href="https://zalo.me/0398138678" target="_blank" rel="noopener" class="bottom-zalo">💬<br>Chat Zalo</a>
   <a class="cart" href="#order">Thêm vào<br>Giỏ hàng</a>
   <a class="buy shake-buy" href="#order">Mua Ngay</a>
 </div>
@@ -1533,6 +1536,12 @@ function applyConfigData(c){
     document.querySelectorAll(".osm-btn-call").forEach(a => {
       a.href = "tel:" + c.hotline;
       a.innerText = "📞 Hotline hỗ trợ 24/7: " + c.hotline;
+    });
+    document.querySelectorAll(".bottom-hotline").forEach(a => {
+      a.href = "tel:" + c.hotline;
+    });
+    document.querySelectorAll(".bottom-zalo").forEach(a => {
+      a.href = "https://zalo.me/" + c.hotline.replace(/\D/g,"");
     });
   }
 }
