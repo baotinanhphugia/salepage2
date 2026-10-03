@@ -1270,22 +1270,14 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
         try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
         const orderVal = Number(String(data.price || "459999").replace(/\D/g,"")) || 459999;
         const currentTitle = data.product || document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
-        fbq('track', 'Purchase', {
+        fbq('track', 'CompleteRegistration', {
           content_name: currentTitle,
           content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
-          content_ids: [data.misaSku || data.size || 'MOISSANITE'],
-          content_type: 'product',
           value: orderVal,
           currency: 'VND',
-          num_items: Number(data.quantity || 1)
-        }, {eventID: eventId + '-purchase'});
-        fbq('track', 'Lead', {
-          content_name: currentTitle,
-          content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
-          value: orderVal,
-          currency: 'VND'
-        }, {eventID: eventId + '-lead'});
-        console.log("🎯 Meta Pixel Event: Purchase & Lead fired (" + orderVal + " VND)");
+          status: true
+        }, {eventID: eventId + '-reg'});
+        console.log("🎯 Meta Pixel Event: CompleteRegistration fired (" + orderVal + " VND)");
       }
 
       e.target.reset();
