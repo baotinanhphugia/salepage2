@@ -713,58 +713,231 @@ button#btnSubmit {
   border-color:#86efac;
 }
 
-/* --- VIDEO SHOWCASE STYLES --- */
-.hero-media-wrap {
+/* --- SHOPEE / TIKTOK STYLE PRODUCT GALLERY SLIDER --- */
+.product-gallery {
   position: relative;
   width: 100%;
-  display: block;
+  background: #fff;
+  user-select: none;
+  overflow: hidden;
 }
-.hero-media-wrap img {
-  display: block;
+.gallery-main-viewer {
+  position: relative;
   width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #000;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
 }
-.hero-video-badge {
-  position: absolute;
-  bottom: 14px;
-  right: 14px;
-  background: rgba(17, 24, 39, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #ffd447;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 8px 14px;
-  border-radius: 30px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
-  border: 1px solid rgba(255, 212, 71, 0.5);
-  z-index: 5;
-  transition: all .25s ease;
-  animation: pulseGlow 2.5s infinite;
+.gallery-slides-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
 }
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.35), 0 0 0 0 rgba(255, 212, 71, 0.4); }
-  50% { box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 0 6px rgba(255, 212, 71, 0); }
-}
-.hero-video-badge:active {
-  transform: scale(0.96);
-}
-.hvb-icon {
-  background: #ffd447;
-  color: #111;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+.gallery-slide {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  font-weight: 900;
-  padding-left: 2px;
+  overflow: hidden;
 }
+.gallery-slide.is-video-slide {
+  background: #000;
+}
+.gallery-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gallery-video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 12%;
+  display: block;
+  cursor: pointer;
+}
+.gallery-video-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  z-index: 4;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.gallery-video-controls {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 4;
+}
+.gallery-arrow-main {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+  transition: all .2s;
+  padding: 0;
+}
+.gallery-arrow-main:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+.gallery-arrow-main.prev { left: 10px; padding-right: 2px; }
+.gallery-arrow-main.next { right: 10px; padding-left: 2px; }
+
+.gallery-counter-pill {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 14px;
+  z-index: 5;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* THUMBNAIL STRIP */
+.gallery-thumbs-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 10px 8px 12px;
+  background: #fff;
+  gap: 6px;
+}
+.thumb-nav-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 64px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 900;
+  color: #4b5563;
+  transition: all .2s;
+  z-index: 2;
+  padding: 0;
+}
+.thumb-nav-btn:hover {
+  background: #e5e7eb;
+  color: #111;
+}
+.gallery-thumbs-track {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 2px;
+  flex: 1;
+}
+.gallery-thumbs-track::-webkit-scrollbar {
+  display: none;
+}
+.gallery-thumb-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  background: #f3f4f6;
+  transition: all .2s ease;
+  box-sizing: border-box;
+}
+.gallery-thumb-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gallery-thumb-item.active {
+  border-color: #e60033;
+  box-shadow: 0 0 0 1px #e60033, 0 3px 8px rgba(230,0,51,0.25);
+  transform: scale(1.02);
+}
+.gallery-thumb-item.is-video .thumb-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  pointer-events: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.t-play-triangle {
+  margin-left: 2px;
+}
+.thumb-video-badge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(230, 0, 51, 0.95);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 900;
+  text-align: center;
+  padding: 1px 0;
+  line-height: 1.1;
+  pointer-events: none;
+  letter-spacing: 0.3px;
+}
+
+/* --- VIDEO SHOWCASE STYLES --- */
 
 .video-sec {
   background: #fff;
@@ -983,12 +1156,128 @@ button#btnSubmit {
 </div>
 
 <section class="hero">
-  <div class="hero-media-wrap">
-    <img src="images/anh-mau.png" alt="Bông tai Moissanite">
-    <a href="#videoSection" class="hero-video-badge" onclick="triggerHeroVideoClick(event)">
-      <span class="hvb-icon">▶</span>
-      <span>Xem video đeo trên tai</span>
-    </a>
+  <!-- PRODUCT MEDIA GALLERY SLIDER (SHOPEE / TIKTOK STYLE) -->
+  <div class="product-gallery" id="productGallery">
+    <!-- KHUNG HIỂN THỊ CHÍNH (MAIN VIEWER) -->
+    <div class="gallery-main-viewer" id="galleryMainViewer">
+      <div class="gallery-slides-track" id="gallerySlidesTrack">
+        <!-- SLIDE 0: VIDEO -->
+        <div class="gallery-slide is-video-slide active" data-index="0">
+          <video
+            id="galleryVideo"
+            class="gallery-video-player"
+            src="videos/video-kc.mp4"
+            poster="videos/poster-video-square.jpg"
+            playsinline
+            webkit-playsinline
+            autoplay
+            loop
+            preload="metadata"
+          ></video>
+          <div class="video-overlay-btn" id="galleryVideoPlayOverlay" onclick="toggleGalleryPlayVideo()">
+            <span class="v-play-icon">▶</span>
+          </div>
+          <div class="gallery-video-controls">
+            <button type="button" class="video-sound-pill active" id="gallerySoundBtn" onclick="toggleGallerySound(event)">
+              <span id="gSoundIcon">🔊</span> <span id="gSoundText">Tắt âm thanh</span>
+            </button>
+            <button type="button" class="video-replay-pill" onclick="replayGalleryVideo(event)">
+              <span>🔄</span> Xem lại
+            </button>
+          </div>
+          <div class="gallery-video-tag">🎥 Video thực tế đeo trên tai</div>
+        </div>
+
+        <!-- SLIDE 1: ANH MAU -->
+        <div class="gallery-slide" data-index="1">
+          <img src="images/anh-mau.png" alt="Bông tai Moissanite Phú Gia Diamond" class="gallery-main-img" loading="eager">
+        </div>
+
+        <!-- SLIDE 2: ANH CHINH -->
+        <div class="gallery-slide" data-index="2">
+          <img src="images/anh-chinh.jpg" alt="Cận cảnh bông tai và hộp cao cấp" class="gallery-main-img" loading="lazy">
+        </div>
+
+        <!-- SLIDE 3: 57 GIAC CAT -->
+        <div class="gallery-slide" data-index="3">
+          <img src="images/57-giac-cat.jpg" alt="57 Giác cắt kim cương chuẩn quốc tế" class="gallery-main-img" loading="lazy">
+        </div>
+
+        <!-- SLIDE 4: KICH THUOC -->
+        <div class="gallery-slide" data-index="4">
+          <img src="images/kich-thuoc.png" alt="Bảng kích thước size đá Moissanite" class="gallery-main-img" loading="lazy">
+        </div>
+
+        <!-- SLIDE 5: ANH CHUP THUC TE -->
+        <div class="gallery-slide" data-index="5">
+          <img src="images/anh-chup.png" alt="Ảnh chụp thực tế đá lấp lánh" class="gallery-main-img" loading="lazy">
+        </div>
+
+        <!-- SLIDE 6: THONG SO -->
+        <div class="gallery-slide" data-index="6">
+          <img src="images/thong-so.png" alt="Thông số kỹ thuật sản phẩm" class="gallery-main-img" loading="lazy">
+        </div>
+      </div>
+
+      <!-- MŨI TÊN ĐIỀU HƯỚNG TRÊN KHUNG CHÍNH -->
+      <button type="button" class="gallery-arrow-main prev" onclick="prevGallerySlide(event)" aria-label="Xem trước">‹</button>
+      <button type="button" class="gallery-arrow-main next" onclick="nextGallerySlide(event)" aria-label="Xem sau">›</button>
+
+      <!-- CHỈ SỐ TRANG (1/7) -->
+      <div class="gallery-counter-pill"><span id="galleryCurrentIdx">1</span>/7</div>
+    </div>
+
+    <!-- HÀNG THUMBNAIL PHÍA DƯỚI (THUMBNAIL STRIP CÓ MŨI TÊN < >) -->
+    <div class="gallery-thumbs-wrapper">
+      <button type="button" class="thumb-nav-btn thumb-prev" onclick="scrollThumbs(-1)" aria-label="Cuộn trái">
+        <span>‹</span>
+      </button>
+
+      <div class="gallery-thumbs-track" id="galleryThumbsTrack">
+        <!-- THUMB 0: VIDEO (CÓ NÚT PLAY TRÒN) -->
+        <div class="gallery-thumb-item is-video active" onclick="goToGallerySlide(0)" data-index="0">
+          <img src="videos/poster-video-square.jpg" alt="Video thumbnail">
+          <div class="thumb-play-icon">
+            <span class="t-play-triangle">▶</span>
+          </div>
+          <span class="thumb-video-badge">VIDEO</span>
+        </div>
+
+        <!-- THUMB 1 -->
+        <div class="gallery-thumb-item" onclick="goToGallerySlide(1)" data-index="1">
+          <img src="images/anh-mau.png" alt="Ảnh mẫu">
+        </div>
+
+        <!-- THUMB 2 -->
+        <div class="gallery-thumb-item" onclick="goToGallerySlide(2)" data-index="2">
+          <img src="images/anh-chinh.jpg" alt="Ảnh chính">
+        </div>
+
+        <!-- THUMB 3 -->
+        <div class="gallery-thumb-item" onclick="goToGallerySlide(3)" data-index="3">
+          <img src="images/57-giac-cat.jpg" alt="57 Giác cắt">
+        </div>
+
+        <!-- THUMB 4 -->
+        <div class="gallery-thumb-item" onclick="goToGallerySlide(4)" data-index="4">
+          <img src="images/kich-thuoc.png" alt="Kích thước">
+        </div>
+
+        <!-- THUMB 5 -->
+        <div class="gallery-thumb-item" onclick="goToGallerySlide(5)" data-index="5">
+          <img src="images/anh-chup.png" alt="Ảnh chụp">
+        </div>
+
+        <!-- THUMB 6 -->
+        <div class="gallery-thumb-item" onclick="goToGallerySlide(6)" data-index="6">
+          <img src="images/thong-so.png" alt="Thông số">
+        </div>
+      </div>
+
+      <button type="button" class="thumb-nav-btn thumb-next" onclick="scrollThumbs(1)" aria-label="Cuộn phải">
+        <span>›</span>
+      </button>
+    </div>
   </div>
   <div class="banner">
     <div>EXTRA<br>Voucher 20%</div>
@@ -2054,157 +2343,206 @@ try {
   });
 } catch(e) {}
 
-// --- VIDEO SHOWCASE CONTROLS (TỰ ĐỘNG BẬT TIẾNG) ---
-const pgdVideo = document.getElementById("pgdVideo");
-const videoSoundBtn = document.getElementById("videoSoundBtn");
-const soundIcon = document.getElementById("soundIcon");
-const soundText = document.getElementById("soundText");
-const videoPlayOverlay = document.getElementById("videoPlayOverlay");
+// ==========================================
+// --- PRODUCT GALLERY SLIDER (SHOPEE STYLE) ---
+// ==========================================
+let currentGalleryIdx = 0;
+const totalGallerySlides = 7;
+const slidesTrack = document.getElementById("gallerySlidesTrack");
+const galleryCounter = document.getElementById("galleryCurrentIdx");
+const thumbItems = document.querySelectorAll(".gallery-thumb-item");
+const galleryVideo = document.getElementById("galleryVideo");
+const gallerySoundBtn = document.getElementById("gallerySoundBtn");
+const gSoundIcon = document.getElementById("gSoundIcon");
+const gSoundText = document.getElementById("gSoundText");
+const galleryPlayOverlay = document.getElementById("galleryVideoPlayOverlay");
 
 let userManuallyMuted = false;
 
-function updateSoundUI(isMuted) {
-  if (!soundIcon || !soundText || !videoSoundBtn) return;
+function updateGallerySoundUI(isMuted) {
+  if (!gSoundIcon || !gSoundText || !gallerySoundBtn) return;
   if (isMuted) {
-    soundIcon.textContent = "🔇";
-    soundText.textContent = "Bật âm thanh";
-    videoSoundBtn.classList.remove("active");
+    gSoundIcon.textContent = "🔇";
+    gSoundText.textContent = "Bật âm thanh";
+    gallerySoundBtn.classList.remove("active");
   } else {
-    soundIcon.textContent = "🔊";
-    soundText.textContent = "Tắt âm thanh";
-    videoSoundBtn.classList.add("active");
+    gSoundIcon.textContent = "🔊";
+    gSoundText.textContent = "Tắt âm thanh";
+    gallerySoundBtn.classList.add("active");
   }
 }
 
-function unmuteVideo() {
-  if (userManuallyMuted || !pgdVideo) return;
-  pgdVideo.muted = false;
-  pgdVideo.volume = 1;
-  updateSoundUI(false);
+function unmuteGalleryVideo() {
+  if (userManuallyMuted || !galleryVideo) return;
+  galleryVideo.muted = false;
+  galleryVideo.volume = 1;
+  updateGallerySoundUI(false);
 }
 
-function muteVideo() {
-  if (!pgdVideo) return;
-  pgdVideo.muted = true;
-  updateSoundUI(true);
+function muteGalleryVideo() {
+  if (!galleryVideo) return;
+  galleryVideo.muted = true;
+  updateGallerySoundUI(true);
 }
 
-function toggleVideoSound() {
-  if (!pgdVideo) return;
-  if (pgdVideo.muted) {
-    // Khách bấm bật lại âm thanh
+function toggleGallerySound(e) {
+  if (e) e.stopPropagation();
+  if (!galleryVideo) return;
+  if (galleryVideo.muted) {
     userManuallyMuted = false;
-    unmuteVideo();
-    pgdVideo.play().catch(e => console.log("Play error", e));
+    unmuteGalleryVideo();
+    galleryVideo.play().catch(err => console.log("Play error", err));
   } else {
-    // Khách chủ động tắt âm thanh
     userManuallyMuted = true;
-    muteVideo();
+    muteGalleryVideo();
   }
 }
 
-function triggerHeroVideoClick(e) {
-  userManuallyMuted = false;
-  unmuteVideo();
-  if (pgdVideo) {
-    pgdVideo.play().catch(e => console.log("Play error", e));
-  }
-}
-
-function togglePlayVideo() {
-  if (!pgdVideo) return;
-  if (pgdVideo.paused) {
-    if (!userManuallyMuted) unmuteVideo();
-    pgdVideo.play().catch(e => console.log("Play failed", e));
-    if (videoPlayOverlay) videoPlayOverlay.classList.remove("show");
+function toggleGalleryPlayVideo() {
+  if (!galleryVideo) return;
+  if (galleryVideo.paused) {
+    if (!userManuallyMuted) unmuteGalleryVideo();
+    galleryVideo.play().catch(err => console.log("Play failed", err));
+    if (galleryPlayOverlay) galleryPlayOverlay.classList.remove("show");
   } else {
-    pgdVideo.pause();
-    if (videoPlayOverlay) videoPlayOverlay.classList.add("show");
+    galleryVideo.pause();
+    if (galleryPlayOverlay) galleryPlayOverlay.classList.add("show");
   }
 }
 
-function replayVideo() {
-  if (!pgdVideo) return;
-  pgdVideo.currentTime = 0;
-  if (!userManuallyMuted) unmuteVideo();
-  pgdVideo.play().catch(e => console.log("Play failed", e));
-  if (videoPlayOverlay) videoPlayOverlay.classList.remove("show");
+function replayGalleryVideo(e) {
+  if (e) e.stopPropagation();
+  if (!galleryVideo) return;
+  galleryVideo.currentTime = 0;
+  if (!userManuallyMuted) unmuteGalleryVideo();
+  galleryVideo.play().catch(err => console.log("Play failed", err));
+  if (galleryPlayOverlay) galleryPlayOverlay.classList.remove("show");
 }
 
-if (pgdVideo) {
-  pgdVideo.addEventListener("play", () => {
-    if (videoPlayOverlay) videoPlayOverlay.classList.remove("show");
-    if (!userManuallyMuted && !pgdVideo.muted) {
-      updateSoundUI(false);
+function goToGallerySlide(idx) {
+  if (idx < 0) idx = 0;
+  if (idx >= totalGallerySlides) idx = totalGallerySlides - 1;
+  currentGalleryIdx = idx;
+
+  if (slidesTrack) {
+    slidesTrack.style.transform = `translateX(-${currentGalleryIdx * 100}%)`;
+  }
+  if (galleryCounter) {
+    galleryCounter.textContent = (currentGalleryIdx + 1);
+  }
+
+  thumbItems.forEach((thumb, i) => {
+    if (i === currentGalleryIdx) {
+      thumb.classList.add("active");
+      thumb.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    } else {
+      thumb.classList.remove("active");
     }
   });
-  pgdVideo.addEventListener("pause", () => {
-    if (videoPlayOverlay) videoPlayOverlay.classList.add("show");
-  });
-  pgdVideo.addEventListener("click", togglePlayVideo);
 
-  // Thử phát video kèm âm thanh ngay lập tức
-  pgdVideo.muted = false;
-  pgdVideo.volume = 1;
-  const initialPlay = pgdVideo.play();
-  if (initialPlay !== undefined) {
-    initialPlay.then(() => {
-      updateSoundUI(false);
+  if (galleryVideo) {
+    if (currentGalleryIdx === 0) {
+      if (!userManuallyMuted) unmuteGalleryVideo();
+      galleryVideo.play().catch(() => {});
+    } else {
+      galleryVideo.pause();
+    }
+  }
+}
+
+function nextGallerySlide(e) {
+  if (e) e.stopPropagation();
+  if (currentGalleryIdx < totalGallerySlides - 1) {
+    goToGallerySlide(currentGalleryIdx + 1);
+  } else {
+    goToGallerySlide(0);
+  }
+}
+
+function prevGallerySlide(e) {
+  if (e) e.stopPropagation();
+  if (currentGalleryIdx > 0) {
+    goToGallerySlide(currentGalleryIdx - 1);
+  } else {
+    goToGallerySlide(totalGallerySlides - 1);
+  }
+}
+
+function scrollThumbs(direction) {
+  const track = document.getElementById("galleryThumbsTrack");
+  if (track) {
+    track.scrollBy({ left: direction * 160, behavior: "smooth" });
+  }
+}
+
+// Touch swipe gesture on main viewer
+const mainViewerEl = document.getElementById("galleryMainViewer");
+if (mainViewerEl) {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  mainViewerEl.addEventListener("touchstart", (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  mainViewerEl.addEventListener("touchend", (e) => {
+    const diffX = e.changedTouches[0].screenX - touchStartX;
+    const diffY = e.changedTouches[0].screenY - touchStartY;
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0) {
+        nextGallerySlide();
+      } else {
+        prevGallerySlide();
+      }
+    }
+  }, { passive: true });
+}
+
+if (galleryVideo) {
+  galleryVideo.addEventListener("play", () => {
+    if (galleryPlayOverlay) galleryPlayOverlay.classList.remove("show");
+    if (!userManuallyMuted && !galleryVideo.muted) {
+      updateGallerySoundUI(false);
+    }
+  });
+  galleryVideo.addEventListener("pause", () => {
+    if (galleryPlayOverlay && currentGalleryIdx === 0) {
+      galleryPlayOverlay.classList.add("show");
+    }
+  });
+  galleryVideo.addEventListener("click", toggleGalleryPlayVideo);
+
+  // Initial autoplay with sound
+  galleryVideo.muted = false;
+  galleryVideo.volume = 1;
+  const initialPlayG = galleryVideo.play();
+  if (initialPlayG !== undefined) {
+    initialPlayG.then(() => {
+      updateGallerySoundUI(false);
     }).catch(() => {
-      // Trình duyệt chặn âm thanh khi chưa có tương tác chạm:
-      // Tạm phát tắt tiếng và tự động BẬT TIẾNG NGAY ở cử chỉ chạm/lướt đầu tiên!
-      pgdVideo.muted = true;
-      updateSoundUI(true);
-      pgdVideo.play().catch(() => {});
+      galleryVideo.muted = true;
+      updateGallerySoundUI(true);
+      galleryVideo.play().catch(() => {});
     });
   }
 
-  // Tự động bật tiếng ngay khi khách chạm/lướt màn hình
-  const autoEnableAudio = () => {
-    if (!userManuallyMuted && pgdVideo) {
-      pgdVideo.muted = false;
-      pgdVideo.volume = 1;
-      updateSoundUI(false);
-      pgdVideo.play().catch(() => {});
+  const autoEnableAudioG = () => {
+    if (!userManuallyMuted && galleryVideo && currentGalleryIdx === 0) {
+      galleryVideo.muted = false;
+      galleryVideo.volume = 1;
+      updateGallerySoundUI(false);
+      galleryVideo.play().catch(() => {});
     }
     ['click', 'touchstart', 'touchend', 'pointerdown', 'scroll', 'keydown'].forEach(evt => {
-      window.removeEventListener(evt, autoEnableAudio, true);
-      document.removeEventListener(evt, autoEnableAudio, true);
+      window.removeEventListener(evt, autoEnableAudioG, true);
+      document.removeEventListener(evt, autoEnableAudioG, true);
     });
   };
 
   ['click', 'touchstart', 'touchend', 'pointerdown', 'scroll', 'keydown'].forEach(evt => {
-    window.addEventListener(evt, autoEnableAudio, { capture: true, passive: true });
-    document.addEventListener(evt, autoEnableAudio, { capture: true, passive: true });
+    window.addEventListener(evt, autoEnableAudioG, { capture: true, passive: true });
+    document.addEventListener(evt, autoEnableAudioG, { capture: true, passive: true });
   });
-
-  // Tự động phát khi cuộn tới và tạm dừng khi cuộn ra ngoài (tiết kiệm pin & dữ liệu)
-  if ("IntersectionObserver" in window) {
-    const videoObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          if (!userManuallyMuted) {
-            pgdVideo.muted = false;
-          }
-          const p = pgdVideo.play();
-          if (p !== undefined) {
-            p.then(() => {
-              if (!userManuallyMuted) updateSoundUI(false);
-            }).catch(() => {
-              pgdVideo.muted = true;
-              updateSoundUI(true);
-              pgdVideo.play().catch(() => {});
-            });
-          }
-        } else {
-          if (!pgdVideo.paused) {
-            pgdVideo.pause();
-          }
-        }
-      });
-    }, { threshold: 0.25 });
-    videoObserver.observe(pgdVideo);
-  }
 }
 
 </script>
