@@ -1171,8 +1171,9 @@ button#btnSubmit {
             playsinline
             webkit-playsinline
             autoplay
+            muted
             loop
-            preload="metadata"
+            preload="auto"
           ></video>
           <div class="video-overlay-btn" id="galleryVideoPlayOverlay" onclick="toggleGalleryPlayVideo()">
             <span class="v-play-icon">▶</span>
@@ -2400,6 +2401,15 @@ function toggleGallerySound(e) {
 
 function toggleGalleryPlayVideo() {
   if (!galleryVideo) return;
+  if (galleryVideo.muted) {
+    userManuallyMuted = false;
+    galleryVideo.muted = false;
+    galleryVideo.volume = 1;
+    updateGallerySoundUI(false);
+    galleryVideo.play().catch(err => console.log("Play failed", err));
+    if (galleryPlayOverlay) galleryPlayOverlay.classList.remove("show");
+    return;
+  }
   if (galleryVideo.paused) {
     if (!userManuallyMuted) unmuteGalleryVideo();
     galleryVideo.play().catch(err => console.log("Play failed", err));
@@ -2512,37 +2522,95 @@ if (galleryVideo) {
   });
   galleryVideo.addEventListener("click", toggleGalleryPlayVideo);
 
-  // Initial autoplay with sound
-  galleryVideo.muted = false;
-  galleryVideo.volume = 1;
-  const initialPlayG = galleryVideo.play();
-  if (initialPlayG !== undefined) {
-    initialPlayG.then(() => {
-      updateGallerySoundUI(false);
-    }).catch(() => {
-      galleryVideo.muted = true;
-      updateGallerySoundUI(true);
-      galleryVideo.play().catch(() => {});
-    });
+  // Tự động phát video và mở âm thanh ngay lập tức
+  function attemptAutoPlayAndUnmute() {
+    if (!galleryVideo || userManuallyMuted) return;
+    galleryVideo.muted = false;
+    galleryVideo.volume = 1;
+    const playPromise = galleryVideo.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        updateGallerySoundUI(false);
+      }).catch(() => {
+        // Nếu trình duyệt yêu cầu tương tác đầu tiên:
+        // Đảm bảo video vẫn chạy mượt mà ngay lập tức và giữ nút ở trạng thái Bật âm thanh
+        galleryVideo.muted = true;
+        galleryVideo.play().catch(() => {});
+        updateGallerySoundUI(false);
+      });
+    }
   }
+
+  // Kích hoạt ngay khi đọc script & khi trang tải hoàn tất
+  attemptAutoPlayAndUnmute();
+  window.addEventListener("load", attemptAutoPlayAndUnmute, { once: true });
+  document.addEventListener("DOMContentLoaded", attemptAutoPlayAndUnmute, { once: true });
+
+  // Bắt mọi tương tác chạm/lướt/cuộn/click đầu tiên để bật âm thanh ngay tức thì
+  const userInteractions = [
+    'touchstart', 'touchend', 'touchmove',
+    'pointerdown', 'mousedown', 'mouseup',
+    'click', 'scroll', 'wheel', 'keydown'
+  ];
 
   const autoEnableAudioG = () => {
     if (!userManuallyMuted && galleryVideo && currentGalleryIdx === 0) {
       galleryVideo.muted = false;
       galleryVideo.volume = 1;
-      updateGallerySoundUI(false);
       galleryVideo.play().catch(() => {});
+      updateGallerySoundUI(false);
     }
-    ['click', 'touchstart', 'touchend', 'pointerdown', 'scroll', 'keydown'].forEach(evt => {
+    userInteractions.forEach(evt => {
       window.removeEventListener(evt, autoEnableAudioG, true);
       document.removeEventListener(evt, autoEnableAudioG, true);
     });
   };
 
-  ['click', 'touchstart', 'touchend', 'pointerdown', 'scroll', 'keydown'].forEach(evt => {
+  userInteractions.forEach(evt => {
     window.addEventListener(evt, autoEnableAudioG, { capture: true, passive: true });
     document.addEventListener(evt, autoEnableAudioG, { capture: true, passive: true });
   });
+}
+
+// Bổ trợ điều khiển cho Video thực tế ở phần dưới (#pgdVideo)
+const pgdVideoEl = document.getElementById("pgdVideo");
+const videoPlayOverlayEl = document.getElementById("videoPlayOverlay");
+const videoSoundBtnEl = document.getElementById("videoSoundBtn");
+const soundIconEl = document.getElementById("soundIcon");
+const soundTextEl = document.getElementById("soundText");
+
+function togglePlayVideo() {
+  if (!pgdVideoEl) return;
+  if (pgdVideoEl.paused) {
+    pgdVideoEl.play().catch(() => {});
+    if (videoPlayOverlayEl) videoPlayOverlayEl.classList.remove("show");
+  } else {
+    pgdVideoEl.pause();
+    if (videoPlayOverlayEl) videoPlayOverlayEl.classList.add("show");
+  }
+}
+
+function replayVideo() {
+  if (!pgdVideoEl) return;
+  pgdVideoEl.currentTime = 0;
+  pgdVideoEl.play().catch(() => {});
+  if (videoPlayOverlayEl) videoPlayOverlayEl.classList.remove("show");
+}
+
+function toggleVideoSound() {
+  if (!pgdVideoEl) return;
+  if (pgdVideoEl.muted) {
+    pgdVideoEl.muted = false;
+    pgdVideoEl.volume = 1;
+    if (soundIconEl) soundIconEl.textContent = "🔊";
+    if (soundTextEl) soundTextEl.textContent = "Tắt âm thanh";
+    if (videoSoundBtnEl) videoSoundBtnEl.classList.add("active");
+  } else {
+    pgdVideoEl.muted = true;
+    if (soundIconEl) soundIconEl.textContent = "🔇";
+    if (soundTextEl) soundTextEl.textContent = "Bật âm thanh";
+    if (videoSoundBtnEl) videoSoundBtnEl.classList.remove("active");
+  }
 }
 
 </script>
