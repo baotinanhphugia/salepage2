@@ -985,7 +985,7 @@ button#btnSubmit {
 <section class="hero">
   <div class="hero-media-wrap">
     <img src="images/anh-mau.png" alt="Bông tai Moissanite">
-    <a href="#videoSection" class="hero-video-badge">
+    <a href="#videoSection" class="hero-video-badge" onclick="triggerHeroVideoClick(event)">
       <span class="hvb-icon">▶</span>
       <span>Xem video đeo trên tai</span>
     </a>
@@ -1108,8 +1108,8 @@ button#btnSubmit {
         <span class="v-play-icon">▶</span>
       </div>
       <div class="video-controls-bar">
-        <button type="button" class="video-sound-pill" id="videoSoundBtn" onclick="toggleVideoSound()">
-          <span id="soundIcon">🔇</span> <span id="soundText">Bật âm thanh</span>
+        <button type="button" class="video-sound-pill active" id="videoSoundBtn" onclick="toggleVideoSound()">
+          <span id="soundIcon">🔊</span> <span id="soundText">Tắt âm thanh</span>
         </button>
         <button type="button" class="video-replay-pill" onclick="replayVideo()">
           <span>🔄</span> Xem lại
@@ -2054,31 +2054,67 @@ try {
   });
 } catch(e) {}
 
-// --- VIDEO SHOWCASE CONTROLS ---
+// --- VIDEO SHOWCASE CONTROLS (TỰ ĐỘNG BẬT TIẾNG) ---
 const pgdVideo = document.getElementById("pgdVideo");
 const videoSoundBtn = document.getElementById("videoSoundBtn");
 const soundIcon = document.getElementById("soundIcon");
 const soundText = document.getElementById("soundText");
 const videoPlayOverlay = document.getElementById("videoPlayOverlay");
 
+let userManuallyMuted = false;
+
+function updateSoundUI(isMuted) {
+  if (!soundIcon || !soundText || !videoSoundBtn) return;
+  if (isMuted) {
+    soundIcon.textContent = "🔇";
+    soundText.textContent = "Bật âm thanh";
+    videoSoundBtn.classList.remove("active");
+  } else {
+    soundIcon.textContent = "🔊";
+    soundText.textContent = "Tắt âm thanh";
+    videoSoundBtn.classList.add("active");
+  }
+}
+
+function unmuteVideo() {
+  if (userManuallyMuted || !pgdVideo) return;
+  pgdVideo.muted = false;
+  pgdVideo.volume = 1;
+  updateSoundUI(false);
+}
+
+function muteVideo() {
+  if (!pgdVideo) return;
+  pgdVideo.muted = true;
+  updateSoundUI(true);
+}
+
 function toggleVideoSound() {
   if (!pgdVideo) return;
   if (pgdVideo.muted) {
-    pgdVideo.muted = false;
-    if (soundIcon) soundIcon.textContent = "🔊";
-    if (soundText) soundText.textContent = "Đang bật tiếng";
-    if (videoSoundBtn) videoSoundBtn.classList.add("active");
+    // Khách bấm bật lại âm thanh
+    userManuallyMuted = false;
+    unmuteVideo();
+    pgdVideo.play().catch(e => console.log("Play error", e));
   } else {
-    pgdVideo.muted = true;
-    if (soundIcon) soundIcon.textContent = "🔇";
-    if (soundText) soundText.textContent = "Bật âm thanh";
-    if (videoSoundBtn) videoSoundBtn.classList.remove("active");
+    // Khách chủ động tắt âm thanh
+    userManuallyMuted = true;
+    muteVideo();
+  }
+}
+
+function triggerHeroVideoClick(e) {
+  userManuallyMuted = false;
+  unmuteVideo();
+  if (pgdVideo) {
+    pgdVideo.play().catch(e => console.log("Play error", e));
   }
 }
 
 function togglePlayVideo() {
   if (!pgdVideo) return;
   if (pgdVideo.paused) {
+    if (!userManuallyMuted) unmuteVideo();
     pgdVideo.play().catch(e => console.log("Play failed", e));
     if (videoPlayOverlay) videoPlayOverlay.classList.remove("show");
   } else {
@@ -2090,6 +2126,7 @@ function togglePlayVideo() {
 function replayVideo() {
   if (!pgdVideo) return;
   pgdVideo.currentTime = 0;
+  if (!userManuallyMuted) unmuteVideo();
   pgdVideo.play().catch(e => console.log("Play failed", e));
   if (videoPlayOverlay) videoPlayOverlay.classList.remove("show");
 }
@@ -2097,19 +2134,67 @@ function replayVideo() {
 if (pgdVideo) {
   pgdVideo.addEventListener("play", () => {
     if (videoPlayOverlay) videoPlayOverlay.classList.remove("show");
+    if (!userManuallyMuted && !pgdVideo.muted) {
+      updateSoundUI(false);
+    }
   });
   pgdVideo.addEventListener("pause", () => {
     if (videoPlayOverlay) videoPlayOverlay.classList.add("show");
   });
   pgdVideo.addEventListener("click", togglePlayVideo);
 
+  // Thử phát video kèm âm thanh ngay lập tức
+  pgdVideo.muted = false;
+  pgdVideo.volume = 1;
+  const initialPlay = pgdVideo.play();
+  if (initialPlay !== undefined) {
+    initialPlay.then(() => {
+      updateSoundUI(false);
+    }).catch(() => {
+      // Trình duyệt chặn âm thanh khi chưa có tương tác chạm:
+      // Tạm phát tắt tiếng và tự động BẬT TIẾNG NGAY ở cử chỉ chạm/lướt đầu tiên!
+      pgdVideo.muted = true;
+      updateSoundUI(true);
+      pgdVideo.play().catch(() => {});
+    });
+  }
+
+  // Tự động bật tiếng ngay khi khách chạm/lướt màn hình
+  const autoEnableAudio = () => {
+    if (!userManuallyMuted && pgdVideo) {
+      pgdVideo.muted = false;
+      pgdVideo.volume = 1;
+      updateSoundUI(false);
+      pgdVideo.play().catch(() => {});
+    }
+    ['click', 'touchstart', 'touchend', 'pointerdown', 'scroll', 'keydown'].forEach(evt => {
+      window.removeEventListener(evt, autoEnableAudio, true);
+      document.removeEventListener(evt, autoEnableAudio, true);
+    });
+  };
+
+  ['click', 'touchstart', 'touchend', 'pointerdown', 'scroll', 'keydown'].forEach(evt => {
+    window.addEventListener(evt, autoEnableAudio, { capture: true, passive: true });
+    document.addEventListener(evt, autoEnableAudio, { capture: true, passive: true });
+  });
+
   // Tự động phát khi cuộn tới và tạm dừng khi cuộn ra ngoài (tiết kiệm pin & dữ liệu)
   if ("IntersectionObserver" in window) {
     const videoObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          if (pgdVideo.paused) {
-            pgdVideo.play().catch(() => {});
+          if (!userManuallyMuted) {
+            pgdVideo.muted = false;
+          }
+          const p = pgdVideo.play();
+          if (p !== undefined) {
+            p.then(() => {
+              if (!userManuallyMuted) updateSoundUI(false);
+            }).catch(() => {
+              pgdVideo.muted = true;
+              updateSoundUI(true);
+              pgdVideo.play().catch(() => {});
+            });
           }
         } else {
           if (!pgdVideo.paused) {
