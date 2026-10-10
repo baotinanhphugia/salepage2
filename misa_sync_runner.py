@@ -527,6 +527,7 @@ def push_order_to_misa(order):
         "shipping_partner_amount": 0,
         "weight": 100,
         "employee_note": f"Đơn PGD {order.get('orderId', '')} [MISA:{matched_item['sku']}] - {order.get('note', '')}",
+        "is_invoice": True,
         "invoice": {
             "inv_buyer_object_type": 2, # Cá nhân
             "inv_buyer_name": recipient_name,
