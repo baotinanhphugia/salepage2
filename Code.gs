@@ -414,6 +414,11 @@ function handleUpdateOrderVN_(data) {
     throw new Error("Không tìm thấy đơn hàng " + orderId);
   }
 
+  const currentStatus = String(values[targetRow - 1][17] || "").trim();
+  if (currentStatus === "Đã đẩy eShop" && !data.force) {
+    throw new Error("Đơn hàng " + orderId + " đã đẩy sang MISA eShop! Vui lòng không sửa trên Sheet để tránh sai lệch tồn kho MISA.");
+  }
+
   const name = cleanText_(data.name || "");
   const phone = cleanText_(data.phone || "");
   const address = cleanText_(data.address || "");
@@ -512,6 +517,16 @@ function handlePushToEShopVN_(data) {
 
   if (targetRow === -1) {
     throw new Error("Không tìm thấy đơn hàng " + orderId);
+  }
+
+  const currentStatus = String(values[targetRow - 1][17] || "").trim();
+  if (currentStatus === "Đã đẩy eShop") {
+    return json_({
+      ok: true,
+      orderId,
+      alreadyPushed: true,
+      message: "Đơn hàng này đã được đẩy sang MISA eShop thành công từ trước!"
+    });
   }
 
   // Cập nhật trạng thái trong Sheet để Runner xử lý
@@ -829,6 +844,11 @@ function handleCancelOrderVN_(data) {
 
     if (targetRow === -1) {
       throw new Error("Không tìm thấy đơn hàng " + orderId);
+    }
+
+    const currentStatus = String(values[targetRow - 1][17] || "").trim();
+    if (currentStatus === "Đã đẩy eShop" && !data.force) {
+      throw new Error("Đơn hàng " + orderId + " đã đẩy sang MISA eShop! Không thể xóa để tránh sai lệch đối soát kho và bưu cục.");
     }
 
     // 1. Xóa tin nhắn đơn hàng trên Telegram (Inbox Zero)

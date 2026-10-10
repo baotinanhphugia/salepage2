@@ -3394,6 +3394,43 @@ let currentOrdersList = [];
 let orderAutoSyncTimer = null;
 let isFetchingOrders = false;
 let previousOrderCount = 0;
+window.sessionUnlockedOrders = new Set();
+
+function isOrderLockedAfterEshop(order) {
+  if (!order) return false;
+  const status = String(order.status || "").trim();
+  const eshopCode = String(order.eshopCode || "").trim();
+  if (status === "Đã đẩy eShop") return true;
+  if (eshopCode && !eshopCode.toLowerCase().startsWith("lỗi") && eshopCode !== "N/A") return true;
+  if (status.includes("(MISA)") || status === "Giao thành công" || status === "Đang giao hàng" || status === "Chờ giao hàng" || status === "Đã xuất kho" || status === "Đã đối soát") return true;
+  return false;
+}
+
+function unlockOrderAction(orderId) {
+  if (!currentAuthUser || currentAuthUser.role !== "Admin") {
+    alert("🔒 Chỉ tài khoản Quản trị viên (Admin) mới có quyền mở khoá đơn hàng đã đẩy eShop!");
+    return;
+  }
+  if (confirm(`⚠️ CẢNH BÁO: Đơn ${orderId} đã được đẩy sang MISA eShop!\n\nBạn có chắc chắn muốn MỞ KHOÁ thao tác cho đơn này không?\n(Lưu ý: Mọi chỉnh sửa thông tin, giá tiền hoặc xóa đơn cần đối soát lại trên MISA eShop)`)) {
+    if (!window.sessionUnlockedOrders) window.sessionUnlockedOrders = new Set();
+    window.sessionUnlockedOrders.add(orderId);
+    filterAndRenderOrders();
+    showStatus(`🔓 Đã mở khoá tạm thời đơn ${orderId} cho Admin thao tác.`, true);
+  }
+}
+
+function relockOrderAction(orderId) {
+  if (window.sessionUnlockedOrders) {
+    window.sessionUnlockedOrders.delete(orderId);
+  }
+  filterAndRenderOrders();
+  showStatus(`🔒 Đã khoá lại đơn ${orderId}.`, true);
+}
+
+function filterAndRenderOrders() {
+  const searchVal = $("#orderSearchInput") ? $("#orderSearchInput").value : "";
+  handleOrderSearch(searchVal);
+}
 
 // Âm thanh thông báo nhẹ khi có đơn hàng mới (Dùng Web Audio API)
 function playNewOrderChime() {
@@ -3641,15 +3678,50 @@ function renderOrdersTable(orders, searchQuery = "") {
     }
 
     const cleanPhoneNum = displayPhone;
-    const actionsHtml = `
-      <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${displayPhone}')" title="Gọi điện & cập nhật trạng thái">📞 Gọi</button>
-        <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Mở Zalo & cập nhật trạng thái">💬 Zalo</button>
-        <button class="btn-action-edit" onclick="openOrderModal('${o.orderId}')" title="Sửa size, địa chỉ & báo Tele">✏️ Sửa</button>
-        <button class="btn-action-eshop" onclick="quickPushEShop('${o.orderId}')" title="Đẩy eShop & Hoàn tất (Xóa tin Tele)">🚀 eShop</button>
-        <button class="btn-action-cancel" onclick="quickCancelOrder('${o.orderId}')" title="Hủy & Xóa đơn khỏi Google Sheet và Telegram">🗑️ Xóa đơn</button>
-      </div>
-    `;
+    const isLocked = isOrderLockedAfterEshop(o);
+    const isSessionUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(o.orderId);
+    const isAdmin = (currentAuthUser && currentAuthUser.role === "Admin");
+
+    let actionsHtml = "";
+    if (isLocked && !isSessionUnlocked) {
+      actionsHtml = `
+        <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:130px;">
+          <div style="display:inline-flex; align-items:center; justify-content:center; gap:5px; width:100%; background:rgba(30,41,59,0.85); border:1px solid rgba(59,130,246,0.5); padding:3px 8px; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.3);">
+            <span style="color:#93c5fd; font-size:11px; font-weight:700; white-space:nowrap;">🔒 ĐÃ KHOÁ ESHOP</span>
+            ${isAdmin ? `<button type="button" onclick="unlockOrderAction('${o.orderId}')" style="background:none; border:none; color:#fbbf24; cursor:pointer; font-size:10.5px; font-weight:700; padding:0 2px; text-decoration:underline;" title="Mở khoá thao tác dành riêng cho Quản trị viên (Admin)">[Mở]</button>` : ''}
+          </div>
+          <div style="display:flex; gap:3px; justify-content:center; flex-wrap:wrap; opacity:0.35; filter:grayscale(1); pointer-events:none;" title="Đơn hàng đã đẩy sang MISA eShop. Các nút thao tác đã được khoá an toàn.">
+            <button class="btn-action-call" disabled style="cursor:not-allowed;">📞 Gọi</button>
+            <button class="btn-action-zalo" disabled style="cursor:not-allowed;">💬 Zalo</button>
+            <button class="btn-action-edit" disabled style="cursor:not-allowed;">✏️ Sửa</button>
+            <button class="btn-action-eshop" disabled style="cursor:not-allowed;">🚀 eShop</button>
+            <button class="btn-action-cancel" disabled style="cursor:not-allowed;">🗑️ Xóa đơn</button>
+          </div>
+        </div>
+      `;
+    } else {
+      let unlockBanner = "";
+      if (isLocked && isSessionUnlocked) {
+        unlockBanner = `
+          <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px; width:100%; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.5); padding:2px 6px; border-radius:5px; margin-bottom:4px;">
+            <span style="color:#fcd34d; font-size:10.5px; font-weight:700;">⚠️ ĐÃ MỞ (ADMIN)</span>
+            <button type="button" onclick="relockOrderAction('${o.orderId}')" style="background:none; border:none; color:#93c5fd; cursor:pointer; font-size:10.5px; font-weight:700; padding:0 2px; text-decoration:underline;" title="Khoá lại">[Khoá]</button>
+          </div>
+        `;
+      }
+      actionsHtml = `
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          ${unlockBanner}
+          <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${displayPhone}')" title="Gọi điện & cập nhật trạng thái">📞 Gọi</button>
+            <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Mở Zalo & cập nhật trạng thái">💬 Zalo</button>
+            <button class="btn-action-edit" onclick="openOrderModal('${o.orderId}')" title="Sửa size, địa chỉ & báo Tele">✏️ Sửa</button>
+            <button class="btn-action-eshop" onclick="quickPushEShop('${o.orderId}')" title="Đẩy eShop & Hoàn tất (Xóa tin Tele)">🚀 eShop</button>
+            <button class="btn-action-cancel" onclick="quickCancelOrder('${o.orderId}')" title="Hủy & Xóa đơn khỏi Google Sheet và Telegram">🗑️ Xóa đơn</button>
+          </div>
+        </div>
+      `;
+    }
 
     const cols = [
       o.createdAt,
@@ -3756,7 +3828,29 @@ function openOrderModal(orderId) {
     $("#editMisaSku").value = targetSku;
   }
 
-  clearStatus("#modalStatus");
+  const isLocked = isOrderLockedAfterEshop(order);
+  const isUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(order.orderId);
+
+  const saveBtn = document.querySelector("#orderEditModal .btn-save-action");
+  const eshopBtn = document.querySelector("#orderEditModal .btn-eshop-action");
+  const cancelBtn = document.querySelector("#orderEditModal .btn-cancel-action");
+
+  if (isLocked && !isUnlocked) {
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = "0.45"; saveBtn.style.cursor = "not-allowed"; }
+    if (eshopBtn) { eshopBtn.disabled = true; eshopBtn.style.opacity = "0.45"; eshopBtn.style.cursor = "not-allowed"; }
+    if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.style.opacity = "0.45"; cancelBtn.style.cursor = "not-allowed"; }
+    showStatus(`🔒 Đơn hàng này đã được đẩy sang MISA eShop (${order.status || 'Đã lên eShop'}). Các thao tác Lưu / Đẩy lại / Xóa đơn đã được KHOÁ để bảo vệ dữ liệu.`, false, "#modalStatus");
+  } else {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = "1"; saveBtn.style.cursor = "pointer"; }
+    if (eshopBtn) { eshopBtn.disabled = false; eshopBtn.style.opacity = "1"; eshopBtn.style.cursor = "pointer"; }
+    if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.style.opacity = "1"; cancelBtn.style.cursor = "pointer"; }
+    if (isLocked && isUnlocked) {
+      showStatus(`⚠️ Đơn này đã đẩy eShop nhưng đang được Admin MỞ KHOÁ tạm thời. Cẩn trọng khi lưu!`, true, "#modalStatus");
+    } else {
+      clearStatus("#modalStatus");
+    }
+  }
+
   $("#orderEditModal").style.display = "flex";
 }
 
@@ -3786,12 +3880,27 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function closeOrderModal() {
+  const saveBtn = document.querySelector("#orderEditModal .btn-save-action");
+  const eshopBtn = document.querySelector("#orderEditModal .btn-eshop-action");
+  const cancelBtn = document.querySelector("#orderEditModal .btn-cancel-action");
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = "1"; saveBtn.style.cursor = "pointer"; }
+  if (eshopBtn) { eshopBtn.disabled = false; eshopBtn.style.opacity = "1"; eshopBtn.style.cursor = "pointer"; }
+  if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.style.opacity = "1"; cancelBtn.style.cursor = "pointer"; }
+  clearStatus("#modalStatus");
   $("#orderEditModal").style.display = "none";
 }
 
 async function submitSaveOrder() {
   const orderId = $("#editOrderId").value;
   if (!orderId) return;
+
+  const order = currentOrdersList.find(o => o.orderId === orderId);
+  const isLocked = isOrderLockedAfterEshop(order);
+  const isUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(orderId);
+  if (isLocked && !isUnlocked) {
+    alert("🔒 Đơn hàng này đã được đẩy sang MISA eShop! Thao tác sửa đã bị khoá.");
+    return;
+  }
 
   const btn = event.target;
   try {
@@ -3850,6 +3959,15 @@ async function submitSaveOrder() {
 async function submitPushEShop() {
   const orderId = $("#editOrderId").value;
   if (!orderId) return;
+
+  const order = currentOrdersList.find(o => o.orderId === orderId);
+  const isLocked = isOrderLockedAfterEshop(order);
+  const isUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(orderId);
+  if (isLocked && !isUnlocked) {
+    alert("🔒 Đơn hàng này đã được đẩy sang MISA eShop rồi! Không thể đẩy lại.");
+    return;
+  }
+
   if (!confirm(`Xác nhận hoàn thành và đẩy đơn ${orderId} sang MISA eShop?\n(Tin nhắn đơn này trên Telegram sẽ tự động được xóa sạch!)`)) return;
 
   const btn = event.target;
@@ -3913,6 +4031,15 @@ async function submitPushEShop() {
 async function submitCancelOrder() {
   const orderId = $("#editOrderId").value;
   if (!orderId) return;
+
+  const order = currentOrdersList.find(o => o.orderId === orderId);
+  const isLocked = isOrderLockedAfterEshop(order);
+  const isUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(orderId);
+  if (isLocked && !isUnlocked) {
+    alert("🔒 CẢNH BÁO: Đơn hàng này đã được đẩy sang MISA eShop! Thao tác xóa đã bị khoá.");
+    return;
+  }
+
   if (!confirm(`Xác nhận HỦY VÀ XÓA đơn ${orderId}?\n(Dữ liệu trên Google Sheet và tin nhắn Telegram sẽ được xóa sạch hoàn toàn!)`)) return;
 
   try {
@@ -3941,6 +4068,13 @@ async function submitCancelOrder() {
 }
 
 async function quickPushEShop(orderId) {
+  const order = currentOrdersList.find(o => o.orderId === orderId);
+  const isLocked = isOrderLockedAfterEshop(order);
+  const isUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(orderId);
+  if (isLocked && !isUnlocked) {
+    alert(`🔒 Đơn hàng ${orderId} đã được đẩy sang MISA eShop thành công rồi!\nThao tác đã bị khoá để tránh trùng đơn.`);
+    return;
+  }
   if (!confirm(`Xác nhận hoàn tất và đẩy đơn ${orderId} sang MISA eShop?\n(Tin nhắn đơn này trên Telegram sẽ tự động được xóa sạch!)`)) return;
   try {
     showStatus(`Đang đẩy đơn ${orderId} sang MISA eShop...`);
@@ -3973,6 +4107,13 @@ async function quickPushEShop(orderId) {
 }
 
 async function quickCancelOrder(orderId) {
+  const order = currentOrdersList.find(o => o.orderId === orderId);
+  const isLocked = isOrderLockedAfterEshop(order);
+  const isUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(orderId);
+  if (isLocked && !isUnlocked) {
+    alert(`🔒 CẢNH BÁO: Đơn ${orderId} đã được đẩy sang MISA eShop và đang xử lý/giao hàng!\nThao tác xóa đã bị khoá để tránh lệch tồn kho và đối soát.`);
+    return;
+  }
   if (!confirm(`Xác nhận HỦY VÀ XÓA đơn ${orderId}?\n(Dữ liệu trên Google Sheet và tin nhắn Telegram sẽ được xóa sạch hoàn toàn!)`)) return;
   try {
     showStatus(`Đang xóa đơn ${orderId} trên Google Sheet & Telegram...`);
@@ -3998,12 +4139,13 @@ async function quickCancelOrder(orderId) {
 async function quickCallOrder(orderId, phone) {
   const validPhone = formatPhoneVN(phone);
   try {
-    // Cập nhật trạng thái Sheet
-    const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đang gọi điện" });
-    requestApi(payload).then(() => loadOrders()).catch(() => {});
-    // Mở ứng dụng gọi điện trên thiết bị
+    const order = currentOrdersList.find(o => o.orderId === orderId);
+    if (!isOrderLockedAfterEshop(order)) {
+      const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đang gọi điện" });
+      requestApi(payload).then(() => loadOrders(true)).catch(() => {});
+    }
     window.open(`tel:${validPhone}`, "_self");
-    showStatus(`📞 Đang gọi ${validPhone}... Trạng thái cập nhật: Đang gọi điện`);
+    showStatus(`📞 Đang gọi ${validPhone}...`);
   } catch (e) {
     showStatus(e.message, false);
   }
@@ -4012,12 +4154,13 @@ async function quickCallOrder(orderId, phone) {
 async function quickZaloOrder(orderId, cleanPhone) {
   const validPhone = formatPhoneVN(cleanPhone);
   try {
-    // Cập nhật trạng thái Sheet
-    const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đã nhắn Zalo" });
-    requestApi(payload).then(() => loadOrders()).catch(() => {});
-    // Mở Zalo chat
+    const order = currentOrdersList.find(o => o.orderId === orderId);
+    if (!isOrderLockedAfterEshop(order)) {
+      const payload = authPayload({ action: "updateStatus", orderId: orderId, status: "Đã nhắn Zalo" });
+      requestApi(payload).then(() => loadOrders(true)).catch(() => {});
+    }
     window.open(`https://zalo.me/${validPhone}`, "_blank");
-    showStatus(`💬 Đã mở Zalo chat với ${validPhone}... Trạng thái cập nhật: Đã nhắn Zalo`);
+    showStatus(`💬 Đã mở Zalo chat với ${validPhone}...`);
   } catch (e) {
     showStatus(e.message, false);
   }
