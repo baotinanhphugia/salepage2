@@ -6,6 +6,7 @@ Tự động đồng bộ đơn hàng nháp sang MISA eShop khi duyệt từ Tel
 Chạy trực tiếp trên máy Mac (IP 123.26.190.185 được cấp phép Open API).
 """
 
+import os
 import time
 import json
 import hmac
@@ -568,7 +569,118 @@ def call_apps_script(payload):
         return json.loads(resp.read().decode('utf-8'))
 
 # --- VÒNG LẶP QUÉT VÀ ĐỒNG BỘ ĐƠN TỪ GOOGLE SHEET ---
+_last_delivery_sync_time = 0
+DELIVERY_SYNC_INTERVAL_SECONDS = 600  # 10 phút tự động đồng bộ trạng thái giao hàng 1 lần
+
+def fetch_misa_vouchers(from_date=None, page=1, page_size=100):
+    try:
+        token = get_misa_token()
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+        if not from_date:
+            import datetime
+            thirty_days_ago = datetime.datetime.now() - datetime.timedelta(days=30)
+            from_date = thirty_days_ago.strftime("%Y-%m-%d")
+
+        payload = {"from_date": from_date, "page": page, "page_size": page_size}
+        req = urllib.request.Request(
+            "https://eshopapp.misa.vn/api/platform/openpartnervouchers/orders",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            return res.get("Data", {}).get("VoucherData", []) or []
+    except Exception as e:
+        print(f"[MISA VOUCHERS ERROR] {e}")
+        return []
+
+def sync_misa_delivery_statuses(from_date=None):
+    """
+    Đồng bộ trạng thái giao hàng thực tế từ MISA eShop Open API về Google Sheets.
+    Phân loại chuẩn: 80 -> Giao thành công (Thực thu), 60/70 -> Đang giao, 100/130/140 -> Hoàn trả.
+    """
+    try:
+        vouchers = fetch_misa_vouchers(from_date=from_date)
+        print(f"[MISA SYNC] Đang đối soát với {len(vouchers)} đơn từ MISA eShop...")
+        if not vouchers:
+            return {"ok": True, "count": 0, "message": "Không có chứng từ MISA nào."}
+
+        sheet_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
+        sheet_orders = sheet_res.get("orders", []) if sheet_res.get("ok") else []
+
+        updates = []
+        for o in sheet_orders:
+            order_id = str(o.get("orderId") or "").strip()
+            eshop_code = str(o.get("eshopCode") or "").strip()
+            phone = str(o.get("phone") or "").replace(" ", "").replace("+84", "0")
+            curr_status = str(o.get("status") or "")
+
+            if curr_status == "Đã hủy":
+                continue
+
+            for v in vouchers:
+                v_no = str(v.get("order_no") or "").strip()
+                v_note = str(v.get("employee_note") or "")
+                v_tel = str(v.get("recipient_tel") or "").replace(" ", "")
+
+                matched = False
+                if eshop_code and (eshop_code in v_no or v_no in eshop_code):
+                    matched = True
+                elif order_id and order_id in v_note:
+                    matched = True
+                elif phone and v_tel and phone.endswith(v_tel[-9:]):
+                    matched = True
+
+                if matched:
+                    ostatus = v.get("order_status")
+                    sname = v.get("status_name", "")
+                    dcode = v.get("delivery_code", "")
+                    spartner = v.get("shipping_partner_name", "")
+
+                    new_status = curr_status
+                    if ostatus == 80:
+                        new_status = "Giao thành công"
+                    elif ostatus in [60, 70]:
+                        new_status = "Đang giao hàng"
+                    elif ostatus == 100:
+                        new_status = "Giao thất bại"
+                    elif ostatus in [130, 140]:
+                        new_status = "Chuyển hoàn"
+                    elif ostatus == 90:
+                        new_status = "Đã hủy"
+                    elif ostatus in [20, 30]:
+                        new_status = "Đang xử lý (MISA)"
+
+                    updates.append({
+                        "orderId": order_id,
+                        "eshopCode": v_no,
+                        "orderStatus": ostatus,
+                        "statusName": sname,
+                        "status": new_status,
+                        "deliveryCode": dcode,
+                        "shippingPartner": spartner,
+                        "totalAmount": v.get("total_amount")
+                    })
+                    break
+
+        if updates:
+            sync_res = call_apps_script({
+                "action": "syncMisaDeliveryStatuses",
+                "key": ADMIN_KEY,
+                "updates": updates
+            })
+            print(f"[MISA SYNC SUCCESS] Đã đồng bộ trạng thái giao hàng {len(updates)} đơn sang Google Sheet!")
+            return {"ok": True, "count": len(updates), "updates": updates, "total_vouchers": len(vouchers)}
+        else:
+            print(f"[MISA SYNC] Không có thay đổi trạng thái giao hàng mới.")
+            return {"ok": True, "count": 0, "updates": [], "total_vouchers": len(vouchers)}
+    except Exception as e:
+        print(f"[MISA SYNC ERROR] {e}")
+        return {"ok": False, "error": str(e)}
+
 def sync_loop():
+    global _last_delivery_sync_time
     print(f"[DAEMON] MISA Sync Runner đã kích hoạt! Đang quét hàng đợi mỗi {POLL_INTERVAL_SECONDS}s...")
     while True:
         try:
@@ -605,6 +717,16 @@ def sync_loop():
                             "orderId": order_id,
                             "error": push_res.get("error", "Lỗi tạo đơn")
                         })
+
+            # Định kỳ 10 phút tự động đồng bộ trạng thái giao hàng MISA
+            now = time.time()
+            if now - _last_delivery_sync_time >= DELIVERY_SYNC_INTERVAL_SECONDS:
+                _last_delivery_sync_time = now
+                try:
+                    sync_misa_delivery_statuses()
+                except Exception as ex_sync:
+                    print(f"[AUTO SYNC NOTICE] {ex_sync}")
+
         except Exception as e:
             # Ghi nhận lỗi kết nối mạng / timeout
             print(f"[SYNC LOOP NOTICE] {e}")
@@ -783,11 +905,34 @@ class LocalServerHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"ok": True, "items": items, "total": len(items)}, ensure_ascii=False).encode('utf-8'))
             return
+        if parsed.path in ["/sync-delivery", "/sync-status", "/misa/sync"]:
+            res = sync_misa_delivery_statuses()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
+            return
+        if parsed.path in ["/code", "/Code.gs"]:
+            code_path = os.path.join(os.path.dirname(__file__), "Code.gs")
+            with open(code_path, "r", encoding="utf-8") as f:
+                code_content = f.read()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(code_content.encode('utf-8'))
+            return
         self.send_response(404)
         self.end_headers()
 
     def do_POST(self):
         parsed = urlparse(self.path)
+        if parsed.path in ["/sync-delivery", "/sync-status", "/misa/sync"]:
+            res = sync_misa_delivery_statuses()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
+            return
         if parsed.path == "/push":
             qs = parse_qs(parsed.query)
             order_id = (qs.get("orderId") or [""])[0]

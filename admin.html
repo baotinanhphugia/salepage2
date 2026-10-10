@@ -1236,6 +1236,9 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         </p>
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn2" onclick="syncMisaDeliveryStatusNow()" style="background:linear-gradient(135deg, #10b981, #059669); border-color:#34d399; color:#fff; display:inline-flex; align-items:center; gap:6px; font-weight:700; box-shadow:0 2px 10px rgba(16,185,129,0.3);">
+          <span>🔄</span> Đồng bộ MISA eShop (Trạng thái giao)
+        </button>
         <button type="button" class="btn2" onclick="refreshDashboardReport()" style="display:inline-flex; align-items:center; gap:6px;">
           🔄 Tải lại dữ liệu
         </button>
@@ -1259,13 +1262,16 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           </select>
         </div>
 
-        <!-- Lọc trạng thái -->
+        <!-- Lọc trạng thái chuẩn MISA eShop -->
         <div style="display:flex; align-items:center; gap:6px;">
           <label style="font-size:12.5px; color:#888; margin:0; font-weight:600; white-space:nowrap;">🛒 Trạng thái:</label>
           <select id="dashStatusFilter" onchange="renderDashboardReport()" style="background:#0c0c12; border:1px solid #38384f; color:#fff; font-size:13px; padding:7px 12px; border-radius:8px; cursor:pointer;">
-            <option value="valid">✅ Đơn hợp lệ (Bỏ đơn hủy)</option>
-            <option value="eshop">🚀 Đã đẩy eShop (Chốt thành công)</option>
-            <option value="pending">⏳ Chờ xử lý / Tư vấn</option>
+            <option value="delivered">💎 Doanh thu Thực thu (MISA: Giao thành công)</option>
+            <option value="shipping">🚚 Đang giao hàng (Tiền trên đường)</option>
+            <option value="valid" selected>✅ Toàn bộ đơn hợp lệ (Doanh số tạm tính)</option>
+            <option value="eshop">🚀 Đã lên MISA (Đang xử lý / Chờ gửi)</option>
+            <option value="returned">❌ Hàng hoàn / Thất bại (Kiểm tra tỷ lệ bom)</option>
+            <option value="pending">⏳ Chờ xử lý / CSKH tư vấn</option>
             <option value="all">📋 Tất cả (Bao gồm Đã hủy)</option>
           </select>
         </div>
@@ -1292,18 +1298,18 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
         <div style="position:absolute; top:0; left:0; right:0; height:3px; background:var(--gold-gradient);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">💰 Tổng Doanh Thu</span>
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;" id="dashRevTitle">💰 Doanh Thu Thực Thu (MISA)</span>
           <span style="font-size:20px;">💵</span>
         </div>
         <div id="dashTotalRevenue" style="font-size:26px; font-weight:900; color:#ffd875; letter-spacing:-0.5px;">0 đ</div>
-        <div id="dashRevenueSub" style="font-size:11.5px; color:#6ee7b7; margin-top:6px;">Từ 0 đơn hàng hợp lệ</div>
+        <div id="dashRevenueSub" style="font-size:11.5px; color:#6ee7b7; margin-top:6px;">Chuẩn xác theo đối soát MISA</div>
       </div>
 
       <!-- Card 2: Size Bán Chạy Nhất -->
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
         <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #10b981, #059669);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">💎 Size Bán Chạy Nhất</span>
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">💎 Size Bán & Giao Chạy Nhất</span>
           <span style="font-size:20px;">🏆</span>
         </div>
         <div id="dashTopSize" style="font-size:26px; font-weight:900; color:#fff; letter-spacing:-0.5px;">---</div>
@@ -1314,7 +1320,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
         <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #3b82f6, #1d4ed8);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">📦 Sản Phẩm Đã Bán</span>
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">📦 Sản Phẩm Đã Bán / Giao</span>
           <span style="font-size:20px;">💍</span>
         </div>
         <div id="dashTotalQty" style="font-size:26px; font-weight:900; color:#93c5fd; letter-spacing:-0.5px;">0 SP</div>
@@ -1325,11 +1331,11 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
         <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #a855f7, #7e22ce);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">📈 Trung Bình / Đơn</span>
-          <span style="font-size:20px;">🎯</span>
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">🎯 Tỷ Lệ Giao Thành Công</span>
+          <span style="font-size:20px;">🎖️</span>
         </div>
-        <div id="dashAOV" style="font-size:26px; font-weight:900; color:#d8b4fe; letter-spacing:-0.5px;">0 đ</div>
-        <div id="dashAOVSub" style="font-size:11.5px; color:#9ca3af; margin-top:6px;">Giá trị trung bình 1 đơn</div>
+        <div id="dashAOV" style="font-size:26px; font-weight:900; color:#d8b4fe; letter-spacing:-0.5px;">100%</div>
+        <div id="dashAOVSub" style="font-size:11.5px; color:#ffd875; margin-top:6px;">AOV: 0 đ • Hoàn: 0%</div>
       </div>
     </div>
 
@@ -1366,13 +1372,13 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
             <tr style="background:#161622; border-bottom:2px solid #272738;">
               <th style="padding:12px 14px; text-align:center; width:60px; color:#ffd875; font-size:12.5px;">Hạng</th>
               <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Kích Cỡ Đá (Size)</th>
-              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Mã SKU MISA (Lô hàng)</th>
-              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Số Lượng Bán</th>
-              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Số Đơn Hàng</th>
-              <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12.5px;">Tổng Doanh Thu</th>
-              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px; width:170px;">Tỷ Trọng (%)</th>
-              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Phân Loại (Đôi / Lẻ)</th>
-              <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12.5px;">Giá TB / SP</th>
+              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Mã SKU MISA</th>
+              <th style="padding:12px 14px; text-align:center; color:#34d399; font-size:12.5px;">Thực Giao (Mã 80)</th>
+              <th style="padding:12px 14px; text-align:center; color:#38bdf8; font-size:12.5px;">Đang Giao</th>
+              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Tổng Đặt</th>
+              <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12.5px;">Doanh Thu Thực Thu</th>
+              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px; width:150px;">Tỷ Trọng (%)</th>
+              <th style="padding:12px 14px; text-align:center; color:#6ee7b7; font-size:12.5px;">Tỷ Lệ Giao TC (%)</th>
             </tr>
           </thead>
           <tbody id="dashSizeTableBody">
@@ -4065,11 +4071,29 @@ function filterOrdersForReport(ordersList) {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
   return (ordersList || []).filter(o => {
-    // 1. Lọc trạng thái
-    const status = String(o.status || "Chờ xác nhận").trim();
-    if (statusFilter === "valid" && status === "Đã hủy") return false;
-    if (statusFilter === "eshop" && status !== "Đã đẩy eShop") return false;
-    if (statusFilter === "pending" && (status === "Đã đẩy eShop" || status === "Đã hủy")) return false;
+    // 1. Lọc trạng thái chuẩn MISA eShop
+    const status = String(o.status || "Chờ xác nhận").trim().toLowerCase();
+    if (statusFilter === "delivered") {
+      // Chỉ đơn Giao thành công (Thực thu)
+      if (!status.includes("giao thành công") && !status.includes("hoàn thành") && !status.includes("đã giao")) return false;
+    } else if (statusFilter === "shipping") {
+      // Đang giao hàng (Tiền trên đường)
+      if (!status.includes("đang giao")) return false;
+    } else if (statusFilter === "valid") {
+      // Đơn hợp lệ (Bỏ đơn hủy, bỏ hàng hoàn / bom đơn)
+      if (status.includes("hủy") || status.includes("hoàn") || status.includes("thất bại")) return false;
+    } else if (statusFilter === "eshop") {
+      // Đã lên MISA eShop (Đang xử lý / Chờ gửi)
+      if (!status.includes("eshop") && !status.includes("xử lý") && !status.includes("giao thành công") && !status.includes("đang giao")) return false;
+    } else if (statusFilter === "returned") {
+      // Hàng hoàn / Thất bại
+      if (!status.includes("thất bại") && !status.includes("hoàn") && !status.includes("trả")) return false;
+    } else if (statusFilter === "pending") {
+      // Chờ xử lý / CSKH tư vấn
+      if (!status.includes("chờ") && !status.includes("gọi") && !status.includes("zalo") && !status.includes("sửa")) return false;
+    } else if (statusFilter === "all") {
+      // Tất cả đơn
+    }
 
     // 2. Lọc phân loại
     const variant = String(o.variant || "1 Đôi").trim();
@@ -4095,6 +4119,7 @@ function filterOrdersForReport(ordersList) {
 
 function renderDashboardReport() {
   const allOrders = currentOrdersList || [];
+  const statusFilter = document.getElementById("dashStatusFilter")?.value || "valid";
   const filtered = filterOrdersForReport(allOrders);
 
   let totalRevenue = 0;
@@ -4102,6 +4127,11 @@ function renderDashboardReport() {
   let totalOrdersCount = filtered.length;
   let totalPairs = 0;
   let totalSingles = 0;
+
+  let deliveredCount = 0;
+  let shippingCount = 0;
+  let returnedCount = 0;
+
   const sizeMap = {};
 
   filtered.forEach(o => {
@@ -4112,10 +4142,19 @@ function renderDashboardReport() {
     const size = normalizeSizeLabel(o.size);
     const variant = String(o.variant || "1 Đôi").trim();
     const isSingle = variant.includes("Chiếc") || variant.includes("lẻ");
+    const statusLower = String(o.status || "").toLowerCase();
 
     totalRevenue += price;
     totalQty += qty;
     if (isSingle) totalSingles += qty; else totalPairs += qty;
+
+    const isDelivered = statusLower.includes("giao thành công") || statusLower.includes("hoàn thành") || statusLower.includes("đã giao");
+    const isShipping = statusLower.includes("đang giao");
+    const isReturned = statusLower.includes("thất bại") || statusLower.includes("hoàn") || statusLower.includes("trả");
+
+    if (isDelivered) deliveredCount++;
+    if (isShipping) shippingCount++;
+    if (isReturned) returnedCount++;
 
     if (!sizeMap[size]) {
       sizeMap[size] = {
@@ -4123,6 +4162,10 @@ function renderDashboardReport() {
         orders: 0,
         quantity: 0,
         revenue: 0,
+        deliveredQty: 0,
+        shippingQty: 0,
+        returnedQty: 0,
+        deliveredRevenue: 0,
         pairs: 0,
         singles: 0,
         sampleSku: o.misaSku || autoDetectMisaSku(size, variant)
@@ -4133,6 +4176,13 @@ function renderDashboardReport() {
     sizeMap[size].quantity += qty;
     sizeMap[size].revenue += price;
     if (isSingle) sizeMap[size].singles += qty; else sizeMap[size].pairs += qty;
+    if (isDelivered) {
+      sizeMap[size].deliveredQty += qty;
+      sizeMap[size].deliveredRevenue += price;
+    }
+    if (isShipping) sizeMap[size].shippingQty += qty;
+    if (isReturned) sizeMap[size].returnedQty += qty;
+
     if (o.misaSku && !sizeMap[size].sampleSku) sizeMap[size].sampleSku = o.misaSku;
   });
 
@@ -4142,15 +4192,28 @@ function renderDashboardReport() {
     s.revPercent = totalRevenue > 0 ? (s.revenue / totalRevenue * 100).toFixed(1) : "0.0";
     s.qtyPercent = totalQty > 0 ? (s.quantity / totalQty * 100).toFixed(1) : "0.0";
     s.avgPrice = s.quantity > 0 ? Math.round(s.revenue / s.quantity) : 0;
+    const finishedQty = s.deliveredQty + s.returnedQty;
+    s.successRate = finishedQty > 0 ? (s.deliveredQty / finishedQty * 100).toFixed(1) : (s.deliveredQty > 0 ? "100.0" : "---");
   });
 
   const topSize = sizes.length > 0 ? sizes[0] : null;
   const aov = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
+  const totalFinished = deliveredCount + returnedCount;
+  const deliveryRate = totalFinished > 0 ? (deliveredCount / totalFinished * 100).toFixed(1) : (deliveredCount > 0 ? "100.0" : "100.0");
+  const returnRate = totalOrdersCount > 0 ? (returnedCount / totalOrdersCount * 100).toFixed(1) : "0.0";
 
   // Cập nhật Stat Cards
+  if ($("#dashRevTitle")) {
+    if (statusFilter === "delivered") $("#dashRevTitle").innerText = "💰 Doanh Thu Thực Thu (MISA)";
+    else if (statusFilter === "shipping") $("#dashRevTitle").innerText = "🚚 Doanh Số Đang Giao";
+    else if (statusFilter === "returned") $("#dashRevTitle").innerText = "❌ Hàng Hoàn / Thất Bại";
+    else $("#dashRevTitle").innerText = "💰 Tổng Doanh Thu Tạm Tính";
+  }
   if ($("#dashTotalRevenue")) $("#dashTotalRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + " đ";
-  if ($("#dashRevenueSub")) $("#dashRevenueSub").innerText = `Từ ${totalOrdersCount} đơn hàng được chọn`;
-  
+  if ($("#dashRevenueSub")) {
+    $("#dashRevenueSub").innerText = `Từ ${totalOrdersCount} đơn • Đã giao: ${deliveredCount} • Đang giao: ${shippingCount}`;
+  }
+
   if ($("#dashTopSize")) {
     $("#dashTopSize").innerHTML = topSize 
       ? `<span style="color:var(--gold-light);">${topSize.size}</span> <span style="font-size:16px; color:#10b981;">(${topSize.revPercent}%)</span>` 
@@ -4161,10 +4224,10 @@ function renderDashboardReport() {
   }
 
   if ($("#dashTotalQty")) $("#dashTotalQty").innerText = totalQty.toLocaleString("vi-VN") + " SP";
-  if ($("#dashTotalQtySub")) $("#dashTotalQtySub").innerText = `${totalPairs} Đôi • ${totalSingles} Chiếc lẻ`;
+  if ($("#dashTotalQtySub")) $("#dashTotalQtySub").innerText = `${totalPairs} Đôi • ${totalSingles} Chiếc lẻ • Thực giao ${sizes.reduce((acc, x) => acc + x.deliveredQty, 0)} SP`;
 
-  if ($("#dashAOV")) $("#dashAOV").innerText = aov.toLocaleString("vi-VN") + " đ";
-  if ($("#dashAOVSub")) $("#dashAOVSub").innerText = totalOrdersCount > 0 ? `Trung bình ${(totalQty / totalOrdersCount).toFixed(1)} SP/đơn` : "Trung bình 0 SP/đơn";
+  if ($("#dashAOV")) $("#dashAOV").innerText = deliveryRate + "%";
+  if ($("#dashAOVSub")) $("#dashAOVSub").innerText = `AOV: ${aov.toLocaleString("vi-VN")} đ/đơn • Hoàn: ${returnRate}%`;
 
   if ($("#dashReportTimestamp")) {
     $("#dashReportTimestamp").innerText = `🕒 Cập nhật: ${new Date().toLocaleTimeString("vi-VN")}`;
@@ -4212,6 +4275,7 @@ function renderDashboardSizeBars(sizes, totalRevenue) {
           </div>
           <div style="display:flex; align-items:center; gap:12px; font-size:13px;">
             <span style="color:#93c5fd; font-weight:600;">📦 ${s.quantity} SP (${s.orders} đơn)</span>
+            <span style="color:#34d399; font-weight:600; font-size:12px;">(🟢 Giao: ${s.deliveredQty})</span>
             <strong style="color:#ffd875; font-size:14px;">${s.revenue.toLocaleString('vi-VN')} đ</strong>
             <span style="background:rgba(16,185,129,0.18); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); padding:2px 7px; border-radius:6px; font-weight:700; font-size:11.5px;">${s.revPercent}%</span>
           </div>
@@ -4252,6 +4316,8 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
     else if (s.rank === 3) { rankBadgeClass = "rank-3"; rankText = "🥉"; }
 
     const p = parseFloat(s.revPercent) || 0;
+    const rateText = s.successRate !== "---" ? `${s.successRate}%` : "Chờ giao";
+    const rateColor = parseFloat(s.successRate) >= 90 ? "#34d399" : (parseFloat(s.successRate) >= 70 ? "#ffd875" : "#f87171");
 
     rowsHtml += `
       <tr style="border-bottom:1px solid #1c1c28; transition:background 0.15s;" onmouseover="this.style.background='#171724'" onmouseout="this.style.background='transparent'">
@@ -4264,11 +4330,14 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
         <td style="padding:12px 14px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#ffd875; font-weight:600;">
           ${escapeHtml(s.sampleSku || '---')}
         </td>
-        <td style="padding:12px 14px; text-align:center; font-weight:700; color:#fff; font-size:14px;">
-          ${s.quantity}
+        <td style="padding:12px 14px; text-align:center; font-weight:800; color:#34d399; font-size:14px;">
+          ${s.deliveredQty} SP
         </td>
-        <td style="padding:12px 14px; text-align:center; color:#9ca3af; font-size:13px;">
-          ${s.orders}
+        <td style="padding:12px 14px; text-align:center; font-weight:600; color:#38bdf8; font-size:13px;">
+          ${s.shippingQty} SP
+        </td>
+        <td style="padding:12px 14px; text-align:center; font-weight:700; color:#fff; font-size:14px;">
+          ${s.quantity} SP <span style="font-size:11px; color:#9ca3af;">(${s.orders}đ)</span>
         </td>
         <td style="padding:12px 14px; text-align:right; font-weight:800; color:#ffd875; font-size:14px;">
           ${s.revenue.toLocaleString('vi-VN')} đ
@@ -4281,13 +4350,8 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
             <span style="font-size:12px; font-weight:700; color:#6ee7b7; min-width:42px; text-align:right;">${s.revPercent}%</span>
           </div>
         </td>
-        <td style="padding:12px 14px; text-align:center; font-size:12px;">
-          <span style="background:rgba(99,102,241,0.18); color:#a5b4fc; padding:2px 7px; border-radius:5px; font-weight:600;">${s.pairs} Đôi</span>
-          <span style="color:#64748b; margin:0 2px;">•</span>
-          <span style="background:rgba(249,115,22,0.18); color:#fdba74; padding:2px 7px; border-radius:5px; font-weight:600;">${s.singles} Chiếc</span>
-        </td>
-        <td style="padding:12px 14px; text-align:right; color:#e2e8f0; font-size:13px;">
-          ${s.avgPrice.toLocaleString('vi-VN')} đ
+        <td style="padding:12px 14px; text-align:center; font-weight:700; color:${rateColor}; font-size:13px;">
+          ${rateText}
         </td>
       </tr>
     `;
@@ -4296,17 +4360,21 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
   tbody.innerHTML = rowsHtml;
 
   if (tfoot) {
-    const overallAov = totalQty > 0 ? Math.round(totalRevenue / totalQty) : 0;
+    const overallDelivered = sizes.reduce((acc, x) => acc + x.deliveredQty, 0);
+    const overallShipping = sizes.reduce((acc, x) => acc + x.shippingQty, 0);
     tfoot.innerHTML = `
       <tr>
         <td colspan="3" style="padding:14px; font-size:13px; color:#ffd875; font-weight:800; text-transform:uppercase;">
           💎 TỔNG CỘNG (${sizes.length} Size)
         </td>
-        <td style="padding:14px; text-align:center; font-size:15px; color:#fff; font-weight:900;">
-          ${totalQty} SP
+        <td style="padding:14px; text-align:center; font-size:14px; color:#34d399; font-weight:900;">
+          ${overallDelivered} SP
         </td>
-        <td style="padding:14px; text-align:center; font-size:13.5px; color:#cbd5e1; font-weight:700;">
-          ${totalOrdersCount} đơn
+        <td style="padding:14px; text-align:center; font-size:13px; color:#38bdf8; font-weight:800;">
+          ${overallShipping} SP
+        </td>
+        <td style="padding:14px; text-align:center; font-size:15px; color:#fff; font-weight:900;">
+          ${totalQty} SP (${totalOrdersCount} đơn)
         </td>
         <td style="padding:14px; text-align:right; font-size:16px; color:#ffd875; font-weight:900;">
           ${totalRevenue.toLocaleString('vi-VN')} đ
@@ -4314,14 +4382,44 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
         <td style="padding:14px; text-align:center; font-size:13px; color:#6ee7b7; font-weight:800;">
           100.0%
         </td>
-        <td style="padding:14px; text-align:center; font-size:12px; color:#9ca3af;">
-          Toàn bộ đơn
-        </td>
-        <td style="padding:14px; text-align:right; font-size:13.5px; color:#e2e8f0; font-weight:700;">
-          ${overallAov.toLocaleString('vi-VN')} đ
+        <td style="padding:14px; text-align:center; font-size:13px; color:#34d399; font-weight:800;">
+          Chuẩn MISA
         </td>
       </tr>
     `;
+  }
+}
+
+async function syncMisaDeliveryStatusNow() {
+  showStatus("⏳ Đang kết nối MISA eShop Open API để đồng bộ trạng thái giao hàng...", true);
+  try {
+    let syncSuccess = false;
+    let syncData = null;
+
+    // 1. Thử gọi trực tiếp Local Runner trên máy Mac (port 8899)
+    try {
+      const resp = await fetch("http://127.0.0.1:8899/sync-delivery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      syncData = await resp.json();
+      if (syncData && syncData.ok) {
+        syncSuccess = true;
+      }
+    } catch (e) {
+      console.log("Local runner fetch error:", e);
+    }
+
+    if (syncSuccess) {
+      showStatus(`✅ Đã đồng bộ thành công trạng thái giao hàng từ MISA eShop! (${syncData.count || 0} đơn cập nhật)`, true);
+    } else {
+      showStatus("ℹ️ MISA Runner đang kiểm tra ngầm. Đang tải lại dữ liệu đơn hàng mới nhất...", true);
+    }
+
+    await loadOrders(false);
+    renderDashboardReport();
+  } catch (err) {
+    showStatus("Lỗi khi đồng bộ MISA: " + (err.message || err.toString()), false);
   }
 }
 

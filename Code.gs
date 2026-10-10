@@ -127,6 +127,12 @@ function doPost(e) {
       return handleFailPushMisa_(data);
     }
 
+    // 5.4 Runner đồng bộ trạng thái giao hàng thực tế từ MISA eShop
+    if (data.action === "syncMisaDeliveryStatuses") {
+      checkStaffAuth_(data.username, data.password || data.key);
+      return handleSyncMisaDeliveryStatuses_(data);
+    }
+
     // 6. Hủy / Xóa đơn (Admin & CSKH - Xóa tin Telegram & Xóa dòng trên Google Sheet)
     if (data.action === "cancelOrder" || data.action === "deleteOrder") {
       checkStaffAuth_(data.username, data.password || data.key);
@@ -629,6 +635,83 @@ function handleFailPushMisa_(data) {
 
   safeSendQuickNotice_(`⚠️ [LỖI MISA] Không thể đẩy đơn ${orderId} sang MISA eShop:\n${error}`);
   return json_({ ok: true, orderId, error });
+}
+
+/**
+ * Đồng bộ trạng thái giao hàng thực tế từ MISA eShop (Mã 80: Giao thành công, 60/70: Đang giao, 100/130/140: Hoàn trả)
+ */
+function handleSyncMisaDeliveryStatuses_(data) {
+  const updates = data.updates || [];
+  if (!Array.isArray(updates) || updates.length === 0) {
+    return json_({ ok: true, updatedCount: 0, message: "Không có đơn hàng nào cần cập nhật." });
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+  let updatedCount = 0;
+  const updatedOrders = [];
+
+  for (let u = 0; u < updates.length; u++) {
+    const item = updates[u];
+    const targetOrderId = String(item.orderId || "").trim();
+    const targetEshopCode = String(item.eshopCode || "").trim().toUpperCase();
+    const targetPhone = String(item.phone || "").replace(/\D/g, "");
+
+    for (let i = 1; i < values.length; i++) {
+      const rowOrderId = String(values[i][1] || "").trim();
+      const rowPhone = String(values[i][4] || "").replace(/\D/g, "");
+      const rowEshopCode = String(values[i][19] || "").trim().toUpperCase();
+
+      const matched = (targetOrderId && rowOrderId === targetOrderId) ||
+                      (targetEshopCode && rowEshopCode && (rowEshopCode.indexOf(targetEshopCode) !== -1 || targetEshopCode.indexOf(rowEshopCode) !== -1)) ||
+                      (targetPhone && rowPhone && rowPhone === targetPhone);
+
+      if (matched) {
+        let newStatus = String(item.status || "").trim();
+        const orderStatus = Number(item.orderStatus);
+
+        if (!newStatus) {
+          if (orderStatus === 80) newStatus = "Giao thành công";
+          else if (orderStatus === 60 || orderStatus === 70) newStatus = "Đang giao hàng";
+          else if (orderStatus === 100) newStatus = "Giao thất bại";
+          else if (orderStatus === 130 || orderStatus === 140) newStatus = "Chuyển hoàn";
+          else if (orderStatus === 90) newStatus = "Đã hủy";
+          else if (orderStatus === 30 || orderStatus === 20) newStatus = "Đang xử lý (MISA)";
+          else newStatus = item.statusName || "Đã đẩy eShop";
+        }
+
+        // 1. Cập nhật trạng thái
+        sheet.getRange(i + 1, 18).setValue(newStatus);
+
+        // 2. Cập nhật thông tin vận đơn MISA nếu có
+        let eshopInfo = String(values[i][19] || "");
+        if (item.eshopCode && !eshopInfo) {
+          eshopInfo = item.eshopCode;
+        }
+        if (item.deliveryCode) {
+          const partnerStr = item.shippingPartner ? `[${item.shippingPartner}: ${item.deliveryCode}]` : `[VĐ: ${item.deliveryCode}]`;
+          if (eshopInfo.indexOf(item.deliveryCode) === -1) {
+            eshopInfo = eshopInfo ? `${eshopInfo} ${partnerStr}` : partnerStr;
+          }
+        }
+        if (eshopInfo) {
+          sheet.getRange(i + 1, 20).setValue(eshopInfo);
+        }
+
+        updatedCount++;
+        updatedOrders.push({ orderId: rowOrderId, status: newStatus, eshopCode: eshopInfo });
+        break;
+      }
+    }
+  }
+
+  return json_({
+    ok: true,
+    updatedCount,
+    updatedOrders,
+    message: `Đã cập nhật trạng thái giao hàng thực tế từ MISA cho ${updatedCount} đơn hàng!`
+  });
 }
 
 /**
@@ -1403,17 +1486,29 @@ function getOrders_(customLimit) {
 
 /**
  * Báo cáo toàn diện Doanh số và Phân bổ từng Size trên Google Sheets
+ * Tích hợp chuẩn xác đa tầng theo API MISA eShop (Thực thu / Đang giao / Chờ xuất kho / Hoàn trả)
  */
 function handleSalesReport_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = getOrCreateOrdersSheet_(ss);
   const values = sheet.getDataRange().getValues();
 
-  let totalRevenue = 0;
+  let totalRevenue = 0;       // Doanh thu tạm tính (Tất cả đơn hợp lệ)
+  let deliveredRevenue = 0;   // Doanh thu THỰC THU (Giao thành công - Mã 80 trên MISA)
+  let shippingRevenue = 0;    // Doanh số đang giao (Mã 60, 70 trên MISA)
+  let processingRevenue = 0;  // Doanh số đã lên MISA / đang đóng gói (Mã 20, 30, Đã đẩy eShop)
+  let pendingRevenue = 0;     // Doanh số chờ xác nhận
+  let returnedRevenue = 0;    // Hàng hoàn / Giao thất bại (Mã 100, 130, 140)
+
   let totalOrders = 0;
   let totalQuantity = 0;
   let validOrders = 0;
+  let deliveredOrders = 0;
+  let shippingOrders = 0;
+  let returnedOrders = 0;
+  let processingOrders = 0;
   let cancelledOrders = 0;
+
   const sizeMap = {};
   const statusMap = {};
   const dateMap = {};
@@ -1434,12 +1529,12 @@ function handleSalesReport_() {
       continue;
     }
 
-    validOrders++;
     const rawSize = String(r[10] || "5mm").trim() || "5mm";
     const variant = String(r[9] || "1 Đôi").trim();
     const qty = Math.max(1, Number(String(r[11] || "1").replace(/\D/g, "")) || 1);
     const price = Number(String(r[14] || "0").replace(/\D/g, "")) || 0;
 
+    validOrders++;
     totalRevenue += price;
     totalQuantity += qty;
     dateMap[dateKey] = (dateMap[dateKey] || 0) + price;
@@ -1450,6 +1545,11 @@ function handleSalesReport_() {
         orders: 0,
         quantity: 0,
         revenue: 0,
+        deliveredRevenue: 0,
+        deliveredQty: 0,
+        shippingRevenue: 0,
+        shippingQty: 0,
+        returnedQty: 0,
         pairs: 0,
         singles: 0,
         defaultSku: autoDetectMisaSku_(rawSize, variant)
@@ -1464,6 +1564,29 @@ function handleSalesReport_() {
     } else {
       sizeMap[rawSize].pairs += qty;
     }
+
+    // Phân loại doanh số chuẩn xác theo trạng thái MISA
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes("giao thành công") || statusLower.includes("hoàn thành") || statusLower.includes("đã giao")) {
+      deliveredOrders++;
+      deliveredRevenue += price;
+      sizeMap[rawSize].deliveredRevenue += price;
+      sizeMap[rawSize].deliveredQty += qty;
+    } else if (statusLower.includes("đang giao")) {
+      shippingOrders++;
+      shippingRevenue += price;
+      sizeMap[rawSize].shippingRevenue += price;
+      sizeMap[rawSize].shippingQty += qty;
+    } else if (statusLower.includes("thất bại") || statusLower.includes("hoàn") || statusLower.includes("trả")) {
+      returnedOrders++;
+      returnedRevenue += price;
+      sizeMap[rawSize].returnedQty += qty;
+    } else if (statusLower.includes("eshop") || statusLower.includes("xử lý")) {
+      processingOrders++;
+      processingRevenue += price;
+    } else {
+      pendingRevenue += price;
+    }
   }
 
   const sizes = Object.values(sizeMap).sort((a, b) => b.revenue - a.revenue);
@@ -1471,16 +1594,38 @@ function handleSalesReport_() {
     s.revenuePercent = totalRevenue > 0 ? Math.round((s.revenue / totalRevenue) * 1000) / 10 : 0;
     s.quantityPercent = totalQuantity > 0 ? Math.round((s.quantity / totalQuantity) * 1000) / 10 : 0;
     s.avgPrice = s.quantity > 0 ? Math.round(s.revenue / s.quantity) : 0;
+    s.deliveredPercent = deliveredRevenue > 0 ? Math.round((s.deliveredRevenue / deliveredRevenue) * 1000) / 10 : 0;
+    s.successRate = (s.deliveredQty + s.returnedQty) > 0 ? Math.round((s.deliveredQty / (s.deliveredQty + s.returnedQty)) * 1000) / 10 : (s.deliveredQty > 0 ? 100 : 0);
   });
+
+  const deliverySuccessRate = (deliveredOrders + returnedOrders) > 0
+    ? Math.round((deliveredOrders / (deliveredOrders + returnedOrders)) * 1000) / 10
+    : (deliveredOrders > 0 ? 100 : 0);
+
+  const returnRate = validOrders > 0
+    ? Math.round((returnedOrders / validOrders) * 1000) / 10
+    : 0;
 
   return json_({
     ok: true,
     totalOrders,
     validOrders,
+    deliveredOrders,
+    shippingOrders,
+    returnedOrders,
+    processingOrders,
     cancelledOrders,
     totalRevenue,
+    deliveredRevenue,
+    shippingRevenue,
+    processingRevenue,
+    pendingRevenue,
+    returnedRevenue,
+    deliverySuccessRate,
+    returnRate,
     totalQuantity,
     avgOrderValue: validOrders > 0 ? Math.round(totalRevenue / validOrders) : 0,
+    deliveredAvgOrderValue: deliveredOrders > 0 ? Math.round(deliveredRevenue / deliveredOrders) : 0,
     sizes,
     statuses: statusMap,
     dailyRevenue: dateMap
