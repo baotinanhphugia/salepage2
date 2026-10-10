@@ -1367,7 +1367,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeOrderModal()">Đóng</button>
-        <button type="button" class="btn-cancel-action" onclick="submitCancelOrder()">❌ Hủy đơn</button>
+        <button type="button" class="btn-cancel-action" onclick="submitCancelOrder()">🗑️ Hủy & Xóa đơn</button>
         <button type="button" class="btn-save-action" onclick="submitSaveOrder()">💾 Lưu & Báo lại Tele</button>
         <button type="button" class="btn-eshop-action" onclick="submitPushEShop()">🚀 Đẩy eShop (Hoàn tất)</button>
       </div>
@@ -3365,7 +3365,7 @@ function renderOrdersTable(orders, searchQuery = "") {
         <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Mở Zalo & cập nhật trạng thái">💬 Zalo</button>
         <button class="btn-action-edit" onclick="openOrderModal('${o.orderId}')" title="Sửa size, địa chỉ & báo Tele">✏️ Sửa</button>
         <button class="btn-action-eshop" onclick="quickPushEShop('${o.orderId}')" title="Đẩy eShop & Hoàn tất (Xóa tin Tele)">🚀 eShop</button>
-        <button class="btn-action-cancel" onclick="quickCancelOrder('${o.orderId}')" title="Hủy đơn & Xóa tin Tele">❌ Hủy</button>
+        <button class="btn-action-cancel" onclick="quickCancelOrder('${o.orderId}')" title="Hủy & Xóa đơn khỏi Google Sheet và Telegram">🗑️ Xóa đơn</button>
       </div>
     `;
 
@@ -3631,25 +3631,30 @@ async function submitPushEShop() {
 async function submitCancelOrder() {
   const orderId = $("#editOrderId").value;
   if (!orderId) return;
-  if (!confirm(`Xác nhận HỦY đơn ${orderId}?\n(Tin nhắn đơn này trên Telegram sẽ được xóa sạch!)`)) return;
+  if (!confirm(`Xác nhận HỦY VÀ XÓA đơn ${orderId}?\n(Dữ liệu trên Google Sheet và tin nhắn Telegram sẽ được xóa sạch hoàn toàn!)`)) return;
 
   try {
-    showStatus("Đang hủy đơn và xóa tin Telegram...", true, "#modalStatus");
+    showStatus("Đang xóa đơn trên Google Sheet và Telegram...", true, "#modalStatus");
     const payload = authPayload({
       action: "cancelOrder",
       orderId: orderId
     });
 
-    const data = await requestApi(payload);
-    if (!data.ok) throw new Error(data.error || "Lỗi hủy đơn!");
+    // Cập nhật UI ngay lập tức
+    currentOrdersList = currentOrdersList.filter(o => o.orderId !== orderId);
+    filterAndRenderOrders();
 
-    showStatus("❌ Đã hủy đơn hàng và dọn sạch tin nhắn Telegram.", false, "#modalStatus");
+    const data = await requestApi(payload);
+    if (!data.ok) throw new Error(data.error || "Lỗi xóa đơn!");
+
+    showStatus("🗑️ Đã xóa đơn hàng khỏi Google Sheet và dọn sạch tin nhắn Telegram.", true, "#modalStatus");
     setTimeout(() => {
       closeOrderModal();
       loadOrders();
-    }, 1200);
+    }, 800);
   } catch (err) {
     showStatus(err.message, false, "#modalStatus");
+    loadOrders();
   }
 }
 
@@ -3686,19 +3691,25 @@ async function quickPushEShop(orderId) {
 }
 
 async function quickCancelOrder(orderId) {
-  if (!confirm(`Xác nhận HỦY đơn ${orderId}?\n(Tin nhắn đơn này trên Telegram sẽ được xóa!)`)) return;
+  if (!confirm(`Xác nhận HỦY VÀ XÓA đơn ${orderId}?\n(Dữ liệu trên Google Sheet và tin nhắn Telegram sẽ được xóa sạch hoàn toàn!)`)) return;
   try {
-    showStatus(`Đang hủy đơn ${orderId}...`);
+    showStatus(`Đang xóa đơn ${orderId} trên Google Sheet & Telegram...`);
     const payload = authPayload({
       action: "cancelOrder",
       orderId: orderId
     });
+
+    // Cập nhật UI ngay lập tức
+    currentOrdersList = currentOrdersList.filter(o => o.orderId !== orderId);
+    filterAndRenderOrders();
+
     const data = await requestApi(payload);
-    if (!data.ok) throw new Error(data.error || "Lỗi hủy đơn!");
-    showStatus(`❌ Đã hủy đơn ${orderId} và dọn tin nhắn Telegram.`);
+    if (!data.ok) throw new Error(data.error || "Lỗi xóa đơn!");
+    showStatus(`🗑️ Đã xóa đơn ${orderId} khỏi Google Sheet và dọn tin nhắn Telegram.`);
     loadOrders();
   } catch (e) {
     showStatus(e.message, false);
+    loadOrders();
   }
 }
 

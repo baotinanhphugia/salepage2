@@ -120,8 +120,8 @@ function doPost(e) {
       return handleFailPushMisa_(data);
     }
 
-    // 6. Hủy đơn (Admin & CSKH - Khách bom / không mua -> Xóa tin Telegram)
-    if (data.action === "cancelOrder") {
+    // 6. Hủy / Xóa đơn (Admin & CSKH - Xóa tin Telegram & Xóa dòng trên Google Sheet)
+    if (data.action === "cancelOrder" || data.action === "deleteOrder") {
       checkStaffAuth_(data.username, data.password || data.key);
       return handleCancelOrderVN_(data);
     }
@@ -712,47 +712,54 @@ function callMisaEShopCreateOrder_(orderData) {
 }
 
 /**
- * Hủy đơn: Cập nhật trạng thái, XÓA TIN NHẮN TRÊN TELEGRAM
+ * Hủy & Xóa đơn: Xóa tin nhắn trên Telegram và XÓA HOÀN TOÀN DÒNG DỮ LIỆU TRÊN GOOGLE SHEET
  */
 function handleCancelOrderVN_(data) {
   const orderId = String(data.orderId || "").trim();
   if (!orderId) throw new Error("Thiếu mã đơn hàng!");
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = getOrCreateOrdersSheet_(ss);
-  const values = sheet.getDataRange().getValues();
-  let targetRow = -1;
-  let oldMsgId = "";
-  let customerName = "";
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = getOrCreateOrdersSheet_(ss);
+    const values = sheet.getDataRange().getValues();
+    let targetRow = -1;
+    let oldMsgId = "";
+    let customerName = "";
 
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][1]).trim() === orderId) {
-      targetRow = i + 1;
-      customerName = values[i][3] || "";
-      oldMsgId = String(values[i][18] || "");
-      break;
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][1]).trim() === orderId) {
+        targetRow = i + 1;
+        customerName = values[i][3] || "";
+        oldMsgId = String(values[i][18] || "");
+        break;
+      }
     }
+
+    if (targetRow === -1) {
+      throw new Error("Không tìm thấy đơn hàng " + orderId);
+    }
+
+    // 1. Xóa tin nhắn đơn hàng trên Telegram (Inbox Zero)
+    if (oldMsgId) {
+      safeDeleteTelegramMessage_(oldMsgId);
+    }
+
+    // 2. XÓA VĨNH VIỄN DÒNG DỮ LIỆU ĐƠN HÀNG TRÊN GOOGLE SHEET
+    sheet.deleteRow(targetRow);
+
+    // 3. Gửi thông báo ngắn gọn xác nhận đơn đã hủy và xóa
+    safeSendQuickNotice_(`❌ [ĐÃ HỦY & XOÁ] Đơn hàng ${orderId} (${customerName}) đã được xóa khỏi hệ thống.`);
+
+    return json_({
+      ok: true,
+      orderId,
+      message: "Đã xóa đơn hàng khỏi Google Sheet và dọn sạch tin nhắn trên Telegram!"
+    });
+  } finally {
+    lock.releaseLock();
   }
-
-  if (targetRow === -1) {
-    throw new Error("Không tìm thấy đơn hàng " + orderId);
-  }
-
-  sheet.getRange(targetRow, 18).setValue("Đã hủy");
-
-  // Xóa tin nhắn Telegram
-  if (oldMsgId) {
-    safeDeleteTelegramMessage_(oldMsgId);
-    sheet.getRange(targetRow, 19).setValue("");
-  }
-
-  safeSendQuickNotice_(`❌ [ĐÃ HỦY] Đơn hàng ${orderId} (${customerName}) đã hủy theo yêu cầu.`);
-
-  return json_({
-    ok: true,
-    orderId,
-    message: "Đã hủy đơn hàng và dọn sạch tin nhắn trên Telegram!"
-  });
 }
 
 /**
