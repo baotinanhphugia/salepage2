@@ -713,6 +713,65 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
+/* ================= DASHBOARD BÁO CÁO DOANH SỐ & SIZE ================= */
+.size-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(214, 173, 69, 0.15);
+  color: var(--gold-light);
+  border: 1px solid rgba(214, 173, 69, 0.35);
+  font-weight: 700;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 13px;
+}
+.rank-1 { background: rgba(255, 215, 0, 0.22); color: #ffd700; border: 1.5px solid rgba(255, 215, 0, 0.5); box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+.rank-2 { background: rgba(192, 192, 192, 0.22); color: #e2e8f0; border: 1.5px solid rgba(192, 192, 192, 0.45); }
+.rank-3 { background: rgba(205, 127, 50, 0.22); color: #f97316; border: 1.5px solid rgba(205, 127, 50, 0.45); }
+.rank-other { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); font-size: 12px; }
+
+.dash-bar-container {
+  background: #191925;
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.dash-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gold-gradient);
+  transition: width 0.4s ease;
+}
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .wrap { max-width: 100% !important; padding: 0 !important; }
+  .header, .header-actions, .quick-bar, .tabs, .status, #configForm, #orders, #users, #guide, #orderEditModal, #productPickerModal, .modal-overlay {
+    display: none !important;
+  }
+  #dashboardSection, #dashboardReport {
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  #dashboardReport * { color: #000 !important; border-color: #ccc !important; box-shadow: none !important; }
+  #dashSizeTable thead tr { background: #eee !important; }
+}
+
 /* Guide */
 .guide-box {
   background: #0c0c10;
@@ -935,6 +994,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <strong>Hệ thống:</strong> Quản trị Bán hàng Phú Gia Diamond (Việt Nam).
     </div>
     <div class="quick-btns">
+      <button class="btn2" onclick="showTab('dashboardReport')" style="background:rgba(214,173,69,0.18); border-color:var(--gold-primary); color:var(--gold-light); font-weight:700;">📊 Báo cáo Doanh số & Size</button>
       <button class="btn2" onclick="loadConfig()">🔄 Tải lại cấu hình</button>
       <button class="btn2" onclick="loadOrders()">📦 Xem đơn hàng</button>
       <button class="btn2" onclick="openLanding('index.html')">🌐 Mở Trang Bán Hàng</button>
@@ -945,11 +1005,12 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
   <!-- Tabs Navigation -->
   <nav class="tabs">
+    <button class="tab tab-dashboard" id="tabBtnDashboard" onclick="showTab('dashboardReport')" style="background:linear-gradient(135deg, rgba(214,173,69,0.2), rgba(154,118,32,0.12)); border:1px solid rgba(214,173,69,0.45); color:#ffd875; font-weight:700;">📊 Báo Cáo Doanh Số & Size</button>
+    <button class="tab" onclick="showTab('orders')">📦 Quản lý Đơn hàng</button>
     <button class="tab active" onclick="showTab('productVN')">🇻🇳 Bảng giá Việt Nam (VNĐ)</button>
     <button class="tab" onclick="showTab('shop')">🏪 Shop & Chuyển khoản</button>
     <button class="tab" onclick="showTab('security')">🔔 Telegram & Gmail</button>
     <button class="tab" onclick="showTab('misa')">🛒 Kết nối MISA eShop</button>
-    <button class="tab" onclick="showTab('orders')">📦 Quản lý Đơn hàng</button>
     <button class="tab tab-users" id="tabBtnUsers" onclick="showTab('users')">👥 Quản lý Nhân sự</button>
     <button class="tab tab-guide" onclick="showTab('guide')">📖 Hướng dẫn sử dụng</button>
   </nav>
@@ -1160,6 +1221,171 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     </div>
   </form>
 
+  <!-- TAB DASHBOARD: BÁO CÁO DOANH SỐ & SIZE -->
+  <section id="dashboardReport" class="panel card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:28px;">📊</span>
+          <h2 style="font-size:22px; font-weight:800; background:var(--gold-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0;">
+            Báo Cáo Doanh Số & Thống Kê Theo Kích Cỡ Đá (Size)
+          </h2>
+        </div>
+        <p class="small" style="margin-top:4px; color:#9ca3af;">
+          Thống kê chi tiết doanh thu thực tế, số lượng bán ra, tỷ trọng % và xếp hạng các size đá Moissanite bán chạy nhất.
+        </p>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn2" onclick="refreshDashboardReport()" style="display:inline-flex; align-items:center; gap:6px;">
+          🔄 Tải lại dữ liệu
+        </button>
+        <button type="button" class="btn2" onclick="printSalesReport()" style="background:rgba(214,173,69,0.18); border-color:var(--gold-primary); color:var(--gold-light); display:inline-flex; align-items:center; gap:6px;">
+          🖨️ In / Xuất Báo Cáo
+        </button>
+      </div>
+    </div>
+
+    <!-- THANH BỘ LỌC BÁO CÁO (FILTER BAR) -->
+    <div style="background:#14141d; border:1px solid #29293d; border-radius:14px; padding:14px 18px; margin-bottom:20px; display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between;">
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+        <!-- Lọc thời gian -->
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label style="font-size:12.5px; color:#888; margin:0; font-weight:600; white-space:nowrap;">📅 Thời gian:</label>
+          <select id="dashTimeFilter" onchange="renderDashboardReport()" style="background:#0c0c12; border:1px solid #38384f; color:#fff; font-size:13px; padding:7px 12px; border-radius:8px; cursor:pointer;">
+            <option value="all">🌟 Toàn bộ lịch sử</option>
+            <option value="today">📅 Hôm nay</option>
+            <option value="7days">📆 7 ngày gần nhất</option>
+            <option value="month">🗓️ Tháng này</option>
+          </select>
+        </div>
+
+        <!-- Lọc trạng thái -->
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label style="font-size:12.5px; color:#888; margin:0; font-weight:600; white-space:nowrap;">🛒 Trạng thái:</label>
+          <select id="dashStatusFilter" onchange="renderDashboardReport()" style="background:#0c0c12; border:1px solid #38384f; color:#fff; font-size:13px; padding:7px 12px; border-radius:8px; cursor:pointer;">
+            <option value="valid">✅ Đơn hợp lệ (Bỏ đơn hủy)</option>
+            <option value="eshop">🚀 Đã đẩy eShop (Chốt thành công)</option>
+            <option value="pending">⏳ Chờ xử lý / Tư vấn</option>
+            <option value="all">📋 Tất cả (Bao gồm Đã hủy)</option>
+          </select>
+        </div>
+
+        <!-- Lọc phân loại -->
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label style="font-size:12.5px; color:#888; margin:0; font-weight:600; white-space:nowrap;">💍 Phân loại:</label>
+          <select id="dashVariantFilter" onchange="renderDashboardReport()" style="background:#0c0c12; border:1px solid #38384f; color:#fff; font-size:13px; padding:7px 12px; border-radius:8px; cursor:pointer;">
+            <option value="all">Tất cả kiểu dáng</option>
+            <option value="1 Đôi">1 Đôi (2 chiếc)</option>
+            <option value="1 Chiếc">1 Chiếc lẻ</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="font-size:12.5px; color:#ffd875; font-weight:600;" id="dashReportTimestamp">
+        <!-- Đang cập nhật... -->
+      </div>
+    </div>
+
+    <!-- HÀNG THẺ CHỈ SỐ KPI TỔNG QUAN (STAT CARDS) -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:24px;">
+      <!-- Card 1: Doanh Thu -->
+      <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:var(--gold-gradient);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">💰 Tổng Doanh Thu</span>
+          <span style="font-size:20px;">💵</span>
+        </div>
+        <div id="dashTotalRevenue" style="font-size:26px; font-weight:900; color:#ffd875; letter-spacing:-0.5px;">0 đ</div>
+        <div id="dashRevenueSub" style="font-size:11.5px; color:#6ee7b7; margin-top:6px;">Từ 0 đơn hàng hợp lệ</div>
+      </div>
+
+      <!-- Card 2: Size Bán Chạy Nhất -->
+      <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #10b981, #059669);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">💎 Size Bán Chạy Nhất</span>
+          <span style="font-size:20px;">🏆</span>
+        </div>
+        <div id="dashTopSize" style="font-size:26px; font-weight:900; color:#fff; letter-spacing:-0.5px;">---</div>
+        <div id="dashTopSizeSub" style="font-size:11.5px; color:#ffd875; margin-top:6px;">0 chiếc/đôi đã bán</div>
+      </div>
+
+      <!-- Card 3: Tổng Sản Phẩm Đã Bán -->
+      <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #3b82f6, #1d4ed8);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">📦 Sản Phẩm Đã Bán</span>
+          <span style="font-size:20px;">💍</span>
+        </div>
+        <div id="dashTotalQty" style="font-size:26px; font-weight:900; color:#93c5fd; letter-spacing:-0.5px;">0 SP</div>
+        <div id="dashTotalQtySub" style="font-size:11.5px; color:#9ca3af; margin-top:6px;">0 Đôi • 0 Chiếc lẻ</div>
+      </div>
+
+      <!-- Card 4: Giá Trị Đơn Trung Bình (AOV) -->
+      <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #a855f7, #7e22ce);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">📈 Trung Bình / Đơn</span>
+          <span style="font-size:20px;">🎯</span>
+        </div>
+        <div id="dashAOV" style="font-size:26px; font-weight:900; color:#d8b4fe; letter-spacing:-0.5px;">0 đ</div>
+        <div id="dashAOVSub" style="font-size:11.5px; color:#9ca3af; margin-top:6px;">Giá trị trung bình 1 đơn</div>
+      </div>
+    </div>
+
+    <!-- KHU VỰC BIỂU ĐỒ THANH TỶ TRỌNG TỪNG SIZE (VISUAL PROGRESS BARS) -->
+    <div style="background:#121219; border:1px solid #232333; border-radius:16px; padding:20px; margin-bottom:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <h3 style="font-size:15px; font-weight:700; color:var(--gold-light); display:flex; align-items:center; gap:8px;">
+          <span>📈</span> Tỷ Trọng Doanh Thu Giữa Các Size Đá
+        </h3>
+        <span style="font-size:12px; color:#9ca3af;">Xếp theo doanh thu giảm dần</span>
+      </div>
+      <div id="dashSizeBars" style="display:flex; flex-direction:column; gap:12px;">
+        <!-- Render động thanh bar từng size -->
+      </div>
+    </div>
+
+    <!-- BẢNG BÁO CÁO DOANH SỐ CHI TIẾT THEO TỪNG SIZE -->
+    <div style="background:#121219; border:1px solid #232333; border-radius:16px; padding:20px; overflow:hidden;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h3 style="font-size:16px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+            <span>💎</span> Bảng Chi Tiết Doanh Số Từng Kích Cỡ Đá (Size)
+          </h3>
+          <p style="font-size:12px; color:#9ca3af; margin-top:2px;">Số liệu tổng hợp từ toàn bộ đơn hàng thực tế</p>
+        </div>
+        <span id="dashSizeCountBadge" style="background:rgba(214,173,69,0.15); color:var(--gold-light); border:1px solid rgba(214,173,69,0.3); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700;">
+          0 Kích Cỡ
+        </span>
+      </div>
+
+      <div class="table-container" style="border:1px solid #1f1f2e; border-radius:12px; overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;" id="dashSizeTable">
+          <thead>
+            <tr style="background:#161622; border-bottom:2px solid #272738;">
+              <th style="padding:12px 14px; text-align:center; width:60px; color:#ffd875; font-size:12.5px;">Hạng</th>
+              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Kích Cỡ Đá (Size)</th>
+              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Mã SKU MISA (Lô hàng)</th>
+              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Số Lượng Bán</th>
+              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Số Đơn Hàng</th>
+              <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12.5px;">Tổng Doanh Thu</th>
+              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px; width:170px;">Tỷ Trọng (%)</th>
+              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Phân Loại (Đôi / Lẻ)</th>
+              <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12.5px;">Giá TB / SP</th>
+            </tr>
+          </thead>
+          <tbody id="dashSizeTableBody">
+            <tr><td colspan="9" style="text-align:center; padding:30px; color:#888;">⏳ Đang tổng hợp dữ liệu báo cáo doanh số...</td></tr>
+          </tbody>
+          <tfoot id="dashSizeTableFoot" style="background:#14141e; font-weight:700; border-top:2px solid #272738;">
+            <!-- Tổng cộng footer -->
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- TAB 5: ĐƠN HÀNG -->
   <section id="orders" class="panel card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
@@ -1171,6 +1397,36 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         <span class="live-pulse-dot" style="display:inline-block; width:8px; height:8px; background:#10b981; border-radius:50%;"></span>
         <span id="orderAutoSyncText">Tự động đồng bộ: <b>Đang hoạt động</b></span>
       </div>
+    </div>
+
+    <!-- BANNER TÓM TẮT DOANH SỐ NHANH TRÊN TAB ĐƠN HÀNG -->
+    <div style="background:linear-gradient(135deg, rgba(20,20,30,0.9), rgba(30,27,55,0.7)); border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:12px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">💰</span>
+          <div>
+            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase;">Doanh số</div>
+            <div id="ordersMiniRevenue" style="font-size:16px; font-weight:800; color:#ffd875;">0 đ</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">💎</span>
+          <div>
+            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase;">Size Bán Chạy Nhất</div>
+            <div id="ordersMiniTopSize" style="font-size:16px; font-weight:800; color:#6ee7b7;">---</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">📦</span>
+          <div>
+            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase;">Đã Bán Ra</div>
+            <div id="ordersMiniCount" style="font-size:16px; font-weight:800; color:#93c5fd;">0 SP</div>
+          </div>
+        </div>
+      </div>
+      <button type="button" onclick="showTab('dashboardReport')" style="background:var(--gold-gradient); color:#000; font-size:12.5px; font-weight:800; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(0,0,0,0.3);">
+        📊 Xem Báo Cáo Doanh Số Chi Tiết Theo Size ➔
+      </button>
     </div>
 
     <!-- THANH TÌM KIẾM & LỌC ĐƠN HÀNG THÔNG MINH -->
@@ -2869,6 +3125,13 @@ function showTab(id) {
   const targetPanel = document.getElementById(id);
   if (targetPanel) targetPanel.classList.add("active");
 
+  if (id === "dashboardReport") {
+    if (!currentOrdersList || currentOrdersList.length === 0) {
+      loadOrders(true).then(() => renderDashboardReport());
+    } else {
+      renderDashboardReport();
+    }
+  }
   if (id === "users") {
     loadUsers();
   }
@@ -2888,6 +3151,13 @@ function showTabFromCode(id) {
   const targetPanel = document.getElementById(id);
   if (targetPanel) targetPanel.classList.add("active");
 
+  if (id === "dashboardReport") {
+    if (!currentOrdersList || currentOrdersList.length === 0) {
+      loadOrders(true).then(() => renderDashboardReport());
+    } else {
+      renderDashboardReport();
+    }
+  }
   if (id === "users") {
     loadUsers();
   }
@@ -3202,8 +3472,14 @@ async function loadOrders(silent = false) {
     const searchVal = $("#orderSearchInput") ? $("#orderSearchInput").value : "";
     handleOrderSearch(searchVal);
 
+    // Tự động cập nhật số liệu Báo cáo Doanh số & Size
+    renderDashboardReport();
+
     if (!silent) {
-      showTabFromCode("orders");
+      const activePanel = document.querySelector(".panel.active");
+      if (!activePanel || activePanel.id !== "dashboardReport") {
+        showTabFromCode("orders");
+      }
       showStatus(`Đã tải xong danh sách đơn hàng (${currentOrdersList.length} đơn gần nhất).`);
     }
 
@@ -3739,6 +4015,328 @@ async function quickZaloOrder(orderId, cleanPhone) {
   } catch (e) {
     showStatus(e.message, false);
   }
+}
+
+
+// ================= MODULE BÁO CÁO DOANH SỐ & PHÂN TÍCH THEO SIZE =================
+function normalizeSizeLabel(raw) {
+  if (!raw) return "5mm";
+  let s = String(raw).trim().toLowerCase();
+  s = s.replace(/ly/g, "mm").replace(/\s+/g, "");
+  if (!s.endsWith("mm")) s += "mm";
+  if (s === "4mm" || s === "4.0mm") return "4mm";
+  if (s === "4.5mm" || s === "4,5mm" || s === "4.5ly") return "4.5mm";
+  if (s === "5mm" || s === "5.0mm") return "5mm";
+  if (s === "6mm" || s === "6.0mm") return "6mm";
+  if (s === "6.3mm" || s === "6,3mm" || s === "6ly3") return "6.3mm";
+  if (s === "6.8mm" || s === "6,8mm" || s === "6ly8") return "6.8mm";
+  if (s === "7mm" || s === "7.0mm") return "7mm";
+  if (s === "7.5mm" || s === "7,5mm" || s === "7ly5") return "7.5mm";
+  if (s === "8mm" || s === "8.0mm") return "8mm";
+  return s.toUpperCase();
+}
+
+function parseOrderDateTime(dateStr) {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return dateStr;
+  const s = String(dateStr).trim();
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if (m) {
+    const day = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10) - 1;
+    const year = parseInt(m[3], 10);
+    const hour = m[4] ? parseInt(m[4], 10) : 0;
+    const min = m[5] ? parseInt(m[5], 10) : 0;
+    const sec = m[6] ? parseInt(m[6], 10) : 0;
+    return new Date(year, month, day, hour, min, sec);
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function filterOrdersForReport(ordersList) {
+  const timeFilter = document.getElementById("dashTimeFilter")?.value || "all";
+  const statusFilter = document.getElementById("dashStatusFilter")?.value || "valid";
+  const variantFilter = document.getElementById("dashVariantFilter")?.value || "all";
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const sevenDaysAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+  return (ordersList || []).filter(o => {
+    // 1. Lọc trạng thái
+    const status = String(o.status || "Chờ xác nhận").trim();
+    if (statusFilter === "valid" && status === "Đã hủy") return false;
+    if (statusFilter === "eshop" && status !== "Đã đẩy eShop") return false;
+    if (statusFilter === "pending" && (status === "Đã đẩy eShop" || status === "Đã hủy")) return false;
+
+    // 2. Lọc phân loại
+    const variant = String(o.variant || "1 Đôi").trim();
+    if (variantFilter !== "all") {
+      if (variantFilter === "1 Đôi" && !variant.includes("Đôi")) return false;
+      if (variantFilter === "1 Chiếc" && !variant.includes("Chiếc") && !variant.includes("lẻ")) return false;
+    }
+
+    // 3. Lọc thời gian
+    if (timeFilter !== "all") {
+      const dt = parseOrderDateTime(o.createdAt);
+      if (dt) {
+        const time = dt.getTime();
+        if (timeFilter === "today" && time < startOfToday) return false;
+        if (timeFilter === "7days" && time < sevenDaysAgo) return false;
+        if (timeFilter === "month" && time < startOfMonth) return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+function renderDashboardReport() {
+  const allOrders = currentOrdersList || [];
+  const filtered = filterOrdersForReport(allOrders);
+
+  let totalRevenue = 0;
+  let totalQty = 0;
+  let totalOrdersCount = filtered.length;
+  let totalPairs = 0;
+  let totalSingles = 0;
+  const sizeMap = {};
+
+  filtered.forEach(o => {
+    const rawPrice = String(o.price || "0").replace(/\D/g, "");
+    const price = parseInt(rawPrice, 10) || 0;
+    const rawQty = String(o.quantity || "1").replace(/\D/g, "");
+    const qty = Math.max(1, parseInt(rawQty, 10) || 1);
+    const size = normalizeSizeLabel(o.size);
+    const variant = String(o.variant || "1 Đôi").trim();
+    const isSingle = variant.includes("Chiếc") || variant.includes("lẻ");
+
+    totalRevenue += price;
+    totalQty += qty;
+    if (isSingle) totalSingles += qty; else totalPairs += qty;
+
+    if (!sizeMap[size]) {
+      sizeMap[size] = {
+        size: size,
+        orders: 0,
+        quantity: 0,
+        revenue: 0,
+        pairs: 0,
+        singles: 0,
+        sampleSku: o.misaSku || autoDetectMisaSku(size, variant)
+      };
+    }
+
+    sizeMap[size].orders += 1;
+    sizeMap[size].quantity += qty;
+    sizeMap[size].revenue += price;
+    if (isSingle) sizeMap[size].singles += qty; else sizeMap[size].pairs += qty;
+    if (o.misaSku && !sizeMap[size].sampleSku) sizeMap[size].sampleSku = o.misaSku;
+  });
+
+  const sizes = Object.values(sizeMap).sort((a, b) => b.revenue - a.revenue);
+  sizes.forEach((s, idx) => {
+    s.rank = idx + 1;
+    s.revPercent = totalRevenue > 0 ? (s.revenue / totalRevenue * 100).toFixed(1) : "0.0";
+    s.qtyPercent = totalQty > 0 ? (s.quantity / totalQty * 100).toFixed(1) : "0.0";
+    s.avgPrice = s.quantity > 0 ? Math.round(s.revenue / s.quantity) : 0;
+  });
+
+  const topSize = sizes.length > 0 ? sizes[0] : null;
+  const aov = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
+
+  // Cập nhật Stat Cards
+  if ($("#dashTotalRevenue")) $("#dashTotalRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + " đ";
+  if ($("#dashRevenueSub")) $("#dashRevenueSub").innerText = `Từ ${totalOrdersCount} đơn hàng được chọn`;
+  
+  if ($("#dashTopSize")) {
+    $("#dashTopSize").innerHTML = topSize 
+      ? `<span style="color:var(--gold-light);">${topSize.size}</span> <span style="font-size:16px; color:#10b981;">(${topSize.revPercent}%)</span>` 
+      : "---";
+  }
+  if ($("#dashTopSizeSub")) {
+    $("#dashTopSizeSub").innerText = topSize ? `${topSize.quantity} SP bán ra (${topSize.revenue.toLocaleString('vi-VN')} đ)` : "Chưa có dữ liệu";
+  }
+
+  if ($("#dashTotalQty")) $("#dashTotalQty").innerText = totalQty.toLocaleString("vi-VN") + " SP";
+  if ($("#dashTotalQtySub")) $("#dashTotalQtySub").innerText = `${totalPairs} Đôi • ${totalSingles} Chiếc lẻ`;
+
+  if ($("#dashAOV")) $("#dashAOV").innerText = aov.toLocaleString("vi-VN") + " đ";
+  if ($("#dashAOVSub")) $("#dashAOVSub").innerText = totalOrdersCount > 0 ? `Trung bình ${(totalQty / totalOrdersCount).toFixed(1)} SP/đơn` : "Trung bình 0 SP/đơn";
+
+  if ($("#dashReportTimestamp")) {
+    $("#dashReportTimestamp").innerText = `🕒 Cập nhật: ${new Date().toLocaleTimeString("vi-VN")}`;
+  }
+  if ($("#dashSizeCountBadge")) {
+    $("#dashSizeCountBadge").innerText = `${sizes.length} Kích cỡ đá`;
+  }
+
+  // Cập nhật Mini Banner trong tab Orders
+  if ($("#ordersMiniRevenue")) $("#ordersMiniRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + " đ";
+  if ($("#ordersMiniTopSize")) $("#ordersMiniTopSize").innerText = topSize ? `${topSize.size} (${topSize.quantity} SP)` : "---";
+  if ($("#ordersMiniCount")) $("#ordersMiniCount").innerText = `${totalQty} SP (${totalOrdersCount} đơn)`;
+
+  // Render Visual Progress Bars
+  renderDashboardSizeBars(sizes, totalRevenue);
+
+  // Render Data Table
+  renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCount);
+}
+
+function renderDashboardSizeBars(sizes, totalRevenue) {
+  const container = $("#dashSizeBars");
+  if (!container) return;
+
+  if (!sizes || sizes.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px; color:#888;">
+        Chưa có dữ liệu bán hàng cho bộ lọc hiện tại.
+      </div>
+    `;
+    return;
+  }
+
+  let html = "";
+  sizes.forEach(s => {
+    const p = parseFloat(s.revPercent) || 0;
+    const medal = s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : s.rank === 3 ? "🥉" : `#${s.rank}`;
+    html += `
+      <div style="background:#151520; border:1px solid #252538; border-radius:12px; padding:12px 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:15px; font-weight:800;">${medal}</span>
+            <span class="size-badge">${escapeHtml(s.size)}</span>
+            <span style="font-size:12px; color:#9ca3af;">(Mã: <code style="color:#ffd875;">${escapeHtml(s.sampleSku || 'N/A')}</code>)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; font-size:13px;">
+            <span style="color:#93c5fd; font-weight:600;">📦 ${s.quantity} SP (${s.orders} đơn)</span>
+            <strong style="color:#ffd875; font-size:14px;">${s.revenue.toLocaleString('vi-VN')} đ</strong>
+            <span style="background:rgba(16,185,129,0.18); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); padding:2px 7px; border-radius:6px; font-weight:700; font-size:11.5px;">${s.revPercent}%</span>
+          </div>
+        </div>
+        <div class="dash-bar-container">
+          <div class="dash-bar-fill" style="width: ${Math.max(2, p)}%;"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCount) {
+  const tbody = $("#dashSizeTableBody");
+  const tfoot = $("#dashSizeTableFoot");
+  if (!tbody) return;
+
+  if (!sizes || sizes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align:center; padding:36px; color:#888;">
+          Không có đơn hàng nào khớp với bộ lọc thời gian hoặc trạng thái này.
+        </td>
+      </tr>
+    `;
+    if (tfoot) tfoot.innerHTML = "";
+    return;
+  }
+
+  let rowsHtml = "";
+  sizes.forEach(s => {
+    let rankBadgeClass = "rank-other";
+    let rankText = `#${s.rank}`;
+    if (s.rank === 1) { rankBadgeClass = "rank-1"; rankText = "🥇"; }
+    else if (s.rank === 2) { rankBadgeClass = "rank-2"; rankText = "🥈"; }
+    else if (s.rank === 3) { rankBadgeClass = "rank-3"; rankText = "🥉"; }
+
+    const p = parseFloat(s.revPercent) || 0;
+
+    rowsHtml += `
+      <tr style="border-bottom:1px solid #1c1c28; transition:background 0.15s;" onmouseover="this.style.background='#171724'" onmouseout="this.style.background='transparent'">
+        <td style="padding:12px 14px; text-align:center;">
+          <span class="rank-badge ${rankBadgeClass}">${rankText}</span>
+        </td>
+        <td style="padding:12px 14px;">
+          <span class="size-badge">${escapeHtml(s.size)}</span>
+        </td>
+        <td style="padding:12px 14px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#ffd875; font-weight:600;">
+          ${escapeHtml(s.sampleSku || '---')}
+        </td>
+        <td style="padding:12px 14px; text-align:center; font-weight:700; color:#fff; font-size:14px;">
+          ${s.quantity}
+        </td>
+        <td style="padding:12px 14px; text-align:center; color:#9ca3af; font-size:13px;">
+          ${s.orders}
+        </td>
+        <td style="padding:12px 14px; text-align:right; font-weight:800; color:#ffd875; font-size:14px;">
+          ${s.revenue.toLocaleString('vi-VN')} đ
+        </td>
+        <td style="padding:12px 14px; text-align:center;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="dash-bar-container" style="flex:1; height:8px;">
+              <div class="dash-bar-fill" style="width: ${Math.max(2, p)}%;"></div>
+            </div>
+            <span style="font-size:12px; font-weight:700; color:#6ee7b7; min-width:42px; text-align:right;">${s.revPercent}%</span>
+          </div>
+        </td>
+        <td style="padding:12px 14px; text-align:center; font-size:12px;">
+          <span style="background:rgba(99,102,241,0.18); color:#a5b4fc; padding:2px 7px; border-radius:5px; font-weight:600;">${s.pairs} Đôi</span>
+          <span style="color:#64748b; margin:0 2px;">•</span>
+          <span style="background:rgba(249,115,22,0.18); color:#fdba74; padding:2px 7px; border-radius:5px; font-weight:600;">${s.singles} Chiếc</span>
+        </td>
+        <td style="padding:12px 14px; text-align:right; color:#e2e8f0; font-size:13px;">
+          ${s.avgPrice.toLocaleString('vi-VN')} đ
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = rowsHtml;
+
+  if (tfoot) {
+    const overallAov = totalQty > 0 ? Math.round(totalRevenue / totalQty) : 0;
+    tfoot.innerHTML = `
+      <tr>
+        <td colspan="3" style="padding:14px; font-size:13px; color:#ffd875; font-weight:800; text-transform:uppercase;">
+          💎 TỔNG CỘNG (${sizes.length} Size)
+        </td>
+        <td style="padding:14px; text-align:center; font-size:15px; color:#fff; font-weight:900;">
+          ${totalQty} SP
+        </td>
+        <td style="padding:14px; text-align:center; font-size:13.5px; color:#cbd5e1; font-weight:700;">
+          ${totalOrdersCount} đơn
+        </td>
+        <td style="padding:14px; text-align:right; font-size:16px; color:#ffd875; font-weight:900;">
+          ${totalRevenue.toLocaleString('vi-VN')} đ
+        </td>
+        <td style="padding:14px; text-align:center; font-size:13px; color:#6ee7b7; font-weight:800;">
+          100.0%
+        </td>
+        <td style="padding:14px; text-align:center; font-size:12px; color:#9ca3af;">
+          Toàn bộ đơn
+        </td>
+        <td style="padding:14px; text-align:right; font-size:13.5px; color:#e2e8f0; font-weight:700;">
+          ${overallAov.toLocaleString('vi-VN')} đ
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function refreshDashboardReport() {
+  showStatus("Đang cập nhật số liệu mới nhất từ hệ thống...", true);
+  loadOrders(false).then(() => {
+    renderDashboardReport();
+    showStatus("✅ Đã cập nhật xong dữ liệu Báo cáo Doanh số & Size!", true);
+  }).catch(e => {
+    showStatus(e.message, false);
+  });
+}
+
+function printSalesReport() {
+  window.print();
 }
 
 

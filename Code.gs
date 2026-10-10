@@ -72,7 +72,14 @@ function doPost(e) {
     // 2. Xem danh sách đơn hàng (Admin & CSKH)
     if (data.action === "orders") {
       checkStaffAuth_(data.username, data.password || data.key);
-      return json_({ ok: true, orders: getOrders_() });
+      const limit = Number(data.limit) || 300;
+      return json_({ ok: true, orders: getOrders_(limit) });
+    }
+
+    // 2.1 Báo cáo doanh số và phân tích theo Size (Admin & CSKH)
+    if (data.action === "salesReport") {
+      checkStaffAuth_(data.username, data.password || data.key);
+      return handleSalesReport_();
     }
 
     // 3. Admin lưu cấu hình (Chỉ Admin)
@@ -1337,13 +1344,14 @@ function autoDetectMisaSku_(size, variant) {
   return isPair ? "MS051" : "MS05";
 }
 
-function getOrders_() {
+function getOrders_(customLimit) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = getOrCreateOrdersSheet_(ss);
   const values = sheet.getDataRange().getValues();
   const rows = [];
+  const limit = Math.max(1, Number(customLimit) || 300);
 
-  for (let i = Math.max(1, values.length - 80); i < values.length; i++) {
+  for (let i = Math.max(1, values.length - limit); i < values.length; i++) {
     const r = values[i];
     const noteStr = String(r[15] || "");
     let misaSku = "";
@@ -1391,6 +1399,92 @@ function getOrders_() {
     });
   }
   return rows;
+}
+
+/**
+ * Báo cáo toàn diện Doanh số và Phân bổ từng Size trên Google Sheets
+ */
+function handleSalesReport_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = getOrCreateOrdersSheet_(ss);
+  const values = sheet.getDataRange().getValues();
+
+  let totalRevenue = 0;
+  let totalOrders = 0;
+  let totalQuantity = 0;
+  let validOrders = 0;
+  let cancelledOrders = 0;
+  const sizeMap = {};
+  const statusMap = {};
+  const dateMap = {};
+
+  for (let i = 1; i < values.length; i++) {
+    const r = values[i];
+    const orderId = String(r[1] || "").trim();
+    if (!orderId) continue;
+
+    totalOrders++;
+    const rawDate = String(r[0] || "");
+    const dateKey = rawDate.split(" ")[0] || "N/A";
+    const status = String(r[17] || "Chờ xác nhận").trim();
+    statusMap[status] = (statusMap[status] || 0) + 1;
+
+    if (status === "Đã hủy") {
+      cancelledOrders++;
+      continue;
+    }
+
+    validOrders++;
+    const rawSize = String(r[10] || "5mm").trim() || "5mm";
+    const variant = String(r[9] || "1 Đôi").trim();
+    const qty = Math.max(1, Number(String(r[11] || "1").replace(/\D/g, "")) || 1);
+    const price = Number(String(r[14] || "0").replace(/\D/g, "")) || 0;
+
+    totalRevenue += price;
+    totalQuantity += qty;
+    dateMap[dateKey] = (dateMap[dateKey] || 0) + price;
+
+    if (!sizeMap[rawSize]) {
+      sizeMap[rawSize] = {
+        size: rawSize,
+        orders: 0,
+        quantity: 0,
+        revenue: 0,
+        pairs: 0,
+        singles: 0,
+        defaultSku: autoDetectMisaSku_(rawSize, variant)
+      };
+    }
+
+    sizeMap[rawSize].orders += 1;
+    sizeMap[rawSize].quantity += qty;
+    sizeMap[rawSize].revenue += price;
+    if (variant.includes("Chiếc") || variant.includes("lẻ")) {
+      sizeMap[rawSize].singles += qty;
+    } else {
+      sizeMap[rawSize].pairs += qty;
+    }
+  }
+
+  const sizes = Object.values(sizeMap).sort((a, b) => b.revenue - a.revenue);
+  sizes.forEach(s => {
+    s.revenuePercent = totalRevenue > 0 ? Math.round((s.revenue / totalRevenue) * 1000) / 10 : 0;
+    s.quantityPercent = totalQuantity > 0 ? Math.round((s.quantity / totalQuantity) * 1000) / 10 : 0;
+    s.avgPrice = s.quantity > 0 ? Math.round(s.revenue / s.quantity) : 0;
+  });
+
+  return json_({
+    ok: true,
+    totalOrders,
+    validOrders,
+    cancelledOrders,
+    totalRevenue,
+    totalQuantity,
+    avgOrderValue: validOrders > 0 ? Math.round(totalRevenue / validOrders) : 0,
+    sizes,
+    statuses: statusMap,
+    dailyRevenue: dateMap
+  });
 }
 
 /**
