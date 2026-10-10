@@ -161,17 +161,22 @@ def fetch_misa_inventory_items(search="", max_items=2000):
 
                     # Bổ sung thông tin từ điển MISA_INVENTORY nếu có
                     ref_info = MISA_INVENTORY.get(sku, {})
-                    uid = ref_info.get("unit_id") or it.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061"
+                    uid = ref_info.get("unit_id") or it.get("unit_id")
                     uname = ref_info.get("unit_name") or it.get("unit_name")
-                    if not uname:
+                    if itype == 3:
+                        # Với mặt hàng Combo / Bộ hàng hóa (type 3), trên MISA không dùng đơn vị tính
+                        uid = None
+                        uname = None
+                    elif not uname:
                         name_lower = name.lower()
-                        if itype == 3 or "đôi" in name_lower or "bộ" in name_lower:
-                            uname = "Đôi"
-                        elif "hộp" in name_lower:
+                        if "hộp" in name_lower:
+                            uid = "097330eb-f92d-4b88-95a8-1a83fd3d8064"
                             uname = "Hộp"
                         elif "thẻ" in name_lower or "card" in name_lower:
-                            uname = "Thẻ"
+                            uid = "097330eb-f92d-4b88-95a8-1a83fd3d8061"
+                            uname = "Cái"
                         else:
+                            uid = "097330eb-f92d-4b88-95a8-1a83fd3d8061"
                             uname = "Cái"
 
                     stock = it.get("on_hand", it.get("inventory_qty", ref_info.get("stock", 100)))
@@ -226,12 +231,14 @@ def lookup_misa_item(sku_or_code, is_pair_hint=False):
         
     if matched:
         is_pair = ("*2" in code_clean) or is_pair_hint or ("đôi" in matched.get("name", "").lower()) or ("bộ" in matched.get("name", "").lower())
+        itype = matched.get("type", 1)
         built_item = {
             "id": matched["id"],
             "sku": matched["sku"],
             "name": matched["name"],
-            "unit_id": matched.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061",
-            "unit_name": matched.get("unit_name") or "Cái",
+            "type": itype,
+            "unit_id": None if itype == 3 else (matched.get("unit_id") or "097330eb-f92d-4b88-95a8-1a83fd3d8061"),
+            "unit_name": None if itype == 3 else (matched.get("unit_name") or "Cái"),
             "is_pair": is_pair
         }
         MISA_INVENTORY[code_clean] = built_item
@@ -445,18 +452,19 @@ def push_order_to_misa(order):
     )
 
     # Xây dựng danh sách hàng hóa đẩy sang MISA
-    details = [
-        {
-            "inventory_item_id": matched_item["id"],
-            "sku_code": matched_item["sku"],
-            "inventory_item_name": matched_item["name"],
-            "unit_id": matched_item["unit_id"],
-            "unit_name": matched_item["unit_name"],
-            "quantity": total_qty,
-            "unit_price": unit_price,
-            "discount_amount": 0
-        }
-    ]
+    main_detail = {
+        "inventory_item_id": matched_item["id"],
+        "sku_code": matched_item["sku"],
+        "inventory_item_name": matched_item["name"],
+        "quantity": total_qty,
+        "unit_price": unit_price,
+        "discount_amount": 0
+    }
+    if matched_item.get("unit_id") and matched_item.get("unit_name") and matched_item.get("type") != 3:
+        main_detail["unit_id"] = matched_item["unit_id"]
+        main_detail["unit_name"] = matched_item["unit_name"]
+
+    details = [main_detail]
 
     # Phụ kiện 1: Hộp đựng trang sức (mặc định Có tặng kèm trừ khi chỉ định không)
     include_box = order.get("includeBox")
