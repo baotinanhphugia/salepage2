@@ -1538,10 +1538,48 @@ function handleSalesReport_() {
     const orderId = String(r[1] || "").trim();
     if (!orderId) continue;
 
+    const status = String(r[17] || "Chờ xác nhận").trim();
+    const noteStr = String(r[15] || "");
+    const rawPrice = String(r[14] || "0").replace(/\D/g, "");
+    const price = Number(rawPrice) || 0;
+    const eshopCode = String(r[19] || "").trim();
+
+    // 0. LOẠI TRỪ LEAD RƠI RỚT (Khách chỉ nhập SĐT, chưa hoàn tất mua hàng)
+    if (orderId.toUpperCase().startsWith("LEAD-") || status === "Khách rớt Lead" || status.toLowerCase().includes("lead") || status.toLowerCase().includes("rớt") || noteStr.toLowerCase().includes("lead rơi rớt")) {
+      continue;
+    }
+    // Bỏ qua nếu đơn 0đ mà không có thông tin lên MISA eShop hoặc không phải đã giao
+    if (price <= 0 && !eshopCode && !status.toLowerCase().includes("eshop") && !status.toLowerCase().includes("giao") && !status.toLowerCase().includes("hoàn thành")) {
+      continue;
+    }
+
+    // 0.1 LOẠI TRỪ QUÀ TẶNG KÈM & PHỤ KIỆN (HỘP NHẪN, IN CARD, THẺ GRA...)
+    // Tính chuẩn xác đúng mã sản phẩm Bông tai Moissanite bán ra
+    let misaSku = "";
+    const mMatch = noteStr.match(/\[MISA:\s*([^\]|]+)/);
+    if (mMatch) {
+      misaSku = mMatch[1].trim().toUpperCase();
+    }
+    const prodStr = String(r[2] || "").trim().toLowerCase();
+    const variant = String(r[9] || "1 Đôi").trim();
+    const rawSize = String(r[10] || "5mm").trim() || "5mm";
+
+    if (misaSku === "HOP NHAN" || misaSku === "CARD" || misaSku === "IN CARD" || misaSku === "HOP" || misaSku === "THE" || misaSku.includes("PHU KIEN") || misaSku.includes("GIFT") || misaSku.includes("TANG")) {
+      continue;
+    }
+    if (prodStr.includes("hộp nhẫn") || prodStr.includes("hộp giấy") || prodStr.includes("hộp đựng") || 
+        prodStr.includes("in card") || prodStr.includes("thẻ kiểm định") || prodStr.includes("thẻ gra") || 
+        prodStr.includes("quà tặng") || prodStr.includes("đồ tặng") || prodStr.includes("phụ kiện")) {
+      continue;
+    }
+    if (variant.toLowerCase().includes("hộp") || variant.toLowerCase().includes("card") || variant.toLowerCase().includes("thẻ") ||
+        rawSize.toLowerCase().includes("hộp") || rawSize.toLowerCase().includes("card") || rawSize.toLowerCase().includes("thẻ")) {
+      continue;
+    }
+
     totalOrders++;
     const rawDate = String(r[0] || "");
     const dateKey = rawDate.split(" ")[0] || "N/A";
-    const status = String(r[17] || "Chờ xác nhận").trim();
     statusMap[status] = (statusMap[status] || 0) + 1;
 
     if (status === "Đã hủy") {
@@ -1549,10 +1587,7 @@ function handleSalesReport_() {
       continue;
     }
 
-    const rawSize = String(r[10] || "5mm").trim() || "5mm";
-    const variant = String(r[9] || "1 Đôi").trim();
     const qty = Math.max(1, Number(String(r[11] || "1").replace(/\D/g, "")) || 1);
-    const price = Number(String(r[14] || "0").replace(/\D/g, "")) || 0;
 
     validOrders++;
     totalRevenue += price;
@@ -1572,7 +1607,7 @@ function handleSalesReport_() {
         returnedQty: 0,
         pairs: 0,
         singles: 0,
-        defaultSku: autoDetectMisaSku_(rawSize, variant)
+        defaultSku: misaSku || autoDetectMisaSku_(rawSize, variant)
       };
     }
 

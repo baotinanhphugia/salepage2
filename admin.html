@@ -4214,8 +4214,42 @@ function filterOrdersForReport(ordersList) {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
   return (ordersList || []).filter(o => {
-    // 1. Lọc trạng thái chuẩn MISA eShop
+    // 0. LOẠI TRỪ LEAD RƠI RỚT (Chưa hoàn tất đặt hàng / chỉ nhập SĐT)
+    const orderId = String(o.orderId || "").trim().toUpperCase();
     const status = String(o.status || "Chờ xác nhận").trim().toLowerCase();
+    const note = String(o.note || "").trim().toLowerCase();
+    const rawPrice = String(o.price || "0").replace(/\D/g, "");
+    const price = parseInt(rawPrice, 10) || 0;
+
+    if (orderId.startsWith("LEAD-") || status.includes("lead") || status.includes("rớt") || note.includes("lead rơi rớt")) {
+      return false;
+    }
+    // Bỏ qua nếu giá trị đơn 0đ và không phải đơn đã lên MISA eShop hoặc giao hàng
+    if (price <= 0 && !o.eshopCode && !status.includes("eshop") && !status.includes("giao") && !status.includes("hoàn thành")) {
+      return false;
+    }
+
+    // 0.1 LOẠI TRỪ QUÀ TẶNG KÈM & PHỤ KIỆN (HỘP NHẪN, IN CARD, THẺ GRA...)
+    // Tính chuẩn xác đúng mã sản phẩm Bông tai Moissanite bán ra
+    const sku = String(o.misaSku || "").trim().toUpperCase();
+    const prod = String(o.product || "").trim().toLowerCase();
+    const vr = String(o.variant || "").trim().toLowerCase();
+    const sz = String(o.size || "").trim().toLowerCase();
+
+    if (sku === "HOP NHAN" || sku === "CARD" || sku === "IN CARD" || sku === "HOP" || sku === "THE" || sku.includes("PHU KIEN") || sku.includes("GIFT") || sku.includes("TANG")) {
+      return false;
+    }
+    if (prod.includes("hộp nhẫn") || prod.includes("hộp giấy") || prod.includes("hộp đựng") || 
+        prod.includes("in card") || prod.includes("thẻ kiểm định") || prod.includes("thẻ gra") || 
+        prod.includes("quà tặng") || prod.includes("đồ tặng") || prod.includes("phụ kiện")) {
+      return false;
+    }
+    if (vr.includes("hộp") || vr.includes("card") || vr.includes("thẻ") || vr.includes("quà") ||
+        sz.includes("hộp") || sz.includes("card") || sz.includes("thẻ")) {
+      return false;
+    }
+
+    // 1. Lọc trạng thái chuẩn MISA eShop
     if (statusFilter === "delivered") {
       // Chỉ đơn Giao thành công (Thực thu)
       if (!status.includes("giao thành công") && !status.includes("hoàn thành") && !status.includes("đã giao")) return false;
@@ -4480,7 +4514,7 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
           ${s.shippingQty} SP
         </td>
         <td style="padding:12px 14px; text-align:center; font-weight:700; color:#fff; font-size:14px;">
-          ${s.quantity} SP <span style="font-size:11px; color:#9ca3af;">(${s.orders}đ)</span>
+          ${s.quantity} SP <span style="font-size:11px; color:#9ca3af;">(${s.orders} đơn)</span>
         </td>
         <td style="padding:12px 14px; text-align:right; font-weight:800; color:#ffd875; font-size:14px;">
           ${s.revenue.toLocaleString('vi-VN')} đ
