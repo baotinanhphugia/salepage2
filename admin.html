@@ -1270,7 +1270,8 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
             <option value="shipping">🚚 Đang giao hàng (Tiền trên đường)</option>
             <option value="valid" selected>✅ Toàn bộ đơn hợp lệ (Doanh số tạm tính)</option>
             <option value="eshop">🚀 Đã lên MISA (Đang xử lý / Chờ gửi)</option>
-            <option value="returned">❌ Hàng hoàn / Thất bại (Kiểm tra tỷ lệ bom)</option>
+            <option value="returned">↩️ Hàng hoàn / Thất bại (Kiểm tra tỷ lệ bom)</option>
+            <option value="cancelled">❌ Đã hủy (MISA: Mã 90)</option>
             <option value="pending">⏳ Chờ xử lý / CSKH tư vấn</option>
             <option value="all">📋 Tất cả (Bao gồm Đã hủy)</option>
           </select>
@@ -1375,6 +1376,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
               <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Mã SKU MISA</th>
               <th style="padding:12px 14px; text-align:center; color:#34d399; font-size:12.5px;">Thực Giao (Mã 80)</th>
               <th style="padding:12px 14px; text-align:center; color:#38bdf8; font-size:12.5px;">Đang Giao</th>
+              <th style="padding:12px 14px; text-align:center; color:#f87171; font-size:12.5px;">Đã Hủy (Mã 90)</th>
               <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Tổng Đặt</th>
               <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12.5px;">Doanh Thu Thực Thu</th>
               <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px; width:150px;">Tỷ Trọng (%)</th>
@@ -1382,7 +1384,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
             </tr>
           </thead>
           <tbody id="dashSizeTableBody">
-            <tr><td colspan="9" style="text-align:center; padding:30px; color:#888;">⏳ Đang tổng hợp dữ liệu báo cáo doanh số...</td></tr>
+            <tr><td colspan="10" style="text-align:center; padding:30px; color:#888;">⏳ Đang tổng hợp dữ liệu báo cáo doanh số...</td></tr>
           </tbody>
           <tfoot id="dashSizeTableFoot" style="background:#14141e; font-weight:700; border-top:2px solid #272738;">
             <!-- Tổng cộng footer -->
@@ -1454,7 +1456,7 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           <option value="Đã nhắn Zalo">Đã nhắn Zalo</option>
           <option value="Đã sửa">Đã sửa</option>
           <option value="Đã đẩy eShop">Đã đẩy eShop</option>
-          <option value="Đã hủy">Đã hủy</option>
+          <option value="Đã hủy">❌ Đã hủy (Xem riêng)</option>
         </select>
         <span id="orderSearchCount" style="font-size:13px; color:#d6ad45; font-weight:700; white-space:nowrap; margin-left:6px;"></span>
       </div>
@@ -3611,8 +3613,14 @@ function renderOrdersTable(orders, searchQuery = "") {
   const qClean = removeVietnameseTones(searchQuery || "").trim();
 
   orders.forEach(o => {
+    const isCancelled = String(o.status || "").trim().toLowerCase().includes("hủy");
     const tr = document.createElement("tr");
     tr.id = "order-row-" + o.orderId;
+    if (isCancelled) {
+      tr.style.background = "rgba(239, 68, 68, 0.05)";
+      tr.style.borderLeft = "3px solid #ef4444";
+      tr.style.opacity = "0.85";
+    }
     const displayPhone = formatPhoneVN(o.phone);
     let phoneHtml = displayPhone ? `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${displayPhone}</a>` : "";
     const cleanPrice = String(o.price || "").replace(/[^0-9]/g, "");
@@ -3642,8 +3650,8 @@ function renderOrdersTable(orders, searchQuery = "") {
     if (o.status === "Đã đẩy eShop") {
       statusBg = "rgba(59,130,246,0.2)";
       statusColor = "#60a5fa";
-    } else if (o.status === "Đã hủy") {
-      statusBg = "rgba(239,68,68,0.2)";
+    } else if (isCancelled) {
+      statusBg = "rgba(239,68,68,0.22)";
       statusColor = "#fca5a5";
     } else if (o.status === "Đã sửa") {
       statusBg = "rgba(245,158,11,0.2)";
@@ -3662,7 +3670,12 @@ function renderOrdersTable(orders, searchQuery = "") {
       statusColor = "#f87171";
     }
 
-    let statusHtml = `<span style="background:${statusBg}; color:${statusColor}; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">${o.status || "Chờ xác nhận"}</span>`;
+    let statusHtml = "";
+    if (isCancelled) {
+      statusHtml = `<span style="background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.5); padding:3px 9px; border-radius:6px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">❌ ĐÃ HỦY</span>`;
+    } else {
+      statusHtml = `<span style="background:${statusBg}; color:${statusColor}; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">${o.status || "Chờ xác nhận"}</span>`;
+    }
 
     // Nhận diện và hiển thị huy hiệu chiến dịch Facebook Ads
     let adsBadgeHtml = "";
@@ -3683,7 +3696,16 @@ function renderOrdersTable(orders, searchQuery = "") {
     const isAdmin = (currentAuthUser && currentAuthUser.role === "Admin");
 
     let actionsHtml = "";
-    if (isLocked && !isSessionUnlocked) {
+    if (isCancelled) {
+      actionsHtml = `
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; min-width:115px;">
+          <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px; width:100%; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.45); padding:3px 8px; border-radius:6px;">
+            <span style="color:#fca5a5; font-size:11px; font-weight:800; white-space:nowrap;">❌ ĐÃ HỦY ĐƠN</span>
+          </div>
+          <button class="btn-action-cancel" onclick="quickCancelOrder('${o.orderId}')" title="Xóa vĩnh viễn dòng này khỏi Google Sheet" style="font-size:10.5px; padding:2px 7px;">🗑️ Xóa dòng</button>
+        </div>
+      `;
+    } else if (isLocked && !isSessionUnlocked) {
       actionsHtml = `
         <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:130px;">
           <div style="display:inline-flex; align-items:center; justify-content:center; gap:5px; width:100%; background:rgba(30,41,59,0.85); border:1px solid rgba(59,130,246,0.5); padding:3px 8px; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.3);">
@@ -4265,6 +4287,9 @@ function filterOrdersForReport(ordersList) {
     } else if (statusFilter === "returned") {
       // Hàng hoàn / Thất bại
       if (!status.includes("thất bại") && !status.includes("hoàn") && !status.includes("trả")) return false;
+    } else if (statusFilter === "cancelled") {
+      // Đơn đã hủy (MISA: Mã 90)
+      if (!status.includes("hủy")) return false;
     } else if (statusFilter === "pending") {
       // Chờ xử lý / CSKH tư vấn
       if (!status.includes("chờ") && !status.includes("gọi") && !status.includes("zalo") && !status.includes("sửa")) return false;
@@ -4298,6 +4323,72 @@ function renderDashboardReport() {
   const allOrders = currentOrdersList || [];
   const statusFilter = document.getElementById("dashStatusFilter")?.value || "valid";
   const filtered = filterOrdersForReport(allOrders);
+
+  const timeFilter = document.getElementById("dashTimeFilter")?.value || "all";
+  const variantFilter = document.getElementById("dashVariantFilter")?.value || "all";
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const sevenDaysAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+  // 1. Quét riêng các đơn ĐÃ HỦY (theo bộ lọc thời gian & phân loại hiện tại) để thống kê chính xác
+  let totalCancelledCount = 0;
+  let totalCancelledQty = 0;
+  let totalCancelledRevenue = 0;
+  const cancelledMap = {};
+
+  (allOrders || []).forEach(o => {
+    const orderId = String(o.orderId || "").trim().toUpperCase();
+    const status = String(o.status || "").trim().toLowerCase();
+    const note = String(o.note || "").trim().toLowerCase();
+    const sku = String(o.misaSku || "").trim().toUpperCase();
+    const prod = String(o.product || "").trim().toLowerCase();
+    const vr = String(o.variant || "").trim().toLowerCase();
+    const sz = String(o.size || "").trim().toLowerCase();
+
+    // Bỏ Lead và đồ tặng
+    if (orderId.startsWith("LEAD-") || status.includes("lead") || status.includes("rớt") || note.includes("lead rơi rớt")) return;
+    if (sku === "HOP NHAN" || sku === "CARD" || sku === "IN CARD" || sku === "HOP" || sku === "THE" || sku.includes("PHU KIEN")) return;
+    if (prod.includes("hộp nhẫn") || prod.includes("hộp giấy") || prod.includes("in card") || prod.includes("thẻ kiểm định") || prod.includes("quà tặng")) return;
+    if (vr.includes("hộp") || vr.includes("card") || vr.includes("thẻ") || sz.includes("hộp") || sz.includes("card") || sz.includes("thẻ")) return;
+
+    // Lọc thời gian
+    if (timeFilter !== "all") {
+      const dt = parseOrderDateTime(o.createdAt);
+      if (dt) {
+        const time = dt.getTime();
+        if (timeFilter === "today" && time < startOfToday) return;
+        if (timeFilter === "7days" && time < sevenDaysAgo) return;
+        if (timeFilter === "month" && time < startOfMonth) return;
+      }
+    }
+    // Lọc phân loại
+    const variantStr = String(o.variant || "1 Đôi").trim();
+    if (variantFilter !== "all") {
+      if (variantFilter === "1 Đôi" && !variantStr.includes("Đôi")) return;
+      if (variantFilter === "1 Chiếc" && !variantStr.includes("Chiếc") && !variantStr.includes("lẻ")) return;
+    }
+
+    if (status.includes("hủy")) {
+      const rawQty = String(o.quantity || "1").replace(/\D/g, "");
+      const qty = Math.max(1, parseInt(rawQty, 10) || 1);
+      const rawPrice = String(o.price || "0").replace(/\D/g, "");
+      const price = parseInt(rawPrice, 10) || 0;
+      const sizeKey = normalizeSizeLabel(o.size);
+
+      totalCancelledCount++;
+      totalCancelledQty += qty;
+      totalCancelledRevenue += price;
+
+      if (!cancelledMap[sizeKey]) {
+        cancelledMap[sizeKey] = { qty: 0, orders: 0, revenue: 0 };
+      }
+      cancelledMap[sizeKey].qty += qty;
+      cancelledMap[sizeKey].orders += 1;
+      cancelledMap[sizeKey].revenue += price;
+    }
+  });
 
   let totalRevenue = 0;
   let totalQty = 0;
@@ -4341,6 +4432,8 @@ function renderDashboardReport() {
         revenue: 0,
         deliveredQty: 0,
         shippingQty: 0,
+        cancelledQty: (cancelledMap[size]?.qty) || 0,
+        cancelledOrders: (cancelledMap[size]?.orders) || 0,
         returnedQty: 0,
         deliveredRevenue: 0,
         pairs: 0,
@@ -4363,6 +4456,30 @@ function renderDashboardReport() {
     if (o.misaSku && !sizeMap[size].sampleSku) sizeMap[size].sampleSku = o.misaSku;
   });
 
+  // Đảm bảo mọi size (dù có đơn hợp lệ hay chỉ có đơn hủy) đều có số liệu hủy chính xác
+  Object.keys(cancelledMap).forEach(sz => {
+    if (!sizeMap[sz]) {
+      sizeMap[sz] = {
+        size: sz,
+        orders: 0,
+        quantity: 0,
+        revenue: 0,
+        deliveredQty: 0,
+        shippingQty: 0,
+        cancelledQty: cancelledMap[sz].qty,
+        cancelledOrders: cancelledMap[sz].orders,
+        returnedQty: 0,
+        deliveredRevenue: 0,
+        pairs: 0,
+        singles: 0,
+        sampleSku: autoDetectMisaSku(sz, "1 Đôi")
+      };
+    } else {
+      sizeMap[sz].cancelledQty = cancelledMap[sz].qty;
+      sizeMap[sz].cancelledOrders = cancelledMap[sz].orders;
+    }
+  });
+
   const sizes = Object.values(sizeMap).sort((a, b) => b.revenue - a.revenue);
   sizes.forEach((s, idx) => {
     s.rank = idx + 1;
@@ -4383,12 +4500,17 @@ function renderDashboardReport() {
   if ($("#dashRevTitle")) {
     if (statusFilter === "delivered") $("#dashRevTitle").innerText = "💰 Doanh Thu Thực Thu (MISA)";
     else if (statusFilter === "shipping") $("#dashRevTitle").innerText = "🚚 Doanh Số Đang Giao";
-    else if (statusFilter === "returned") $("#dashRevTitle").innerText = "❌ Hàng Hoàn / Thất Bại";
+    else if (statusFilter === "returned") $("#dashRevTitle").innerText = "↩️ Hàng Hoàn / Thất Bại";
+    else if (statusFilter === "cancelled") $("#dashRevTitle").innerText = "❌ Doanh Số Đơn Đã Hủy";
     else $("#dashRevTitle").innerText = "💰 Tổng Doanh Thu Tạm Tính";
   }
   if ($("#dashTotalRevenue")) $("#dashTotalRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + " đ";
   if ($("#dashRevenueSub")) {
-    $("#dashRevenueSub").innerText = `Từ ${totalOrdersCount} đơn • Đã giao: ${deliveredCount} • Đang giao: ${shippingCount}`;
+    if (statusFilter === "cancelled") {
+      $("#dashRevenueSub").innerText = `Đã hủy ${totalCancelledCount} đơn (${totalCancelledQty} SP) • Thất thoát: ${totalCancelledRevenue.toLocaleString("vi-VN")} đ`;
+    } else {
+      $("#dashRevenueSub").innerText = `Từ ${totalOrdersCount} đơn hợp lệ • Đã giao: ${deliveredCount} • Đang giao: ${shippingCount} • ❌ Đã hủy: ${totalCancelledCount}`;
+    }
   }
 
   if ($("#dashTopSize")) {
@@ -4404,7 +4526,10 @@ function renderDashboardReport() {
   if ($("#dashTotalQtySub")) $("#dashTotalQtySub").innerText = `${totalPairs} Đôi • ${totalSingles} Chiếc lẻ • Thực giao ${sizes.reduce((acc, x) => acc + x.deliveredQty, 0)} SP`;
 
   if ($("#dashAOV")) $("#dashAOV").innerText = deliveryRate + "%";
-  if ($("#dashAOVSub")) $("#dashAOVSub").innerText = `AOV: ${aov.toLocaleString("vi-VN")} đ/đơn • Hoàn: ${returnRate}%`;
+  if ($("#dashAOVSub")) {
+    const cancelRate = (totalOrdersCount + totalCancelledCount) > 0 ? ((totalCancelledCount / (totalOrdersCount + totalCancelledCount)) * 100).toFixed(1) : "0.0";
+    $("#dashAOVSub").innerText = `AOV: ${aov.toLocaleString("vi-VN")} đ/đơn • ❌ Hủy: ${totalCancelledCount} đơn (${cancelRate}%) • Hoàn: ${returnRate}%`;
+  }
 
   if ($("#dashReportTimestamp")) {
     $("#dashReportTimestamp").innerText = `🕒 Cập nhật: ${new Date().toLocaleTimeString("vi-VN")}`;
@@ -4442,6 +4567,7 @@ function renderDashboardSizeBars(sizes, totalRevenue) {
   sizes.forEach(s => {
     const p = parseFloat(s.revPercent) || 0;
     const medal = s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : s.rank === 3 ? "🥉" : `#${s.rank}`;
+    const cancelBadge = s.cancelledQty > 0 ? `<span style="color:#f87171; font-weight:700; font-size:12px;">(❌ Hủy: ${s.cancelledQty})</span>` : "";
     html += `
       <div style="background:#151520; border:1px solid #252538; border-radius:12px; padding:12px 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
@@ -4453,6 +4579,7 @@ function renderDashboardSizeBars(sizes, totalRevenue) {
           <div style="display:flex; align-items:center; gap:12px; font-size:13px;">
             <span style="color:#93c5fd; font-weight:600;">📦 ${s.quantity} SP (${s.orders} đơn)</span>
             <span style="color:#34d399; font-weight:600; font-size:12px;">(🟢 Giao: ${s.deliveredQty})</span>
+            ${cancelBadge}
             <strong style="color:#ffd875; font-size:14px;">${s.revenue.toLocaleString('vi-VN')} đ</strong>
             <span style="background:rgba(16,185,129,0.18); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); padding:2px 7px; border-radius:6px; font-weight:700; font-size:11.5px;">${s.revPercent}%</span>
           </div>
@@ -4475,7 +4602,7 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
   if (!sizes || sizes.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align:center; padding:36px; color:#888;">
+        <td colspan="10" style="text-align:center; padding:36px; color:#888;">
           Không có đơn hàng nào khớp với bộ lọc thời gian hoặc trạng thái này.
         </td>
       </tr>
@@ -4496,6 +4623,10 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
     const rateText = s.successRate !== "---" ? `${s.successRate}%` : "Chờ giao";
     const rateColor = parseFloat(s.successRate) >= 90 ? "#34d399" : (parseFloat(s.successRate) >= 70 ? "#ffd875" : "#f87171");
 
+    const cancelCellHtml = s.cancelledQty > 0
+      ? `<span style="color:#f87171; font-weight:800; font-size:13.5px;">${s.cancelledQty} SP</span> <span style="font-size:11px; color:#fca5a5;">(${s.cancelledOrders} đơn)</span>`
+      : `<span style="color:#6b7280; font-size:12px;">0 SP</span>`;
+
     rowsHtml += `
       <tr style="border-bottom:1px solid #1c1c28; transition:background 0.15s;" onmouseover="this.style.background='#171724'" onmouseout="this.style.background='transparent'">
         <td style="padding:12px 14px; text-align:center;">
@@ -4512,6 +4643,9 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
         </td>
         <td style="padding:12px 14px; text-align:center; font-weight:600; color:#38bdf8; font-size:13px;">
           ${s.shippingQty} SP
+        </td>
+        <td style="padding:12px 14px; text-align:center; font-weight:700; color:#f87171;">
+          ${cancelCellHtml}
         </td>
         <td style="padding:12px 14px; text-align:center; font-weight:700; color:#fff; font-size:14px;">
           ${s.quantity} SP <span style="font-size:11px; color:#9ca3af;">(${s.orders} đơn)</span>
@@ -4537,8 +4671,15 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
   tbody.innerHTML = rowsHtml;
 
   if (tfoot) {
-    const overallDelivered = sizes.reduce((acc, x) => acc + x.deliveredQty, 0);
-    const overallShipping = sizes.reduce((acc, x) => acc + x.shippingQty, 0);
+    const overallDelivered = sizes.reduce((acc, x) => acc + (x.deliveredQty || 0), 0);
+    const overallShipping = sizes.reduce((acc, x) => acc + (x.shippingQty || 0), 0);
+    const overallCancelled = sizes.reduce((acc, x) => acc + (x.cancelledQty || 0), 0);
+    const overallCancelledOrders = sizes.reduce((acc, x) => acc + (x.cancelledOrders || 0), 0);
+
+    const cancelFootHtml = overallCancelled > 0
+      ? `<span style="color:#f87171; font-weight:900; font-size:14px;">${overallCancelled} SP</span> <span style="font-size:11px; color:#fca5a5; font-weight:700;">(${overallCancelledOrders} đơn)</span>`
+      : `<span style="color:#6b7280; font-size:12px;">0 SP</span>`;
+
     tfoot.innerHTML = `
       <tr>
         <td colspan="3" style="padding:14px; font-size:13px; color:#ffd875; font-weight:800; text-transform:uppercase;">
@@ -4549,6 +4690,9 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
         </td>
         <td style="padding:14px; text-align:center; font-size:13px; color:#38bdf8; font-weight:800;">
           ${overallShipping} SP
+        </td>
+        <td style="padding:14px; text-align:center;">
+          ${cancelFootHtml}
         </td>
         <td style="padding:14px; text-align:center; font-size:15px; color:#fff; font-weight:900;">
           ${totalQty} SP (${totalOrdersCount} đơn)

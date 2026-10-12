@@ -710,6 +710,9 @@ function handleSyncMisaDeliveryStatuses_(data) {
             eshopInfo = eshopInfo ? `${eshopInfo} ${partnerStr}` : partnerStr;
           }
         }
+        if (item.cancelReason && eshopInfo.indexOf("Hủy:") === -1) {
+          eshopInfo = eshopInfo ? `${eshopInfo} [Hủy: ${item.cancelReason}]` : `[Hủy: ${item.cancelReason}]`;
+        }
         if (eshopInfo) {
           sheet.getRange(i + 1, 20).setValue(eshopInfo);
         }
@@ -1519,6 +1522,7 @@ function handleSalesReport_() {
   let processingRevenue = 0;  // Doanh số đã lên MISA / đang đóng gói (Mã 20, 30, Đã đẩy eShop)
   let pendingRevenue = 0;     // Doanh số chờ xác nhận
   let returnedRevenue = 0;    // Hàng hoàn / Giao thất bại (Mã 100, 130, 140)
+  let cancelledRevenue = 0;   // Doanh số đơn đã hủy
 
   let totalOrders = 0;
   let totalQuantity = 0;
@@ -1582,12 +1586,33 @@ function handleSalesReport_() {
     const dateKey = rawDate.split(" ")[0] || "N/A";
     statusMap[status] = (statusMap[status] || 0) + 1;
 
-    if (status === "Đã hủy") {
+    const qty = Math.max(1, Number(String(r[11] || "1").replace(/\D/g, "")) || 1);
+
+    if (status === "Đã hủy" || status.toLowerCase().includes("hủy")) {
       cancelledOrders++;
+      cancelledRevenue += price;
+      if (!sizeMap[rawSize]) {
+        sizeMap[rawSize] = {
+          size: rawSize,
+          orders: 0,
+          quantity: 0,
+          revenue: 0,
+          deliveredRevenue: 0,
+          deliveredQty: 0,
+          shippingRevenue: 0,
+          shippingQty: 0,
+          cancelledQty: 0,
+          cancelledOrders: 0,
+          returnedQty: 0,
+          pairs: 0,
+          singles: 0,
+          defaultSku: misaSku || autoDetectMisaSku_(rawSize, variant)
+        };
+      }
+      sizeMap[rawSize].cancelledQty = (sizeMap[rawSize].cancelledQty || 0) + qty;
+      sizeMap[rawSize].cancelledOrders = (sizeMap[rawSize].cancelledOrders || 0) + 1;
       continue;
     }
-
-    const qty = Math.max(1, Number(String(r[11] || "1").replace(/\D/g, "")) || 1);
 
     validOrders++;
     totalRevenue += price;
@@ -1604,6 +1629,8 @@ function handleSalesReport_() {
         deliveredQty: 0,
         shippingRevenue: 0,
         shippingQty: 0,
+        cancelledQty: 0,
+        cancelledOrders: 0,
         returnedQty: 0,
         pairs: 0,
         singles: 0,
@@ -1650,6 +1677,8 @@ function handleSalesReport_() {
     s.quantityPercent = totalQuantity > 0 ? Math.round((s.quantity / totalQuantity) * 1000) / 10 : 0;
     s.avgPrice = s.quantity > 0 ? Math.round(s.revenue / s.quantity) : 0;
     s.deliveredPercent = deliveredRevenue > 0 ? Math.round((s.deliveredRevenue / deliveredRevenue) * 1000) / 10 : 0;
+    s.cancelledQty = s.cancelledQty || 0;
+    s.cancelledOrders = s.cancelledOrders || 0;
     s.successRate = (s.deliveredQty + s.returnedQty) > 0 ? Math.round((s.deliveredQty / (s.deliveredQty + s.returnedQty)) * 1000) / 10 : (s.deliveredQty > 0 ? 100 : 0);
   });
 
@@ -1676,6 +1705,7 @@ function handleSalesReport_() {
     processingRevenue,
     pendingRevenue,
     returnedRevenue,
+    cancelledRevenue,
     deliverySuccessRate,
     returnRate,
     totalQuantity,

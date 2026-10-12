@@ -652,6 +652,7 @@ def sync_misa_delivery_statuses(from_date=None):
                     elif ostatus in [20, 30]:
                         new_status = "Đang xử lý (MISA)"
 
+                    cancel_reason = str(v.get("cancel_reason") or v.get("reason_cancel") or "")
                     updates.append({
                         "orderId": order_id,
                         "eshopCode": v_no,
@@ -660,6 +661,7 @@ def sync_misa_delivery_statuses(from_date=None):
                         "status": new_status,
                         "deliveryCode": dcode,
                         "shippingPartner": spartner,
+                        "cancelReason": cancel_reason if ostatus == 90 else "",
                         "totalAmount": v.get("total_amount")
                     })
                     break
