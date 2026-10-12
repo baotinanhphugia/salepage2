@@ -3402,6 +3402,7 @@ function isOrderLockedAfterEshop(order) {
   if (!order) return false;
   const status = String(order.status || "").trim();
   const eshopCode = String(order.eshopCode || "").trim();
+  if (status === "Đã hủy" || status.toLowerCase().includes("hủy")) return false;
   if (status === "Đã đẩy eShop") return true;
   if (eshopCode && !eshopCode.toLowerCase().startsWith("lỗi") && eshopCode !== "N/A") return true;
   if (status.includes("(MISA)") || status === "Giao thành công" || status === "Đang giao hàng" || status === "Chờ giao hàng" || status === "Đã xuất kho" || status === "Đã đối soát") return true;
@@ -4243,7 +4244,7 @@ function filterOrdersForReport(ordersList) {
     const rawPrice = String(o.price || "0").replace(/\D/g, "");
     const price = parseInt(rawPrice, 10) || 0;
 
-    if (orderId.startsWith("LEAD-") || status.includes("lead") || status.includes("rớt") || note.includes("lead rơi rớt")) {
+    if (status === "khách rớt lead" || status.includes("rớt lead") || note.includes("lead rơi rớt") || (orderId.startsWith("LEAD-") && status !== "đã hủy" && !status.includes("eshop") && !status.includes("giao"))) {
       return false;
     }
     // Bỏ qua nếu giá trị đơn 0đ và không phải đơn đã lên MISA eShop hoặc giao hàng
@@ -4348,7 +4349,7 @@ function renderDashboardReport() {
     const sz = String(o.size || "").trim().toLowerCase();
 
     // Bỏ Lead và đồ tặng
-    if (orderId.startsWith("LEAD-") || status.includes("lead") || status.includes("rớt") || note.includes("lead rơi rớt")) return;
+    if (status === "khách rớt lead" || status.includes("rớt lead") || note.includes("lead rơi rớt") || (orderId.startsWith("LEAD-") && status !== "đã hủy" && !status.includes("eshop") && !status.includes("giao"))) return;
     if (sku === "HOP NHAN" || sku === "CARD" || sku === "IN CARD" || sku === "HOP" || sku === "THE" || sku.includes("PHU KIEN")) return;
     if (prod.includes("hộp nhẫn") || prod.includes("hộp giấy") || prod.includes("in card") || prod.includes("thẻ kiểm định") || prod.includes("quà tặng")) return;
     if (vr.includes("hộp") || vr.includes("card") || vr.includes("thẻ") || sz.includes("hộp") || sz.includes("card") || sz.includes("thẻ")) return;
