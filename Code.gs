@@ -1588,12 +1588,21 @@ function handleSalesReport_() {
 
     const qty = Math.max(1, Number(String(r[11] || "1").replace(/\D/g, "")) || 1);
 
+    const isSingle = variant.includes("Chiếc") || variant.includes("lẻ");
+    const variantLabel = isSingle ? "1 Chiếc" : "1 Đôi";
+    let finalSku = misaSku || autoDetectMisaSku_(rawSize, variant);
+    if (!finalSku) finalSku = isSingle ? "MS05" : "MS051";
+    finalSku = finalSku.toUpperCase();
+    const itemKey = `${rawSize}__${variantLabel}__${finalSku}`;
+
     if (status === "Đã hủy" || status.toLowerCase().includes("hủy")) {
       cancelledOrders++;
       cancelledRevenue += price;
-      if (!sizeMap[rawSize]) {
-        sizeMap[rawSize] = {
+      if (!sizeMap[itemKey]) {
+        sizeMap[itemKey] = {
           size: rawSize,
+          variant: variantLabel,
+          defaultSku: finalSku,
           orders: 0,
           quantity: 0,
           revenue: 0,
@@ -1604,13 +1613,12 @@ function handleSalesReport_() {
           cancelledQty: 0,
           cancelledOrders: 0,
           returnedQty: 0,
-          pairs: 0,
-          singles: 0,
-          defaultSku: misaSku || autoDetectMisaSku_(rawSize, variant)
+          pairs: isSingle ? 0 : 1,
+          singles: isSingle ? 1 : 0
         };
       }
-      sizeMap[rawSize].cancelledQty = (sizeMap[rawSize].cancelledQty || 0) + qty;
-      sizeMap[rawSize].cancelledOrders = (sizeMap[rawSize].cancelledOrders || 0) + 1;
+      sizeMap[itemKey].cancelledQty = (sizeMap[itemKey].cancelledQty || 0) + qty;
+      sizeMap[itemKey].cancelledOrders = (sizeMap[itemKey].cancelledOrders || 0) + 1;
       continue;
     }
 
@@ -1619,9 +1627,11 @@ function handleSalesReport_() {
     totalQuantity += qty;
     dateMap[dateKey] = (dateMap[dateKey] || 0) + price;
 
-    if (!sizeMap[rawSize]) {
-      sizeMap[rawSize] = {
+    if (!sizeMap[itemKey]) {
+      sizeMap[itemKey] = {
         size: rawSize,
+        variant: variantLabel,
+        defaultSku: finalSku,
         orders: 0,
         quantity: 0,
         revenue: 0,
@@ -1632,19 +1642,18 @@ function handleSalesReport_() {
         cancelledQty: 0,
         cancelledOrders: 0,
         returnedQty: 0,
-        pairs: 0,
-        singles: 0,
-        defaultSku: misaSku || autoDetectMisaSku_(rawSize, variant)
+        pairs: isSingle ? 0 : 1,
+        singles: isSingle ? 1 : 0
       };
     }
 
-    sizeMap[rawSize].orders += 1;
-    sizeMap[rawSize].quantity += qty;
-    sizeMap[rawSize].revenue += price;
-    if (variant.includes("Chiếc") || variant.includes("lẻ")) {
-      sizeMap[rawSize].singles += qty;
+    sizeMap[itemKey].orders += 1;
+    sizeMap[itemKey].quantity += qty;
+    sizeMap[itemKey].revenue += price;
+    if (isSingle) {
+      sizeMap[itemKey].singles += qty;
     } else {
-      sizeMap[rawSize].pairs += qty;
+      sizeMap[itemKey].pairs += qty;
     }
 
     // Phân loại doanh số chuẩn xác theo trạng thái MISA
@@ -1652,17 +1661,17 @@ function handleSalesReport_() {
     if (statusLower.includes("giao thành công") || statusLower.includes("hoàn thành") || statusLower.includes("đã giao")) {
       deliveredOrders++;
       deliveredRevenue += price;
-      sizeMap[rawSize].deliveredRevenue += price;
-      sizeMap[rawSize].deliveredQty += qty;
+      sizeMap[itemKey].deliveredRevenue += price;
+      sizeMap[itemKey].deliveredQty += qty;
     } else if (statusLower.includes("đang giao")) {
       shippingOrders++;
       shippingRevenue += price;
-      sizeMap[rawSize].shippingRevenue += price;
-      sizeMap[rawSize].shippingQty += qty;
+      sizeMap[itemKey].shippingRevenue += price;
+      sizeMap[itemKey].shippingQty += qty;
     } else if (statusLower.includes("thất bại") || statusLower.includes("hoàn") || statusLower.includes("trả")) {
       returnedOrders++;
       returnedRevenue += price;
-      sizeMap[rawSize].returnedQty += qty;
+      sizeMap[itemKey].returnedQty += qty;
     } else if (statusLower.includes("eshop") || statusLower.includes("xử lý")) {
       processingOrders++;
       processingRevenue += price;

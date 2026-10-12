@@ -1358,12 +1358,12 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div>
           <h3 style="font-size:16px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
-            <span>💎</span> Bảng Chi Tiết Doanh Số Từng Kích Cỡ Đá (Size)
+            <span>💎</span> Bảng Chi Tiết Doanh Số Từng Mã Hàng & Kích Cỡ Đá (MISA eShop)
           </h3>
-          <p style="font-size:12px; color:#9ca3af; margin-top:2px;">Số liệu tổng hợp từ toàn bộ đơn hàng thực tế</p>
+          <p style="font-size:12px; color:#9ca3af; margin-top:2px;">Số liệu tổng hợp chuẩn xác theo từng Mã SKU MISA và Quy cách đóng gói thực tế</p>
         </div>
         <span id="dashSizeCountBadge" style="background:rgba(214,173,69,0.15); color:var(--gold-light); border:1px solid rgba(214,173,69,0.3); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700;">
-          0 Kích Cỡ
+          0 Mặt Hàng / Phân Loại
         </span>
       </div>
 
@@ -1372,8 +1372,8 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           <thead>
             <tr style="background:#161622; border-bottom:2px solid #272738;">
               <th style="padding:12px 14px; text-align:center; width:60px; color:#ffd875; font-size:12.5px;">Hạng</th>
-              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Kích Cỡ Đá (Size)</th>
-              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Mã SKU MISA</th>
+              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Kích Cỡ & Quy Cách</th>
+              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Mã Hàng (MISA SKU)</th>
               <th style="padding:12px 14px; text-align:center; color:#34d399; font-size:12.5px;">Thực Giao (Mã 80)</th>
               <th style="padding:12px 14px; text-align:center; color:#38bdf8; font-size:12.5px;">Đang Giao</th>
               <th style="padding:12px 14px; text-align:center; color:#f87171; font-size:12.5px;">Đã Hủy (Mã 90)</th>
@@ -4376,18 +4376,32 @@ function renderDashboardReport() {
       const qty = Math.max(1, parseInt(rawQty, 10) || 1);
       const rawPrice = String(o.price || "0").replace(/\D/g, "");
       const price = parseInt(rawPrice, 10) || 0;
-      const sizeKey = normalizeSizeLabel(o.size);
+      const size = normalizeSizeLabel(o.size);
+      const variant = String(o.variant || "1 Đôi").trim();
+      const isSingle = variant.includes("Chiếc") || variant.includes("lẻ");
+      const variantLabel = isSingle ? "1 Chiếc" : "1 Đôi";
+
+      let sku = String(o.misaSku || "").trim();
+      if (!sku) {
+        const noteStr = String(o.note || "");
+        const mMatch = noteStr.match(/\[MISA:\s*([^\]|]+)/);
+        if (mMatch) sku = mMatch[1].trim();
+        else sku = autoDetectMisaSku(size, variant);
+      }
+      sku = sku.toUpperCase();
+
+      const itemKey = `${size}__${variantLabel}__${sku}`;
 
       totalCancelledCount++;
       totalCancelledQty += qty;
       totalCancelledRevenue += price;
 
-      if (!cancelledMap[sizeKey]) {
-        cancelledMap[sizeKey] = { qty: 0, orders: 0, revenue: 0 };
+      if (!cancelledMap[itemKey]) {
+        cancelledMap[itemKey] = { qty: 0, orders: 0, revenue: 0, size: size, variant: variantLabel, sku: sku };
       }
-      cancelledMap[sizeKey].qty += qty;
-      cancelledMap[sizeKey].orders += 1;
-      cancelledMap[sizeKey].revenue += price;
+      cancelledMap[itemKey].qty += qty;
+      cancelledMap[itemKey].orders += 1;
+      cancelledMap[itemKey].revenue += price;
     }
   });
 
@@ -4411,7 +4425,19 @@ function renderDashboardReport() {
     const size = normalizeSizeLabel(o.size);
     const variant = String(o.variant || "1 Đôi").trim();
     const isSingle = variant.includes("Chiếc") || variant.includes("lẻ");
+    const variantLabel = isSingle ? "1 Chiếc" : "1 Đôi";
     const statusLower = String(o.status || "").toLowerCase();
+
+    let sku = String(o.misaSku || "").trim();
+    if (!sku) {
+      const noteStr = String(o.note || "");
+      const mMatch = noteStr.match(/\[MISA:\s*([^\]|]+)/);
+      if (mMatch) sku = mMatch[1].trim();
+      else sku = autoDetectMisaSku(size, variant);
+    }
+    sku = sku.toUpperCase();
+
+    const itemKey = `${size}__${variantLabel}__${sku}`;
 
     totalRevenue += price;
     totalQty += qty;
@@ -4425,59 +4451,64 @@ function renderDashboardReport() {
     if (isShipping) shippingCount++;
     if (isReturned) returnedCount++;
 
-    if (!sizeMap[size]) {
-      sizeMap[size] = {
+    if (!sizeMap[itemKey]) {
+      sizeMap[itemKey] = {
+        key: itemKey,
         size: size,
+        variant: variantLabel,
+        sku: sku,
+        sampleSku: sku,
         orders: 0,
         quantity: 0,
         revenue: 0,
         deliveredQty: 0,
         shippingQty: 0,
-        cancelledQty: (cancelledMap[size]?.qty) || 0,
-        cancelledOrders: (cancelledMap[size]?.orders) || 0,
+        cancelledQty: (cancelledMap[itemKey]?.qty) || 0,
+        cancelledOrders: (cancelledMap[itemKey]?.orders) || 0,
         returnedQty: 0,
         deliveredRevenue: 0,
         pairs: 0,
-        singles: 0,
-        sampleSku: o.misaSku || autoDetectMisaSku(size, variant)
+        singles: 0
       };
     }
 
-    sizeMap[size].orders += 1;
-    sizeMap[size].quantity += qty;
-    sizeMap[size].revenue += price;
-    if (isSingle) sizeMap[size].singles += qty; else sizeMap[size].pairs += qty;
+    sizeMap[itemKey].orders += 1;
+    sizeMap[itemKey].quantity += qty;
+    sizeMap[itemKey].revenue += price;
+    if (isSingle) sizeMap[itemKey].singles += qty; else sizeMap[itemKey].pairs += qty;
     if (isDelivered) {
-      sizeMap[size].deliveredQty += qty;
-      sizeMap[size].deliveredRevenue += price;
+      sizeMap[itemKey].deliveredQty += qty;
+      sizeMap[itemKey].deliveredRevenue += price;
     }
-    if (isShipping) sizeMap[size].shippingQty += qty;
-    if (isReturned) sizeMap[size].returnedQty += qty;
-
-    if (o.misaSku && !sizeMap[size].sampleSku) sizeMap[size].sampleSku = o.misaSku;
+    if (isShipping) sizeMap[itemKey].shippingQty += qty;
+    if (isReturned) sizeMap[itemKey].returnedQty += qty;
   });
 
-  // Đảm bảo mọi size (dù có đơn hợp lệ hay chỉ có đơn hủy) đều có số liệu hủy chính xác
-  Object.keys(cancelledMap).forEach(sz => {
-    if (!sizeMap[sz]) {
-      sizeMap[sz] = {
-        size: sz,
+  // Đảm bảo mọi mặt hàng/quy cách (dù chỉ có đơn hủy) đều có số liệu đầy đủ
+  Object.keys(cancelledMap).forEach(itemKey => {
+    if (!sizeMap[itemKey]) {
+      const c = cancelledMap[itemKey];
+      sizeMap[itemKey] = {
+        key: itemKey,
+        size: c.size,
+        variant: c.variant,
+        sku: c.sku,
+        sampleSku: c.sku,
         orders: 0,
         quantity: 0,
         revenue: 0,
         deliveredQty: 0,
         shippingQty: 0,
-        cancelledQty: cancelledMap[sz].qty,
-        cancelledOrders: cancelledMap[sz].orders,
+        cancelledQty: c.qty,
+        cancelledOrders: c.orders,
         returnedQty: 0,
         deliveredRevenue: 0,
-        pairs: 0,
-        singles: 0,
-        sampleSku: autoDetectMisaSku(sz, "1 Đôi")
+        pairs: c.variant === "1 Đôi" ? 1 : 0,
+        singles: c.variant === "1 Chiếc" ? 1 : 0
       };
     } else {
-      sizeMap[sz].cancelledQty = cancelledMap[sz].qty;
-      sizeMap[sz].cancelledOrders = cancelledMap[sz].orders;
+      sizeMap[itemKey].cancelledQty = cancelledMap[itemKey].qty;
+      sizeMap[itemKey].cancelledOrders = cancelledMap[itemKey].orders;
     }
   });
 
@@ -4516,7 +4547,7 @@ function renderDashboardReport() {
 
   if ($("#dashTopSize")) {
     $("#dashTopSize").innerHTML = topSize 
-      ? `<span style="color:var(--gold-light);">${topSize.size}</span> <span style="font-size:16px; color:#10b981;">(${topSize.revPercent}%)</span>` 
+      ? `<span style="color:var(--gold-light);">${topSize.size} (${topSize.variant})</span> <span style="font-size:12.5px; color:#ffd875; font-family:'JetBrains Mono',monospace; margin-left:3px;">[${topSize.sku || topSize.sampleSku}]</span> <span style="font-size:14px; color:#10b981; margin-left:4px;">(${topSize.revPercent}%)</span>` 
       : "---";
   }
   if ($("#dashTopSizeSub")) {
@@ -4536,12 +4567,12 @@ function renderDashboardReport() {
     $("#dashReportTimestamp").innerText = `🕒 Cập nhật: ${new Date().toLocaleTimeString("vi-VN")}`;
   }
   if ($("#dashSizeCountBadge")) {
-    $("#dashSizeCountBadge").innerText = `${sizes.length} Kích cỡ đá`;
+    $("#dashSizeCountBadge").innerText = `${sizes.length} Mã Hàng / Phân Loại`;
   }
 
   // Cập nhật Mini Banner trong tab Orders
   if ($("#ordersMiniRevenue")) $("#ordersMiniRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + " đ";
-  if ($("#ordersMiniTopSize")) $("#ordersMiniTopSize").innerText = topSize ? `${topSize.size} (${topSize.quantity} SP)` : "---";
+  if ($("#ordersMiniTopSize")) $("#ordersMiniTopSize").innerText = topSize ? `${topSize.size} (${topSize.variant})` : "---";
   if ($("#ordersMiniCount")) $("#ordersMiniCount").innerText = `${totalQty} SP (${totalOrdersCount} đơn)`;
 
   // Render Visual Progress Bars
@@ -4572,10 +4603,13 @@ function renderDashboardSizeBars(sizes, totalRevenue) {
     html += `
       <div style="background:#151520; border:1px solid #252538; border-radius:12px; padding:12px 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <span style="font-size:15px; font-weight:800;">${medal}</span>
             <span class="size-badge">${escapeHtml(s.size)}</span>
-            <span style="font-size:12px; color:#9ca3af;">(Mã: <code style="color:#ffd875;">${escapeHtml(s.sampleSku || 'N/A')}</code>)</span>
+            <span style="font-size:11px; padding:2px 7px; border-radius:6px; font-weight:700; ${s.variant === '1 Đôi' ? 'background:rgba(214,173,69,0.15); color:#ffd875; border:1px solid rgba(214,173,69,0.3);' : 'background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);'}">
+              ${escapeHtml(s.variant || '1 Đôi')}
+            </span>
+            <span style="font-size:12px; color:#9ca3af;">(Mã: <code style="color:#ffd875; font-weight:700; font-family:'JetBrains Mono',monospace;">${escapeHtml(s.sku || s.sampleSku || 'N/A')}</code>)</span>
           </div>
           <div style="display:flex; align-items:center; gap:12px; font-size:13px;">
             <span style="color:#93c5fd; font-weight:600;">📦 ${s.quantity} SP (${s.orders} đơn)</span>
@@ -4634,10 +4668,15 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
           <span class="rank-badge ${rankBadgeClass}">${rankText}</span>
         </td>
         <td style="padding:12px 14px;">
-          <span class="size-badge">${escapeHtml(s.size)}</span>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span class="size-badge">${escapeHtml(s.size)}</span>
+            <span style="font-size:11px; padding:2px 7px; border-radius:6px; font-weight:700; ${s.variant === '1 Đôi' ? 'background:rgba(214,173,69,0.15); color:#ffd875; border:1px solid rgba(214,173,69,0.3);' : 'background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);'}">
+              ${escapeHtml(s.variant || '1 Đôi')}
+            </span>
+          </div>
         </td>
-        <td style="padding:12px 14px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#ffd875; font-weight:600;">
-          ${escapeHtml(s.sampleSku || '---')}
+        <td style="padding:12px 14px; font-family:'JetBrains Mono',monospace; font-size:13px; color:#ffd875; font-weight:700;">
+          ${escapeHtml(s.sku || s.sampleSku || '---')}
         </td>
         <td style="padding:12px 14px; text-align:center; font-weight:800; color:#34d399; font-size:14px;">
           ${s.deliveredQty} SP
@@ -4684,7 +4723,7 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
     tfoot.innerHTML = `
       <tr>
         <td colspan="3" style="padding:14px; font-size:13px; color:#ffd875; font-weight:800; text-transform:uppercase;">
-          💎 TỔNG CỘNG (${sizes.length} Size)
+          💎 TỔNG CỘNG (${sizes.length} MẶT HÀNG / SIZE)
         </td>
         <td style="padding:14px; text-align:center; font-size:14px; color:#34d399; font-weight:900;">
           ${overallDelivered} SP
