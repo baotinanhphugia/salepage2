@@ -192,7 +192,7 @@ a { text-decoration: none; color: inherit; }
   word-break: break-word;
 }
 form { display: grid; gap: 10px; }
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
   padding: 13px 14px;
   border: 1px solid #bbb;
@@ -202,9 +202,113 @@ input, select, textarea {
   color: #111;
   box-sizing: border-box;
 }
+input[type="checkbox"], input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #e60033;
+  cursor: pointer;
+}
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-.options { background: #fff; border-radius: 10px; padding: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; font-size: clamp(13px, 3.6vw, 15px); }
-.radioBox { background: #fff; border-radius: 10px; padding: 12px; display: grid; gap: 10px; font-size: clamp(13px, 3.6vw, 15px); }
+.options { background: #fff; border-radius: 10px; padding: 12px 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; font-size: clamp(13.5px, 3.6vw, 15px); }
+.options label, .radioBox label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #111; }
+.radioBox { background: #fff; border-radius: 10px; padding: 12px 14px; display: grid; gap: 12px; font-size: clamp(13.5px, 3.6vw, 15px); }
+
+/* Khung hiển thị giá rõ ràng trong Form Đặt Hàng */
+.order-price-card {
+  background: linear-gradient(135deg, #fffdf5 0%, #fff1f2 100%);
+  border: 2px solid #e60033;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(230, 0, 51, 0.12);
+}
+.opc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.opc-variant-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-weight: 800;
+  font-size: 13.5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+.opc-price-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-left: auto;
+}
+.opc-old-price {
+  color: #6b7280;
+  text-decoration: line-through;
+  font-size: 14px;
+  font-weight: 600;
+}
+.opc-sale-price {
+  color: #e60033;
+  font-size: clamp(20px, 5.8vw, 24px);
+  font-weight: 900;
+  line-height: 1.1;
+}
+.opc-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #fca5a5;
+  font-size: 12.5px;
+}
+.opc-freeship {
+  color: #15803d;
+  font-weight: 800;
+}
+.opc-save {
+  color: #b45309;
+  background: #fef3c7;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+}
+.price-variant-pill {
+  display: inline-block;
+  font-size: 12.5px;
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-weight: 800;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.price-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.price-table tbody tr:hover {
+  background: #fffbeb;
+}
+.price-table tbody tr.active-price-row {
+  background: #fff1f2;
+  font-weight: 700;
+}
+.price-table tbody tr.active-price-row td:first-child {
+  border-left: 3px solid #e60033;
+}
 
 button#btnSubmit {
   border: 0;
@@ -1288,7 +1392,7 @@ button#btnSubmit {
 </section>
 
 <section class="priceBox">
-  <div><span class="price">459.999đ</span><span class="old">647.895đ</span><span class="sale">Flash Sale</span></div>
+  <div><span class="price">649.999đ</span><span class="old">824.000đ</span><span class="sale">Flash Sale</span><span class="price-variant-pill">1 Đôi • Size 5mm</span></div>
   <div class="title">Bông nụ bạc S925 kim cương Moissanite cao cấp full kiểm định GRA</div>
   <div class="meta"><span class="star">★</span><b>4.9/5</b><span>(mẫu hiển thị)</span><span>|</span><span id="metaSoldCount">Đã bán 1.2K+</span></div>
 </section>
@@ -1318,7 +1422,7 @@ button#btnSubmit {
       <tbody id="priceTableBody"></tbody>
     </table>
   </div>
-  <div class="price-hint">Chọn phân loại và size ở form đặt hàng để hệ thống tự tính giá.</div>
+  <div class="price-hint">👆 Chạm vào dòng bất kỳ trên bảng hoặc chọn Phân loại &amp; Size ở form đặt hàng bên dưới để xem đúng giá.</div>
 
   <!-- KHỐI GỢI Ý CHỌN SIZE ĐÁ -->
   <div class="size-guide-card">
@@ -1477,7 +1581,7 @@ button#btnSubmit {
 
 <section class="orderBlock" id="order">
   <div class="count"><b>⚡ Flash Sale</b><div><span id="d">00</span><span id="h">00</span><span id="m">14</span><span id="s">59</span></div></div>
-  <div style="background:white;padding:14px 16px"><span class="old">647.895đ</span> <span class="sale">Flash Sale</span> <span class="price">459.999đ</span></div>
+  <div style="background:white;padding:14px 16px"><span class="old">824.000đ</span> <span class="sale">Flash Sale</span> <span class="price">649.999đ</span><span class="price-variant-pill">1 Đôi • Size 5mm</span></div>
   <div style="background:#fff200;text-align:center;font-size:20px;font-weight:900;padding:12px">MUA HÀNG NGAY HÔM NAY ĐỂ NHẬN ƯU ĐÃI</div>
 
   <!-- KHỐI CAM KẾT 3 KHÔNG TRIỆT TIÊU RỦI RO -->
@@ -1502,7 +1606,7 @@ button#btnSubmit {
   <div class="orderTitle">THÔNG TIN ĐẶT HÀNG</div>
 
   <form id="orderForm">
-    <input type="hidden" name="price" value="459999">
+    <input type="hidden" name="price" value="649999">
     <div class="grid2">
       <input name="name" placeholder="Họ và tên" required>
       <input name="phone" placeholder="Số điện thoại" required>
@@ -1575,17 +1679,35 @@ button#btnSubmit {
     </select>
     <textarea name="address" placeholder="🏠 Số nhà, tên đường, thôn/xóm, phường/xã, quận/huyện..." rows="2" required></textarea>
     <div class="grid2">
-      <select name="variant" id="variantSelect" required>
-        <option value="1 Đôi">1 Đôi</option>
-        <option value="1 Chiếc">1 Chiếc</option>
+      <select name="variant" id="variantSelect" style="font-weight:700;" required>
+        <option value="1 Đôi">1 Đôi (2 chiếc) - 649.999đ</option>
+        <option value="1 Chiếc">1 Chiếc (Lẻ 1 bên) - 329.999đ</option>
       </select>
-      <select name="size" id="sizeSelect" required>
+      <select name="size" id="sizeSelect" style="font-weight:700;" required>
         <option value="">Chọn size đá</option>
-        <option>4mm</option><option>4.5mm</option><option>5mm</option>
-        <option>6mm</option><option>6.8mm</option><option>7.5mm</option>
+        <option value="4mm">Size 4mm - 569.999đ</option>
+        <option value="4.5mm">Size 4.5mm - 589.999đ</option>
+        <option value="5mm" selected>Size 5mm - 649.999đ</option>
+        <option value="6mm">Size 6mm - 819.999đ</option>
+        <option value="6.8mm">Size 6.8mm - 969.999đ</option>
+        <option value="7mm">Size 7mm - 1.099.999đ</option>
+        <option value="7.5mm">Size 7.5mm - 1.229.999đ</option>
       </select>
     </div>
-    <input id="selectedPriceText" value="Giá: 459.999đ" readonly>
+    <div class="order-price-card" id="orderPriceCard">
+      <div class="opc-top">
+        <span class="opc-variant-badge" id="opcVariantBadge">💎 1 Đôi (2 chiếc) • Size 5mm</span>
+        <div class="opc-price-group">
+          <span class="opc-old-price" id="opcOldPrice">824.000đ</span>
+          <span class="opc-sale-price" id="opcSalePrice">649.999đ</span>
+        </div>
+      </div>
+      <div class="opc-bottom">
+        <span class="opc-freeship">🚚 Miễn phí giao hàng toàn quốc</span>
+        <span class="opc-save" id="opcSaveBadge">🔥 Tiết kiệm 174.001đ</span>
+      </div>
+      <input type="hidden" id="selectedPriceText" value="Giá 1 Đôi (Size 5mm): 649.999đ">
+    </div>
     <input type="hidden" name="giftBox" value="Có hộp cao cấp">
     <input type="hidden" name="gra" value="Có giấy GRA">
     <input type="hidden" name="warranty" value="Bảo hành sáng bóng">
@@ -1593,7 +1715,7 @@ button#btnSubmit {
       <label><input type="checkbox" name="call" value="Gọi xác nhận"> Gọi trước khi giao</label>
     </div>
     <div class="grid2">
-      <select name="quantity" required><option value="1">Số lượng: 1</option><option value="2">Số lượng: 2</option><option value="3">Số lượng: 3</option></select>
+      <select name="quantity" id="quantitySelect" required><option value="1">Số lượng: 1</option><option value="2">Số lượng: 2</option><option value="3">Số lượng: 3</option></select>
       <select name="payment"><option>Thanh toán COD</option></select>
     </div>
     <div class="radioBox">
@@ -1643,18 +1765,20 @@ button#btnSubmit {
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec";
 const DEFAULT_PRICE_TABLE = [
-  {type:"1 Chiếc",size:"4mm",code:"MS04",stock:"106",oldPrice:"295000",salePrice:"229999"},
-  {type:"1 Chiếc",size:"4.5mm",code:"MS 04.5-1",stock:"2",oldPrice:"315000",salePrice:"249000"},
-  {type:"1 Chiếc",size:"5mm",code:"MS05",stock:"105",oldPrice:"332000",salePrice:"259000"},
-  {type:"1 Chiếc",size:"6mm",code:"MS06-1",stock:"50",oldPrice:"444000",salePrice:"305999"},
-  {type:"1 Chiếc",size:"6.8mm",code:"MS06.8",stock:"31",oldPrice:"556000",salePrice:"369000"},
-  {type:"1 Chiếc",size:"7.5mm",code:"MS07.5",stock:"41",oldPrice:"700000",salePrice:"409999"},
-  {type:"1 Đôi",size:"4mm",code:"MS041",stock:"56",oldPrice:"600303",salePrice:"399999"},
-  {type:"1 Đôi",size:"4.5mm",code:"BNM4SB01",stock:"3",oldPrice:"616216",salePrice:"439999"},
-  {type:"1 Đôi",size:"5mm",code:"MS051",stock:"46",oldPrice:"647895",salePrice:"459999"},
-  {type:"1 Đôi",size:"6mm",code:"BNM6B01",stock:"25",oldPrice:"804872",salePrice:"549999"},
-  {type:"1 Đôi",size:"6.8mm",code:"MS0681",stock:"6",oldPrice:"953721",salePrice:"659999"},
-  {type:"1 Đôi",size:"7.5mm",code:"MS0751",stock:"111",oldPrice:"1204000",salePrice:"759999"}
+  {type:"1 Chiếc",size:"4mm",code:"4C-4mm-NK",stock:"105",oldPrice:"375000",salePrice:"349000"},
+  {type:"1 Chiếc",size:"4.5mm",code:"4C-4.5mm-NK",stock:"2",oldPrice:"395000",salePrice:"319999"},
+  {type:"1 Chiếc",size:"5mm",code:"4C-5mm-NK",stock:"104",oldPrice:"412000",salePrice:"329999"},
+  {type:"1 Chiếc",size:"6mm",code:"4C-6mm-NK",stock:"50",oldPrice:"524000",salePrice:"449999"},
+  {type:"1 Chiếc",size:"6.8mm",code:"MS06.8",stock:"0",oldPrice:"636000",salePrice:"559999"},
+  {type:"1 Chiếc",size:"7mm",code:"4C-7mm-NK",stock:"50",oldPrice:"699000",salePrice:"579999"},
+  {type:"1 Chiếc",size:"7.5mm",code:"4C-7.5mm-NK",stock:"41",oldPrice:"780000",salePrice:"699999"},
+  {type:"1 Đôi",size:"4mm",code:"NK 4C -4LY",stock:"56",oldPrice:"750000",salePrice:"569999"},
+  {type:"1 Đôi",size:"4.5mm",code:"NK 4C-4.5LY",stock:"3",oldPrice:"790000",salePrice:"589999"},
+  {type:"1 Đôi",size:"5mm",code:"NK 4C -5LY",stock:"27",oldPrice:"824000",salePrice:"649999"},
+  {type:"1 Đôi",size:"6mm",code:"NK 4C -6LY",stock:"25",oldPrice:"1048000",salePrice:"819999"},
+  {type:"1 Đôi",size:"6.8mm",code:"MS0681",stock:"0",oldPrice:"1272000",salePrice:"969999"},
+  {type:"1 Đôi",size:"7mm",code:"NK 4C -7LY",stock:"50",oldPrice:"1398000",salePrice:"1099999"},
+  {type:"1 Đôi",size:"7.5mm",code:"NK 4C-7.5LY",stock:"111",oldPrice:"1560000",salePrice:"1229999"}
 ];
 let priceTable = [...DEFAULT_PRICE_TABLE];
 
@@ -1663,12 +1787,22 @@ function money(value){
   return n ? n.toLocaleString("vi-VN") + "đ" : "Liên hệ";
 }
 
+function normStr(val){
+  return String(val || "").trim().toLowerCase();
+}
+
+function findPriceItem(variant, size){
+  const vNorm = normStr(variant);
+  const sNorm = normStr(size);
+  return priceTable.find(i => normStr(i.type) === vNorm && normStr(i.size) === sNorm);
+}
+
 function parsePriceTable(value){
   if(!value) return [...DEFAULT_PRICE_TABLE];
-  if(Array.isArray(value)) return value;
+  if(Array.isArray(value)) return value.length ? value : [...DEFAULT_PRICE_TABLE];
   try{
     const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [...DEFAULT_PRICE_TABLE];
+    return (Array.isArray(parsed) && parsed.length) ? parsed : [...DEFAULT_PRICE_TABLE];
   }catch(e){
     return [...DEFAULT_PRICE_TABLE];
   }
@@ -1678,9 +1812,24 @@ function renderPriceTable(){
   const tbody = document.getElementById("priceTableBody");
   if(!tbody) return;
   tbody.innerHTML = "";
+  const curVariant = document.getElementById("variantSelect")?.value || "1 Đôi";
+  const curSize = document.getElementById("sizeSelect")?.value || "5mm";
   priceTable.forEach(item=>{
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${item.type || ""}</td><td>${item.size || ""}</td><td>${item.code || ""}</td><td class="sale-price">${money(item.salePrice || item.oldPrice)}</td><td class="old-price">${money(item.oldPrice)}</td>`;
+    tr.dataset.type = item.type || "";
+    tr.dataset.size = item.size || "";
+    if(normStr(item.type) === normStr(curVariant) && normStr(item.size) === normStr(curSize)){
+      tr.classList.add("active-price-row");
+    }
+    tr.innerHTML = `<td><b>${item.type || ""}</b></td><td><b>${item.size || ""}</b></td><td style="font-size:12.5px;color:#555">${item.code || ""}</td><td class="sale-price">${money(item.salePrice || item.oldPrice)}</td><td class="old-price">${money(item.oldPrice)}</td>`;
+    tr.addEventListener("click", () => {
+      const vSel = document.getElementById("variantSelect");
+      const sSel = document.getElementById("sizeSelect");
+      if(vSel && item.type) vSel.value = item.type;
+      if(sSel && item.size) sSel.value = item.size;
+      updateSelectedPrice();
+      document.getElementById("order")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     tbody.appendChild(tr);
   });
 }
@@ -1689,35 +1838,119 @@ function syncSizeOptions(){
   const sizeSelect = document.getElementById("sizeSelect");
   if(!sizeSelect) return;
   const selected = sizeSelect.value || "5mm";
-  const sizes = [...new Set(priceTable.map(i=>i.size).filter(Boolean))];
+  const rawSizes = [...new Set(priceTable.map(i=>String(i.size || "").trim()).filter(Boolean))];
+  rawSizes.sort((a, b) => (parseFloat(a) || 0) - (parseFloat(b) || 0));
   sizeSelect.innerHTML = '<option value="">Chọn size đá</option>';
-  sizes.forEach(size=>{
+  rawSizes.forEach(size=>{
     const opt = document.createElement("option");
     opt.value = size;
-    opt.textContent = size;
-    if(size === selected) opt.selected = true;
+    opt.textContent = "Size " + size;
+    if(normStr(size) === normStr(selected)) opt.selected = true;
     sizeSelect.appendChild(opt);
   });
-  if(!sizeSelect.value && sizes.includes("5mm")) sizeSelect.value = "5mm";
+  if(!sizeSelect.value && rawSizes.some(s => normStr(s) === "5mm")) sizeSelect.value = "5mm";
 }
 
-function setDisplayedPrices(sale, old){
+function setDisplayedPrices(sale, old, variantLabel){
   document.querySelectorAll(".price").forEach(el=>el.innerText = money(sale));
   document.querySelectorAll(".old").forEach(el=>el.innerText = money(old));
+  if(variantLabel){
+    document.querySelectorAll(".price-variant-pill").forEach(el=>el.innerText = variantLabel);
+  }
   document.querySelectorAll('[name="price"]').forEach(el=>el.value = String(sale || "").replace(/\D/g,""));
   const selectedPrice = document.getElementById("selectedPriceText");
   if(selectedPrice) selectedPrice.value = "Giá: " + money(sale);
 }
 
 function updateSelectedPrice(){
-  const variant = document.getElementById("variantSelect")?.value || "1 Đôi";
-  const size = document.getElementById("sizeSelect")?.value || "5mm";
-  const item = priceTable.find(i=>i.type === variant && i.size === size) || priceTable.find(i=>i.type === "1 Đôi" && i.size === "5mm") || priceTable[0];
+  const variantSelect = document.getElementById("variantSelect");
+  const sizeSelect = document.getElementById("sizeSelect");
+  const qtySelect = document.getElementById("quantitySelect") || document.querySelector('[name="quantity"]');
+
+  const variant = variantSelect?.value || "1 Đôi";
+  const size = sizeSelect?.value || "5mm";
+  const qty = Math.max(1, parseInt(qtySelect?.value || "1", 10) || 1);
+
+  const item = findPriceItem(variant, size) || findPriceItem("1 Đôi", "5mm") || priceTable[0];
   if(!item) return;
-  const sale = item.salePrice || item.oldPrice;
-  setDisplayedPrices(sale, item.oldPrice);
+
+  // Cập nhật giá hiển thị trực tiếp bên trong từng mục chọn của 2 ô Dropdown để khách nhìn rõ 100%
+  if(variantSelect){
+    Array.from(variantSelect.options).forEach(opt => {
+      const vType = opt.value;
+      const matchedV = findPriceItem(vType, size);
+      const vDesc = normStr(vType) === "1 đôi" ? "1 Đôi (2 chiếc)" : (normStr(vType) === "1 chiếc" ? "1 Chiếc (Lẻ 1 bên)" : vType);
+      if(matchedV){
+        opt.textContent = `${vDesc} — ${money(matchedV.salePrice || matchedV.oldPrice)}`;
+      } else {
+        opt.textContent = vDesc;
+      }
+    });
+  }
+
+  if(sizeSelect){
+    Array.from(sizeSelect.options).forEach(opt => {
+      if(!opt.value) return;
+      const matchedS = findPriceItem(variant, opt.value);
+      if(matchedS){
+        opt.textContent = `Size ${opt.value} — ${money(matchedS.salePrice || matchedS.oldPrice)}`;
+      } else {
+        opt.textContent = `Size ${opt.value}`;
+      }
+    });
+  }
+
+  const unitSale = Number(String(item.salePrice || item.oldPrice || 0).replace(/\D/g,"")) || 0;
+  const unitOld = Number(String(item.oldPrice || item.salePrice || 0).replace(/\D/g,"")) || unitSale;
+  const totalSale = unitSale * qty;
+  const totalOld = unitOld * qty;
+  const totalSave = Math.max(0, totalOld - totalSale);
+
+  // Cập nhật giá trên banner đầu trang & banner khu vực đặt hàng theo đúng phân loại đang chọn
+  const pillText = `${item.type || variant} • Size ${item.size || size}`;
+  document.querySelectorAll(".price").forEach(el=>el.innerText = money(unitSale));
+  document.querySelectorAll(".old").forEach(el=>el.innerText = money(unitOld));
+  document.querySelectorAll(".price-variant-pill").forEach(el=>el.innerText = pillText);
+
+  // Cập nhật tổng tiền thực tế gửi đi trong form và hiển thị trong thẻ giá
+  document.querySelectorAll('[name="price"]').forEach(el=>el.value = String(totalSale));
+
+  const variantDesc = normStr(variant) === "1 đôi" ? "1 Đôi (2 chiếc)" : (normStr(variant) === "1 chiếc" ? "1 Chiếc (Lẻ 1 bên)" : variant);
+  const badgeEl = document.getElementById("opcVariantBadge");
+  if(badgeEl){
+    badgeEl.innerText = qty > 1
+      ? `💎 ${qty} x ${variantDesc} • Size ${item.size || size}`
+      : `💎 ${variantDesc} • Size ${item.size || size}`;
+  }
+  const oldPriceEl = document.getElementById("opcOldPrice");
+  if(oldPriceEl){
+    oldPriceEl.innerText = money(totalOld);
+    oldPriceEl.style.display = totalOld > totalSale ? "inline" : "none";
+  }
+  const salePriceEl = document.getElementById("opcSalePrice");
+  if(salePriceEl){
+    salePriceEl.innerText = money(totalSale);
+  }
+  const saveBadgeEl = document.getElementById("opcSaveBadge");
+  if(saveBadgeEl){
+    saveBadgeEl.innerText = totalSave > 0 ? `🔥 Tiết kiệm ${money(totalSave)}` : `⚡ Giá ưu đãi Flash Sale`;
+  }
+  const selectedPrice = document.getElementById("selectedPriceText");
+  if(selectedPrice){
+    selectedPrice.value = `Giá ${variantDesc} (Size ${item.size || size}${qty > 1 ? " x" + qty : ""}): ${money(totalSale)}`;
+  }
+
+  // Highlight dòng tương ứng trên bảng giá
+  document.querySelectorAll("#priceTableBody tr").forEach(tr => {
+    if(normStr(tr.dataset.type) === normStr(variant) && normStr(tr.dataset.size) === normStr(size)){
+      tr.classList.add("active-price-row");
+    } else {
+      tr.classList.remove("active-price-row");
+    }
+  });
+
   const stock = document.getElementById("stockLeft");
-  if(stock && item.stock) stock.innerText = item.stock;
+  if(stock && item.stock !== undefined && item.stock !== "") stock.innerText = item.stock;
 }
 
 function initPricing(){
@@ -1726,6 +1959,7 @@ function initPricing(){
   updateSelectedPrice();
   document.getElementById("variantSelect")?.addEventListener("change", updateSelectedPrice);
   document.getElementById("sizeSelect")?.addEventListener("change", updateSelectedPrice);
+  document.getElementById("quantitySelect")?.addEventListener("change", updateSelectedPrice);
 }
 
 let remain = 14*60+59;
@@ -1748,6 +1982,9 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   btn.disabled = true;
   btn.innerText = "⏳ ĐANG GỬI ĐƠN HÀNG...";
   msg.innerText = "";
+
+  // Đảm bảo giá được tính chuẩn xác theo Phân loại + Size + Số lượng ngay trước khi lấy dữ liệu form
+  updateSelectedPrice();
 
   const fd = new FormData(e.target);
   const data = Object.fromEntries(fd.entries());
@@ -1811,7 +2048,16 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
 
   const currentTitle = document.querySelector('.title')?.innerText || "Bông nụ bạc S925 4 chấu kim cương Moissanite cao cấp full kiểm định GRA";
   data.product = currentTitle;
-  data.price = document.querySelector('[name="price"]')?.value || data.price || "459999";
+
+  // Gán mã SKU MISA cố định & kiểm tra lại giá chuẩn từ bảng giá theo đúng Phân loại + Size + Số lượng
+  const matchedItem = findPriceItem(data.variant, data.size);
+  if (matchedItem) {
+    if (matchedItem.code) data.misaSku = matchedItem.code;
+    const unitP = Number(String(matchedItem.salePrice || matchedItem.oldPrice || 0).replace(/\D/g,"")) || 0;
+    const qNum = Math.max(1, parseInt(data.quantity || "1", 10) || 1);
+    if (unitP > 0) data.price = String(unitP * qNum);
+  }
+  data.price = data.price || document.querySelector('[name="price"]')?.value || "649999";
   data.source = location.href;
   // Bóc tách nguồn quảng cáo Facebook Ads (UTM parameters) đã lưu
   const utm = getSavedUtmParams();
@@ -1821,12 +2067,6 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   data.utm_content = utm.utm_content || "";
   data.utm_term = utm.utm_term || "";
   data.fbclid = utm.fbclid || "";
-
-  // Gán mã SKU MISA cố định của lô hàng tương ứng với phân loại & kích cỡ đã chọn
-  const matchedItem = priceTable.find(i => i.type === data.variant && i.size === data.size);
-  if (matchedItem && matchedItem.code) {
-    data.misaSku = matchedItem.code;
-  }
 
   try {
     let orderSuccess = false;
@@ -1879,8 +2119,8 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
       let alreadyTracked = false;
       try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
       if(window.fbq && currentPixelId && !alreadyTracked){
-        try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
-        const orderVal = Number(String(data.price || "459999").replace(/\D/g,"")) || 459999;
+        try { sessionStorage.setItem(dedupeKey) === "1"; } catch(_) {}
+        const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
         const currentTitle = data.product || document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
         fbq('track', 'CompleteRegistration', {
           content_name: currentTitle,
@@ -1916,13 +2156,15 @@ function showOrderSuccessModal(orderData){
     const timeStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`;
     const code = "PGD-VN-" + timeStr;
     const fullAddr = [orderData.address, orderData.province].filter(Boolean).join(", ");
+    const qtyNum = Math.max(1, parseInt(orderData.quantity || "1", 10) || 1);
+    const qtyText = qtyNum > 1 ? ` (SL: ${qtyNum})` : "";
     
     details.innerHTML = `
       <div class="osm-row"><span style="color:#6b7280">Mã đơn:</span><b>${code}</b></div>
       <div class="osm-row"><span style="color:#6b7280">Người nhận:</span><b>${orderData.name || ""}</b></div>
       <div class="osm-row"><span style="color:#6b7280">Số điện thoại:</span><b>${orderData.phone || ""}</b></div>
       <div class="osm-row"><span style="color:#6b7280">Địa chỉ:</span><b>${fullAddr}</b></div>
-      <div class="osm-row"><span style="color:#6b7280">Sản phẩm:</span><b>${orderData.variant || "1 Đôi"} (Size ${orderData.size || "5mm"})</b></div>
+      <div class="osm-row"><span style="color:#6b7280">Sản phẩm:</span><b>${orderData.variant || "1 Đôi"} (Size ${orderData.size || "5mm"})${qtyText}</b></div>
       <div class="osm-row total"><span>Tổng tiền COD:</span><b>${priceFormatted}</b></div>
     `;
   }
@@ -2069,13 +2311,15 @@ function applyConfigData(c){
     syncSizeOptions();
   }
 
-  // 3. Giá bán mặc định & Giá gốc mặc định
-  const saleVal = c.salePrice || c.salePriceVN;
-  const oldVal = c.oldPrice || c.oldPriceVN;
-  if(saleVal){
-    setDisplayedPrices(saleVal, oldVal || "");
-  } else {
+  // 3. Luôn đồng bộ giá theo đúng Phân loại (1 Đôi / 1 Chiếc) & Size đang chọn trong Form Đặt Hàng
+  if(priceTable && priceTable.length > 0){
     updateSelectedPrice();
+  } else {
+    const saleVal = c.salePrice || c.salePriceVN;
+    const oldVal = c.oldPrice || c.oldPriceVN;
+    if(saleVal){
+      setDisplayedPrices(saleVal, oldVal || "");
+    }
   }
 
   // 4. Text giảm giá
