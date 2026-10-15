@@ -2,3 +2,11 @@
 .DS_Store
 *.log
 __pycache__/
+*.xlsx
+check_*.py
+test_*.py
+find_*.py
+inspect_*.py
+print_*.py
+sample_*.py
+update_excel.py

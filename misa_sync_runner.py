@@ -34,7 +34,26 @@ POLL_INTERVAL_SECONDS = 4
 
 # Danh mục hàng hóa mapping chuẩn trên MISA eShop
 MISA_INVENTORY = {
-    # 1 Đôi (Mã Bộ -> Map về mã tồn kho vật lý tương ứng trên MISA, số lượng x2 chiếc)
+    # Dòng 4 chấu bạc mạ rhodium Moissanite thực tế theo bảng giá Shop
+    "NK 4C -5LY": {"id": "d3d77ffc-7476-450e-b987-4a89686f4374", "sku": "NK 4C -5LY", "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 5mm)", "unit_id": None, "unit_name": None, "is_pair": True, "type": 3},
+    "4C-5mm-NK": {"id": "7afdfadf-8262-4065-9c80-5114ad63e12b", "sku": "4C-5mm-NK", "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 5mm)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False, "type": 1},
+
+    "NK 4C -4LY": {"id": "5f59285b-cdc4-4df0-a3b9-29b838d624c5", "sku": "NK 4C -4LY", "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu(đá 4mm)", "unit_id": None, "unit_name": None, "is_pair": True, "type": 3},
+    "4C-4mm-NK": {"id": "e99ce811-41a1-4410-b304-d596aeffb859", "sku": "4C-4mm-NK", "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu(đá 4mm)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False, "type": 1},
+
+    "NK 4C-4.5LY": {"id": "215d9d87-e183-40b6-9fbb-92480059edfd", "sku": "NK 4C-4.5LY", "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đinh đá moissanite 4 chấu(đá 4.5mm)", "unit_id": None, "unit_name": None, "is_pair": True, "type": 3},
+    "4C-4.5mm-NK": {"id": "a5864e9b-ea53-4e67-947c-a630aa505ab5", "sku": "4C-4.5mm-NK", "name": "Bông tai bạc 925 mạ rhodium đinh đá moissanite 4 chấu(đá 4.5mm)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False, "type": 1},
+
+    "NK 4C -6LY": {"id": "5235e2e2-268f-436a-976f-1e241a402f6f", "sku": "NK 4C -6LY", "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 6mm)", "unit_id": None, "unit_name": None, "is_pair": True, "type": 3},
+    "4C-6mm-NK": {"id": "d10aae52-1b8e-4c4b-b223-b1bf57c89380", "sku": "4C-6mm-NK", "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 6mm)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False, "type": 1},
+
+    "NK 4C -7LY": {"id": "6f3a247c-3f31-40b1-ae1a-6e1efb9c9cde", "sku": "NK 4C -7LY", "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7mm)", "unit_id": None, "unit_name": None, "is_pair": True, "type": 3},
+    "4C-7mm-NK": {"id": "d125f2c1-f5c8-432b-b288-3c28ea37f104", "sku": "4C-7mm-NK", "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7mm)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False, "type": 1},
+
+    "NK 4C-7.5LY": {"id": "bd7edfe5-cd16-4bec-80ef-59732ced0633", "sku": "NK 4C-7.5LY", "name": "1 ĐÔI - Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7.5mm)", "unit_id": None, "unit_name": None, "is_pair": True, "type": 3},
+    "4C-7.5mm-NK": {"id": "618b1c14-62c0-40b7-ab32-cabdb59033dc", "sku": "4C-7.5mm-NK", "name": "Bông tai bạc 925 mạ rhodium đính đá moissanite 4 chấu (đá 7.5mm)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False, "type": 1},
+
+    # 1 Đôi (Mã Bộ truyền thống)
     "BNM6B01": {"id": "841beb30-0614-4233-b6b7-c06395964f30", "sku": "MS06-1", "name": "Bông nụ Moissaanite 6mm-S925- BMOI45-1 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
     "BNM4SB01": {"id": "2f3ac933-7bcd-43a9-9906-74cdde41c702", "sku": "MS 04.5-1", "name": "Bông nụ Moissanite 4.5mm- S925- BMOI42-1 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
     "MS051": {"id": "cd1ebd5c-0fa0-4e57-8235-c271900b7de8", "sku": "MS05", "name": "Bông nụ Moissanite 5ly-S925 -BMOI144 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
@@ -42,7 +61,7 @@ MISA_INVENTORY = {
     "MS0681": {"id": "0459fdc2-126f-47e2-b79f-b3b277bf056e", "sku": "MS06.8", "name": "Bông nụ Moissanite 6ly8-S925-BMOI146 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
     "MS0751": {"id": "43e2beef-a3d7-4d9f-94bf-353ea991be29", "sku": "MS07.5", "name": "Bông nụ Moissanite 7ly5-S925-BMOI47 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
 
-    # 1 Chiếc (Mã Lẻ)
+    # 1 Chiếc (Mã Lẻ truyền thống)
     "MS06-1": {"id": "841beb30-0614-4233-b6b7-c06395964f30", "sku": "MS06-1", "name": "Bông nụ Moissaanite 6mm-S925- BMOI45-1", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
     "MS 04.5-1": {"id": "2f3ac933-7bcd-43a9-9906-74cdde41c702", "sku": "MS 04.5-1", "name": "Bông nụ Moissanite 4.5mm- S925- BMOI42-1", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
     "MS05": {"id": "cd1ebd5c-0fa0-4e57-8235-c271900b7de8", "sku": "MS05", "name": "Bông nụ Moissanite 5ly-S925 -BMOI144", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": False},
@@ -58,36 +77,33 @@ MISA_INVENTORY = {
     "6 chấu 54": {"id": "8b8c4a5d-69f7-4908-b00b-264757938e6f", "sku": "6C54", "name": "Bông nụ 6 chấu Moissanite 7ly -S925-BMOI54 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
     "6 chấu 56": {"id": "01841d20-de6d-468b-8a29-6c04d4c021ea", "sku": "6C56", "name": "Bông nụ 6 chấu moissanite 8ly -S925-BMOI56 (1 Đôi)", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
 
-    # Mẫu khác
-    "Bốn Lá 39": {"id": "1efff9ca-5671-447c-9c04-02c2aefff4ca", "sku": "Bốn Lá 39", "name": "Bông tai full Moissanite Bốn lá 3ly5 -S925-BMOI39", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
-    "Đồng Tiền 34": {"id": "055cae33-3a40-443a-a0d3-2fae593c34e3", "sku": "Đồng Tiền 34", "name": "Bông tai Full Moissanite Đồng tiền -S925 -BMOI34", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
-    "BT143 - 5ly": {"id": "8883adde-546e-41da-8289-f62400109ab9", "sku": "BT143 - 5ly", "name": "Bông tai Moissanite -5ly -S925-BMOI43", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_pair": True},
-
     # Phụ kiện đi kèm
     "HOP NHAN": {"id": "ec950be7-bc3b-4bfd-8f7a-05a1685da472", "sku": "HOP NHAN", "name": "Hộp giấy đựng trang sức", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_accessory": True},
     "CARD": {"id": "ef6117d0-79dc-473b-978d-33f0111e85f8", "sku": "CARD", "name": "IN CARD", "unit_id": "097330eb-f92d-4b88-95a8-1a83fd3d8061", "unit_name": "Cái", "is_accessory": True}
 }
 
-# Tự động chọn SKU MISA mới nhất theo Size và Phân loại
+# Tự động chọn SKU MISA mới nhất theo Size và Phân loại (Chuẩn bảng giá Shop)
 SIZE_TO_SKU = {
-    "4mm": {"1 Đôi": "MS041", "1 Chiếc": "MS04"},
-    "4.5mm": {"1 Đôi": "BNM4SB01", "1 Chiếc": "MS 04.5-1"},
-    "5mm": {"1 Đôi": "MS051", "1 Chiếc": "MS05"},
-    "6mm": {"1 Đôi": "BNM6B01", "1 Chiếc": "MS06-1"},
+    "4mm": {"1 Đôi": "NK 4C -4LY", "1 Chiếc": "4C-4mm-NK"},
+    "4.5mm": {"1 Đôi": "NK 4C-4.5LY", "1 Chiếc": "4C-4.5mm-NK"},
+    "5mm": {"1 Đôi": "NK 4C -5LY", "1 Chiếc": "4C-5mm-NK"},
+    "6mm": {"1 Đôi": "NK 4C -6LY", "1 Chiếc": "4C-6mm-NK"},
     "6.8mm": {"1 Đôi": "MS0681", "1 Chiếc": "MS06.8"},
-    "7.5mm": {"1 Đôi": "MS0751", "1 Chiếc": "MS07.5"}
+    "7mm": {"1 Đôi": "NK 4C -7LY", "1 Chiếc": "4C-7mm-NK"},
+    "7.5mm": {"1 Đôi": "NK 4C-7.5LY", "1 Chiếc": "4C-7.5mm-NK"}
 }
 
-# CATALOG tương thích ngược cho các module cũ
+# CATALOG tương thích ngược
 CATALOG = {
-    "4mm": MISA_INVENTORY["MS041"],
-    "4.5mm": MISA_INVENTORY["BNM4SB01"],
-    "5mm": MISA_INVENTORY["MS051"],
-    "6mm": MISA_INVENTORY["BNM6B01"],
+    "4mm": MISA_INVENTORY["NK 4C -4LY"],
+    "4.5mm": MISA_INVENTORY["NK 4C-4.5LY"],
+    "5mm": MISA_INVENTORY["NK 4C -5LY"],
+    "6mm": MISA_INVENTORY["NK 4C -6LY"],
     "6.8mm": MISA_INVENTORY["MS0681"],
-    "7.5mm": MISA_INVENTORY["MS0751"]
+    "7mm": MISA_INVENTORY["NK 4C -7LY"],
+    "7.5mm": MISA_INVENTORY["NK 4C-7.5LY"]
 }
-DEFAULT_ITEM = MISA_INVENTORY["BNM6B01"]
+DEFAULT_ITEM = MISA_INVENTORY["NK 4C -5LY"]
 
 # --- QUẢN LÝ TOKEN MISA ---
 _cached_token = None
@@ -95,7 +111,7 @@ _token_expire_time = 0
 
 def get_misa_token():
     global _cached_token, _token_expire_time
-    now = time.time()
+    now = time.time() - 10
     if _cached_token and now < _token_expire_time:
         return _cached_token
 
@@ -570,27 +586,37 @@ def call_apps_script(payload):
 
 # --- VÒNG LẶP QUÉT VÀ ĐỒNG BỘ ĐƠN TỪ GOOGLE SHEET ---
 _last_delivery_sync_time = 0
-DELIVERY_SYNC_INTERVAL_SECONDS = 600  # 10 phút tự động đồng bộ trạng thái giao hàng 1 lần
+DELIVERY_SYNC_INTERVAL_SECONDS = 120  # 2 phút tự động đối soát & đồng bộ trạng thái giao hàng / hủy từ MISA 1 lần
 
-def fetch_misa_vouchers(from_date=None, page=1, page_size=100):
+def clean_misa_order_no(code_str):
+    if not code_str:
+        return ""
+    import re
+    digits = re.sub(r'\D', '', str(code_str))
+    return digits.lstrip('0')
+
+def fetch_misa_vouchers(from_date=None, max_pages=25):
     try:
         token = get_misa_token()
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
-        if not from_date:
-            import datetime
-            thirty_days_ago = datetime.datetime.now() - datetime.timedelta(days=30)
-            from_date = thirty_days_ago.strftime("%Y-%m-%d")
-
-        payload = {"from_date": from_date, "page": page, "page_size": page_size}
-        req = urllib.request.Request(
-            "https://eshopapp.misa.vn/api/platform/openpartnervouchers/orders",
-            data=json.dumps(payload).encode("utf-8"),
-            headers=headers,
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            res = json.loads(resp.read().decode("utf-8"))
-            return res.get("Data", {}).get("VoucherData", []) or []
+        all_vouchers = []
+        for page in range(1, max_pages + 1):
+            payload = {"page": page, "page_size": 100}
+            if from_date:
+                payload["from_date"] = from_date
+            req = urllib.request.Request(
+                "https://eshopapp.misa.vn/api/platform/openpartnervouchers/orders",
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                vdata = res.get("Data", {}).get("VoucherData", []) or []
+                if not vdata:
+                    break
+                all_vouchers.extend(vdata)
+        return all_vouchers
     except Exception as e:
         print(f"[MISA VOUCHERS ERROR] {e}")
         return []
@@ -598,7 +624,7 @@ def fetch_misa_vouchers(from_date=None, page=1, page_size=100):
 def sync_misa_delivery_statuses(from_date=None):
     """
     Đồng bộ trạng thái giao hàng thực tế từ MISA eShop Open API về Google Sheets.
-    Phân loại chuẩn: 80 -> Giao thành công (Thực thu), 60/70 -> Đang giao, 100/130/140 -> Hoàn trả.
+    Phân loại chuẩn: 80 -> Giao thành công (Thực thu), 90 -> Đã hủy, 60/70 -> Đang giao, 100/130/140 -> Hoàn trả.
     """
     try:
         vouchers = fetch_misa_vouchers(from_date=from_date)
@@ -613,19 +639,21 @@ def sync_misa_delivery_statuses(from_date=None):
         for o in sheet_orders:
             order_id = str(o.get("orderId") or "").strip()
             eshop_code = str(o.get("eshopCode") or "").strip()
+            c_eshop = clean_misa_order_no(eshop_code)
             phone = str(o.get("phone") or "").replace(" ", "").replace("+84", "0")
             curr_status = str(o.get("status") or "")
 
-            if curr_status == "Đã hủy":
+            if not c_eshop and not order_id and not phone:
                 continue
 
             for v in vouchers:
                 v_no = str(v.get("order_no") or "").strip()
+                c_vno = clean_misa_order_no(v_no)
                 v_note = str(v.get("employee_note") or "")
                 v_tel = str(v.get("recipient_tel") or "").replace(" ", "")
 
                 matched = False
-                if eshop_code and (eshop_code in v_no or v_no in eshop_code):
+                if c_eshop and c_vno and c_eshop == c_vno:
                     matched = True
                 elif order_id and order_id in v_note:
                     matched = True
@@ -639,7 +667,9 @@ def sync_misa_delivery_statuses(from_date=None):
                     spartner = v.get("shipping_partner_name", "")
 
                     new_status = curr_status
-                    if ostatus == 80:
+                    if ostatus == 90:
+                        new_status = "Đã hủy"
+                    elif ostatus == 80:
                         new_status = "Giao thành công"
                     elif ostatus in [60, 70]:
                         new_status = "Đang giao hàng"
@@ -647,8 +677,6 @@ def sync_misa_delivery_statuses(from_date=None):
                         new_status = "Giao thất bại"
                     elif ostatus in [130, 140]:
                         new_status = "Chuyển hoàn"
-                    elif ostatus == 90:
-                        new_status = "Đã hủy"
                     elif ostatus in [20, 30]:
                         new_status = "Đang xử lý (MISA)"
 

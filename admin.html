@@ -1456,8 +1456,13 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           <option value="Đã nhắn Zalo">Đã nhắn Zalo</option>
           <option value="Đã sửa">Đã sửa</option>
           <option value="Đã đẩy eShop">Đã đẩy eShop</option>
+          <option value="Giao thành công">🟢 Giao thành công (Thực thu)</option>
+          <option value="Đang giao hàng">🚚 Đang giao hàng</option>
           <option value="Đã hủy">❌ Đã hủy (Xem riêng)</option>
         </select>
+        <button type="button" class="btn2" onclick="syncMisaDeliveryStatusNow()" style="background:linear-gradient(135deg, #10b981, #059669); border-color:#34d399; color:#fff; font-size:12.5px; font-weight:700; padding:7px 12px; display:inline-flex; align-items:center; gap:5px; border-radius:8px; cursor:pointer;" title="Đồng bộ trạng thái đơn thực tế từ MISA eShop">
+          <span>🔄</span> Đồng bộ MISA
+        </button>
         <span id="orderSearchCount" style="font-size:13px; color:#d6ad45; font-weight:700; white-space:nowrap; margin-left:6px;"></span>
       </div>
     </div>
@@ -3878,15 +3883,32 @@ function openOrderModal(orderId) {
 }
 
 function autoDetectMisaSku(size, variant) {
+  // 1. Ưu tiên tìm trong bảng giá động thực tế của Shop
+  try {
+    const pTable = (typeof getPriceTableData === "function") ? getPriceTableData("tbodyVN") : [];
+    if (pTable && pTable.length > 0) {
+      const isPairReq = String(variant || "").toLowerCase().includes("đôi");
+      const normSize = String(size || "").toLowerCase().replace(/\s+/g, "");
+      const matched = pTable.find(it => {
+        const itPair = String(it.type || "").toLowerCase().includes("đôi");
+        const itSize = String(it.size || "").toLowerCase().replace(/\s+/g, "");
+        return itPair === isPairReq && (itSize === normSize || normSize.includes(itSize) || itSize.includes(normSize));
+      });
+      if (matched && matched.code) return matched.code.trim();
+    }
+  } catch (e) {}
+
+  // 2. Mapping dự phòng chuẩn xác theo mã kho thực tế của Shop
   const v = String(variant || "1 Đôi").toLowerCase();
   const s = String(size || "5mm").toLowerCase();
   const isPair = v.includes("đôi");
+  if (s.includes("7.5")) return isPair ? "NK 4C-7.5LY" : "4C-7.5mm-NK";
+  if (s.includes("7")) return isPair ? "NK 4C -7LY" : "4C-7mm-NK";
   if (s.includes("6.8")) return isPair ? "MS0681" : "MS06.8";
-  if (s.includes("7.5")) return isPair ? "MS0751" : "MS07.5";
-  if (s.includes("6")) return isPair ? "BNM6B01" : "MS06-1";
-  if (s.includes("4.5")) return isPair ? "BNM4SB01" : "MS 04.5-1";
-  if (s.includes("4")) return isPair ? "MS041" : "MS04";
-  return isPair ? "MS051" : "MS05";
+  if (s.includes("6")) return isPair ? "NK 4C -6LY" : "4C-6mm-NK";
+  if (s.includes("4.5")) return isPair ? "NK 4C-4.5LY" : "4C-4.5mm-NK";
+  if (s.includes("4")) return isPair ? "NK 4C -4LY" : "4C-4mm-NK";
+  return isPair ? "NK 4C -5LY" : "4C-5mm-NK";
 }
 
 // Lắng nghe sự kiện đổi size hoặc variant để tự động gợi ý mã MISA
