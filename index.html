@@ -24,15 +24,106 @@ let currentPixelId = "";
 let pendingInitiateCheckout = null;
 const metaEventsFired = new Set();
 
+// ===== META PIXEL ADVANCED MATCHING (SO KHỚP NÂNG CAO THỦ CÔNG) =====
+function getSavedMetaUserData(){
+  try {
+    const raw = localStorage.getItem("PGD_META_USER_DATA");
+    if(raw) return JSON.parse(raw);
+  } catch(_) {}
+  return {};
+}
+
+function formatMetaPhone(phoneStr){
+  if(!phoneStr) return "";
+  let digits = String(phoneStr).replace(/\D/g, "");
+  if(digits.startsWith("0")) digits = "84" + digits.slice(1);
+  else if(!digits.startsWith("84") && digits.length === 9) digits = "84" + digits;
+  return digits;
+}
+
+function parseMetaName(fullName){
+  if(!fullName) return { fn: "", ln: "" };
+  const parts = String(fullName).trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if(parts.length === 0) return { fn: "", ln: "" };
+  if(parts.length === 1) return { fn: parts[0], ln: parts[0] };
+  const fn = parts[parts.length - 1]; // Tên
+  const ln = parts[0];                // Họ
+  return { fn, ln };
+}
+
+function normalizeMetaProvince(provStr){
+  if(!provStr) return "";
+  return String(provStr).trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function buildMetaAdvancedMatching(userData){
+  const saved = getSavedMetaUserData();
+  const merged = Object.assign({}, saved, userData || {});
+  
+  // Thông số thứ 3 bắt buộc của Meta Pixel: So khớp nâng cao (Advanced Matching)
+  const matchObj = {
+    country: "vn" // Luôn khai báo mã quốc gia chuẩn ISO
+  };
+
+  const formattedPhone = formatMetaPhone(merged.phone || merged.ph);
+  if(formattedPhone) matchObj.ph = formattedPhone;
+
+  const nameParts = parseMetaName(merged.name || merged.fullName);
+  if(merged.fn) matchObj.fn = String(merged.fn).trim().toLowerCase();
+  else if(nameParts.fn) matchObj.fn = nameParts.fn;
+
+  if(merged.ln) matchObj.ln = String(merged.ln).trim().toLowerCase();
+  else if(nameParts.ln) matchObj.ln = nameParts.ln;
+
+  const normProv = normalizeMetaProvince(merged.province || merged.city || merged.ct || merged.address);
+  if(normProv) matchObj.ct = normProv;
+
+  if(merged.email || merged.em) matchObj.em = String(merged.email || merged.em).trim().toLowerCase();
+  if(merged.external_id || merged.orderId) matchObj.external_id = String(merged.external_id || merged.orderId).trim();
+
+  return matchObj;
+}
+
+function updateMetaAdvancedMatching(newData){
+  if(!newData) return;
+  try {
+    const current = getSavedMetaUserData();
+    const updated = Object.assign({}, current, newData);
+    localStorage.setItem("PGD_META_USER_DATA", JSON.stringify(updated));
+    
+    if(window.fbq && currentPixelId){
+      const matchingData = buildMetaAdvancedMatching(updated);
+      // Gọi fbq('init') cập nhật thông số thứ 3 với dữ liệu so khớp mới
+      fbq('init', currentPixelId, matchingData);
+      console.log("🎯 Meta Pixel Advanced Matching Updated:", matchingData);
+    }
+  } catch(e) {
+    console.log("Error updating Meta advanced matching:", e);
+  }
+}
+
 function isValidMetaPixelId(pixelId){
   return /^\d{10,20}$/.test(String(pixelId || "").trim());
 }
 
-function initMetaPixel(pixelId){
+function initMetaPixel(pixelId, customUserData){
   const cleanId = String(pixelId || "").trim();
-  if(!isValidMetaPixelId(cleanId) || cleanId === "YOUR_PIXEL_ID" || cleanId === currentPixelId) return;
+  if(!isValidMetaPixelId(cleanId) || cleanId === "YOUR_PIXEL_ID") return;
+  
+  if(cleanId === currentPixelId){
+    if(customUserData){
+      updateMetaAdvancedMatching(customUserData);
+    }
+    return;
+  }
+
+  const advancedMatching = buildMetaAdvancedMatching(customUserData);
   currentPixelId = cleanId;
-  fbq('init', cleanId);
+
+  // Khởi tạo Pixel với thông số thứ 3: So khớp nâng cao thủ công (Manual Advanced Matching)
+  fbq('init', cleanId, advancedMatching);
   fbq('track', 'PageView');
 
   // Tự động kích hoạt ViewContent cho sản phẩm
@@ -48,7 +139,7 @@ function initMetaPixel(pixelId){
     });
   } catch(_) {}
 
-  console.log("🎯 Meta Pixel Initialized:", cleanId);
+  console.log("🎯 Meta Pixel Initialized with Advanced Matching:", cleanId, advancedMatching);
 
   // Bắn sự kiện InitiateCheckout nếu khách đã tương tác trước khi Pixel tải xong
   if(pendingInitiateCheckout && typeof trackInitiateCheckout === "function"){
@@ -2122,14 +2213,34 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
         try { sessionStorage.setItem(dedupeKey) === "1"; } catch(_) {}
         const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
         const currentTitle = data.product || document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
-        fbq('track', 'CompleteRegistration', {
+        
+        // 1. Cập nhật So Khớp Nâng Cao (Advanced Matching) đầy đủ nhất từ thông tin đơn hàng
+        updateMetaAdvancedMatching({
+          name: data.name,
+          phone: data.phone,
+          province: data.province || data.address,
+          orderId: eventId
+        });
+
+        const eventData = {
           content_name: currentTitle,
           content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
+          content_type: 'product',
           value: orderVal,
           currency: 'VND',
-          status: true
-        }, {eventID: eventId + '-reg'});
-        console.log("🎯 Meta Pixel Event: CompleteRegistration fired (" + orderVal + " VND)");
+          num_items: Number(data.quantity) || 1
+        };
+
+        // 2. Bắn sự kiện Purchase (Mua hàng chuẩn Meta e-commerce)
+        fbq('track', 'Purchase', eventData, {eventID: eventId + '-pur'});
+
+        // 3. Bắn sự kiện Lead (Khách hàng tiềm năng cho chiến dịch tối ưu hóa Lead)
+        fbq('track', 'Lead', eventData, {eventID: eventId + '-lead'});
+
+        // 4. Bắn sự kiện CompleteRegistration (Hoàn tất đăng ký)
+        fbq('track', 'CompleteRegistration', Object.assign({}, eventData, { status: true }), {eventID: eventId + '-reg'});
+
+        console.log("🎯 Meta Pixel Events fired with Advanced Matching (Purchase, Lead, CompleteRegistration) for " + eventId);
       }
 
       e.target.reset();
@@ -2145,6 +2256,50 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
 
   btn.disabled = false;
 });
+
+// ===== TỰ ĐỘNG ĐỒNG BỘ SO KHỚP NÂNG CAO (ADVANCED MATCHING) TỪ FORM ĐẶT HÀNG =====
+(function setupAdvancedMatchingInputListeners(){
+  const form = document.getElementById("orderForm");
+  if(!form) return;
+
+  const phoneInput = form.querySelector('[name="phone"]');
+  const nameInput = form.querySelector('[name="name"]');
+  const provinceSelect = form.querySelector('[name="province"]');
+  const addressInput = form.querySelector('[name="address"]');
+
+  function syncLiveInputs(){
+    const phoneVal = phoneInput ? phoneInput.value.trim() : "";
+    const nameVal = nameInput ? nameInput.value.trim() : "";
+    const provVal = provinceSelect ? provinceSelect.value.trim() : "";
+    const addrVal = addressInput ? addressInput.value.trim() : "";
+
+    const cleanDigits = phoneVal.replace(/\D/g, "");
+    const payload = {};
+    if(cleanDigits.length >= 9) payload.phone = phoneVal;
+    if(nameVal.length >= 2) payload.name = nameVal;
+    if(provVal) payload.province = provVal;
+    else if(addrVal) payload.address = addrVal;
+
+    if(Object.keys(payload).length > 0){
+      updateMetaAdvancedMatching(payload);
+    }
+  }
+
+  if(phoneInput){
+    phoneInput.addEventListener("blur", syncLiveInputs);
+    phoneInput.addEventListener("change", syncLiveInputs);
+  }
+  if(nameInput){
+    nameInput.addEventListener("blur", syncLiveInputs);
+    nameInput.addEventListener("change", syncLiveInputs);
+  }
+  if(provinceSelect){
+    provinceSelect.addEventListener("change", syncLiveInputs);
+  }
+  if(addressInput){
+    addressInput.addEventListener("blur", syncLiveInputs);
+  }
+})();
 
 function showOrderSuccessModal(orderData){
   const modal = document.getElementById("orderSuccessModal");
