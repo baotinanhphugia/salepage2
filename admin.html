@@ -1294,48 +1294,70 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     </div>
 
     <!-- HÀNG THẺ CHỈ SỐ KPI TỔNG QUAN (STAT CARDS) -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:24px;">
-      <!-- Card 1: Doanh Thu -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:24px;">
+      <!-- Card 1: Doanh Thu Thực Thu (Giao thành công) -->
+      <div style="background:#13131c; border:1px solid rgba(16,185,129,0.35); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #10b981, #059669);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; color:#34d399; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">💎 Doanh Thu Thực Thu (Giao TC)</span>
+          <span style="font-size:20px;">💵</span>
+        </div>
+        <div id="dashDeliveredRevenue" style="font-size:25px; font-weight:900; color:#34d399; letter-spacing:-0.5px;">0 đ</div>
+        <div id="dashDeliveredSub" style="font-size:11.5px; color:#6ee7b7; margin-top:6px;">0 đơn giao thành công • Tiền đã thu</div>
+      </div>
+
+      <!-- Card 2: Tiền Hàng Đang Giao -->
+      <div style="background:#13131c; border:1px solid rgba(59,130,246,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #3b82f6, #1d4ed8);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; color:#60a5fa; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">🚚 Tiền Hàng Đang Giao</span>
+          <span style="font-size:20px;">📦</span>
+        </div>
+        <div id="dashShippingRevenue" style="font-size:25px; font-weight:900; color:#93c5fd; letter-spacing:-0.5px;">0 đ</div>
+        <div id="dashShippingSub" style="font-size:11.5px; color:#9ca3af; margin-top:6px;">0 đơn đang vận chuyển</div>
+      </div>
+
+      <!-- Card 3: Tổng Doanh Số Tạm Tính -->
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
         <div style="position:absolute; top:0; left:0; right:0; height:3px; background:var(--gold-gradient);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;" id="dashRevTitle">💰 Doanh Thu Thực Thu (MISA)</span>
-          <span style="font-size:20px;">💵</span>
+          <span style="font-size:12px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;" id="dashRevTitle">💰 Tổng Doanh Số Tạm Tính</span>
+          <span style="font-size:20px;">📊</span>
         </div>
-        <div id="dashTotalRevenue" style="font-size:26px; font-weight:900; color:#ffd875; letter-spacing:-0.5px;">0 đ</div>
-        <div id="dashRevenueSub" style="font-size:11.5px; color:#6ee7b7; margin-top:6px;">Chuẩn xác theo đối soát MISA</div>
+        <div id="dashTotalRevenue" style="font-size:25px; font-weight:900; color:#ffd875; letter-spacing:-0.5px;">0 đ</div>
+        <div id="dashRevenueSub" style="font-size:11.5px; color:#ffd875; margin-top:6px;">Tất cả đơn hàng hợp lệ</div>
       </div>
 
-      <!-- Card 2: Size Bán Chạy Nhất -->
+      <!-- Card 4: Size Bán Chạy Nhất -->
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
-        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #10b981, #059669);"></div>
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #f59e0b, #d97706);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">💎 Size Bán & Giao Chạy Nhất</span>
+          <span style="font-size:12px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">💎 Size Bán Chạy Nhất</span>
           <span style="font-size:20px;">🏆</span>
         </div>
-        <div id="dashTopSize" style="font-size:26px; font-weight:900; color:#fff; letter-spacing:-0.5px;">---</div>
+        <div id="dashTopSize" style="font-size:24px; font-weight:900; color:#fff; letter-spacing:-0.5px;">---</div>
         <div id="dashTopSizeSub" style="font-size:11.5px; color:#ffd875; margin-top:6px;">0 chiếc/đôi đã bán</div>
       </div>
 
-      <!-- Card 3: Tổng Sản Phẩm Đã Bán -->
+      <!-- Card 5: Tổng Sản Phẩm Đã Bán -->
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
-        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #3b82f6, #1d4ed8);"></div>
+        <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #06b6d4, #0891b2);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">📦 Sản Phẩm Đã Bán / Giao</span>
+          <span style="font-size:12px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">📦 Sản Phẩm Đã Đặt</span>
           <span style="font-size:20px;">💍</span>
         </div>
-        <div id="dashTotalQty" style="font-size:26px; font-weight:900; color:#93c5fd; letter-spacing:-0.5px;">0 SP</div>
+        <div id="dashTotalQty" style="font-size:25px; font-weight:900; color:#a5f3fc; letter-spacing:-0.5px;">0 SP</div>
         <div id="dashTotalQtySub" style="font-size:11.5px; color:#9ca3af; margin-top:6px;">0 Đôi • 0 Chiếc lẻ</div>
       </div>
 
-      <!-- Card 4: Giá Trị Đơn Trung Bình (AOV) -->
+      <!-- Card 6: Tỷ Lệ Giao Thành Công -->
       <div style="background:#13131c; border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
         <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(135deg, #a855f7, #7e22ce);"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12.5px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">🎯 Tỷ Lệ Giao Thành Công</span>
+          <span style="font-size:12px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">🎯 Tỷ Lệ Giao Thành Công</span>
           <span style="font-size:20px;">🎖️</span>
         </div>
-        <div id="dashAOV" style="font-size:26px; font-weight:900; color:#d8b4fe; letter-spacing:-0.5px;">100%</div>
+        <div id="dashAOV" style="font-size:25px; font-weight:900; color:#d8b4fe; letter-spacing:-0.5px;">100%</div>
         <div id="dashAOVSub" style="font-size:11.5px; color:#ffd875; margin-top:6px;">AOV: 0 đ • Hoàn: 0%</div>
       </div>
     </div>
@@ -1371,20 +1393,21 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
         <table style="width:100%; border-collapse:collapse;" id="dashSizeTable">
           <thead>
             <tr style="background:#161622; border-bottom:2px solid #272738;">
-              <th style="padding:12px 14px; text-align:center; width:60px; color:#ffd875; font-size:12.5px;">Hạng</th>
-              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Kích Cỡ & Quy Cách</th>
-              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12.5px;">Mã Hàng (MISA SKU)</th>
-              <th style="padding:12px 14px; text-align:center; color:#34d399; font-size:12.5px;">Thực Giao (Mã 80)</th>
-              <th style="padding:12px 14px; text-align:center; color:#38bdf8; font-size:12.5px;">Đang Giao</th>
-              <th style="padding:12px 14px; text-align:center; color:#f87171; font-size:12.5px;">Đã Hủy (Mã 90)</th>
-              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px;">Tổng Đặt</th>
-              <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12.5px;">Doanh Thu Thực Thu</th>
-              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12.5px; width:150px;">Tỷ Trọng (%)</th>
-              <th style="padding:12px 14px; text-align:center; color:#6ee7b7; font-size:12.5px;">Tỷ Lệ Giao TC (%)</th>
+              <th style="padding:12px 14px; text-align:center; width:50px; color:#ffd875; font-size:12px;">Hạng</th>
+              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12px;">Kích Cỡ & Quy Cách</th>
+              <th style="padding:12px 14px; text-align:left; color:#ffd875; font-size:12px;">Mã Hàng (MISA SKU)</th>
+              <th style="padding:12px 14px; text-align:center; color:#34d399; font-size:12px;">Thực Giao (Mã 80)</th>
+              <th style="padding:12px 14px; text-align:center; color:#38bdf8; font-size:12px;">Đang Giao</th>
+              <th style="padding:12px 14px; text-align:center; color:#f87171; font-size:12px;">Đã Hủy (Mã 90)</th>
+              <th style="padding:12px 14px; text-align:center; color:#fff; font-size:12px;">Tổng Đặt</th>
+              <th style="padding:12px 14px; text-align:right; color:#34d399; font-size:12.5px; font-weight:800;">Doanh Thu Thực Thu</th>
+              <th style="padding:12px 14px; text-align:right; color:#ffd875; font-size:12px;">Doanh Số Tạm Tính</th>
+              <th style="padding:12px 14px; text-align:center; color:#ffd875; font-size:12px; width:130px;">Tỷ Trọng (%)</th>
+              <th style="padding:12px 14px; text-align:center; color:#6ee7b7; font-size:12px;">Tỷ Lệ Giao TC (%)</th>
             </tr>
           </thead>
           <tbody id="dashSizeTableBody">
-            <tr><td colspan="10" style="text-align:center; padding:30px; color:#888;">⏳ Đang tổng hợp dữ liệu báo cáo doanh số...</td></tr>
+            <tr><td colspan="11" style="text-align:center; padding:30px; color:#888;">⏳ Đang tổng hợp dữ liệu báo cáo doanh số...</td></tr>
           </tbody>
           <tfoot id="dashSizeTableFoot" style="background:#14141e; font-weight:700; border-top:2px solid #272738;">
             <!-- Tổng cộng footer -->
@@ -1408,27 +1431,46 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
     </div>
 
     <!-- BANNER TÓM TẮT DOANH SỐ NHANH TRÊN TAB ĐƠN HÀNG -->
-    <div style="background:linear-gradient(135deg, rgba(20,20,30,0.9), rgba(30,27,55,0.7)); border:1px solid rgba(214,173,69,0.3); border-radius:14px; padding:12px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="background:linear-gradient(135deg, rgba(20,20,30,0.95), rgba(30,27,55,0.8)); border:1px solid rgba(214,173,69,0.35); border-radius:14px; padding:12px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
       <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:18px;">💰</span>
+        <!-- Doanh số Thực thu -->
+        <div style="display:flex; align-items:center; gap:9px; background:rgba(16,185,129,0.12); padding:6px 12px; border-radius:10px; border:1px solid rgba(16,185,129,0.25);">
+          <span style="font-size:20px;">💎</span>
           <div>
-            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase;">Doanh số</div>
+            <div style="font-size:11px; color:#34d399; font-weight:700; text-transform:uppercase; letter-spacing:0.3px;">Doanh Thu Thực Thu</div>
+            <div id="ordersMiniDeliveredRevenue" style="font-size:16.5px; font-weight:900; color:#34d399;">0 đ</div>
+          </div>
+        </div>
+        <!-- Tiền đang giao -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:19px;">🚚</span>
+          <div>
+            <div style="font-size:11px; color:#60a5fa; font-weight:700; text-transform:uppercase;">Đang Giao Hàng</div>
+            <div id="ordersMiniShippingRevenue" style="font-size:16px; font-weight:800; color:#93c5fd;">0 đ</div>
+          </div>
+        </div>
+        <!-- Tổng tạm tính -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:19px;">💰</span>
+          <div>
+            <div style="font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase;">Tổng Tạm Tính</div>
             <div id="ordersMiniRevenue" style="font-size:16px; font-weight:800; color:#ffd875;">0 đ</div>
           </div>
         </div>
+        <!-- Size Bán Chạy Nhất -->
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:18px;">💎</span>
+          <span style="font-size:19px;">🏆</span>
           <div>
-            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase;">Size Bán Chạy Nhất</div>
+            <div style="font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase;">Size Bán Chạy</div>
             <div id="ordersMiniTopSize" style="font-size:16px; font-weight:800; color:#6ee7b7;">---</div>
           </div>
         </div>
+        <!-- Đã bán ra -->
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:18px;">📦</span>
+          <span style="font-size:19px;">📦</span>
           <div>
-            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase;">Đã Bán Ra</div>
-            <div id="ordersMiniCount" style="font-size:16px; font-weight:800; color:#93c5fd;">0 SP</div>
+            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase; font-weight:600;">Đã Bán Ra</div>
+            <div id="ordersMiniCount" style="font-size:16px; font-weight:800; color:#fff;">0 SP</div>
           </div>
         </div>
       </div>
@@ -4502,7 +4544,10 @@ function renderDashboardReport() {
       sizeMap[itemKey].deliveredQty += qty;
       sizeMap[itemKey].deliveredRevenue += price;
     }
-    if (isShipping) sizeMap[itemKey].shippingQty += qty;
+    if (isShipping) {
+      sizeMap[itemKey].shippingQty += qty;
+      sizeMap[itemKey].shippingRevenue = (sizeMap[itemKey].shippingRevenue || 0) + price;
+    }
     if (isReturned) sizeMap[itemKey].returnedQty += qty;
   });
 
@@ -4521,6 +4566,7 @@ function renderDashboardReport() {
         revenue: 0,
         deliveredQty: 0,
         shippingQty: 0,
+        shippingRevenue: 0,
         cancelledQty: c.qty,
         cancelledOrders: c.orders,
         returnedQty: 0,
@@ -4550,13 +4596,30 @@ function renderDashboardReport() {
   const deliveryRate = totalFinished > 0 ? (deliveredCount / totalFinished * 100).toFixed(1) : (deliveredCount > 0 ? "100.0" : "100.0");
   const returnRate = totalOrdersCount > 0 ? (returnedCount / totalOrdersCount * 100).toFixed(1) : "0.0";
 
+  const overallDeliveredRevenue = sizes.reduce((acc, x) => acc + (x.deliveredRevenue || 0), 0);
+  const overallShippingRevenue = sizes.reduce((acc, x) => acc + (x.shippingRevenue || 0), 0);
+
   // Cập nhật Stat Cards
+  if ($("#dashDeliveredRevenue")) {
+    $("#dashDeliveredRevenue").innerText = overallDeliveredRevenue.toLocaleString("vi-VN") + " đ";
+  }
+  if ($("#dashDeliveredSub")) {
+    $("#dashDeliveredSub").innerText = `${deliveredCount} đơn giao thành công • Tiền đã về`;
+  }
+
+  if ($("#dashShippingRevenue")) {
+    $("#dashShippingRevenue").innerText = overallShippingRevenue.toLocaleString("vi-VN") + " đ";
+  }
+  if ($("#dashShippingSub")) {
+    $("#dashShippingSub").innerText = `${shippingCount} đơn đang vận chuyển`;
+  }
+
   if ($("#dashRevTitle")) {
     if (statusFilter === "delivered") $("#dashRevTitle").innerText = "💰 Doanh Thu Thực Thu (MISA)";
     else if (statusFilter === "shipping") $("#dashRevTitle").innerText = "🚚 Doanh Số Đang Giao";
     else if (statusFilter === "returned") $("#dashRevTitle").innerText = "↩️ Hàng Hoàn / Thất Bại";
     else if (statusFilter === "cancelled") $("#dashRevTitle").innerText = "❌ Doanh Số Đơn Đã Hủy";
-    else $("#dashRevTitle").innerText = "💰 Tổng Doanh Thu Tạm Tính";
+    else $("#dashRevTitle").innerText = "💰 Tổng Doanh Số Tạm Tính";
   }
   if ($("#dashTotalRevenue")) $("#dashTotalRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + " đ";
   if ($("#dashRevenueSub")) {
@@ -4593,6 +4656,8 @@ function renderDashboardReport() {
   }
 
   // Cập nhật Mini Banner trong tab Orders
+  if ($("#ordersMiniDeliveredRevenue")) $("#ordersMiniDeliveredRevenue").innerText = overallDeliveredRevenue.toLocaleString("vi-VN") + " đ";
+  if ($("#ordersMiniShippingRevenue")) $("#ordersMiniShippingRevenue").innerText = overallShippingRevenue.toLocaleString("vi-VN") + " đ";
   if ($("#ordersMiniRevenue")) $("#ordersMiniRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + " đ";
   if ($("#ordersMiniTopSize")) $("#ordersMiniTopSize").innerText = topSize ? `${topSize.size} (${topSize.variant})` : "---";
   if ($("#ordersMiniCount")) $("#ordersMiniCount").innerText = `${totalQty} SP (${totalOrdersCount} đơn)`;
@@ -4633,11 +4698,12 @@ function renderDashboardSizeBars(sizes, totalRevenue) {
             </span>
             <span style="font-size:12px; color:#9ca3af;">(Mã: <code style="color:#ffd875; font-weight:700; font-family:'JetBrains Mono',monospace;">${escapeHtml(s.sku || s.sampleSku || 'N/A')}</code>)</span>
           </div>
-          <div style="display:flex; align-items:center; gap:12px; font-size:13px;">
+          <div style="display:flex; align-items:center; gap:12px; font-size:13px; flex-wrap:wrap;">
             <span style="color:#93c5fd; font-weight:600;">📦 ${s.quantity} SP (${s.orders} đơn)</span>
             <span style="color:#34d399; font-weight:600; font-size:12px;">(🟢 Giao: ${s.deliveredQty})</span>
             ${cancelBadge}
-            <strong style="color:#ffd875; font-size:14px;">${s.revenue.toLocaleString('vi-VN')} đ</strong>
+            <span style="color:#34d399; font-weight:800; font-size:13.5px;">💎 Thực thu: ${(s.deliveredRevenue || 0).toLocaleString('vi-VN')} đ</span>
+            <span style="color:#ffd875; font-weight:600; font-size:13px;">(Tạm tính: ${s.revenue.toLocaleString('vi-VN')} đ)</span>
             <span style="background:rgba(16,185,129,0.18); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); padding:2px 7px; border-radius:6px; font-weight:700; font-size:11.5px;">${s.revPercent}%</span>
           </div>
         </div>
@@ -4659,7 +4725,7 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
   if (!sizes || sizes.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="10" style="text-align:center; padding:36px; color:#888;">
+        <td colspan="11" style="text-align:center; padding:36px; color:#888;">
           Không có đơn hàng nào khớp với bộ lọc thời gian hoặc trạng thái này.
         </td>
       </tr>
@@ -4667,6 +4733,8 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
     if (tfoot) tfoot.innerHTML = "";
     return;
   }
+
+  const overallDeliveredRevenue = sizes.reduce((acc, x) => acc + (x.deliveredRevenue || 0), 0);
 
   let rowsHtml = "";
   sizes.forEach(s => {
@@ -4712,7 +4780,10 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
         <td style="padding:12px 14px; text-align:center; font-weight:700; color:#fff; font-size:14px;">
           ${s.quantity} SP <span style="font-size:11px; color:#9ca3af;">(${s.orders} đơn)</span>
         </td>
-        <td style="padding:12px 14px; text-align:right; font-weight:800; color:#ffd875; font-size:14px;">
+        <td style="padding:12px 14px; text-align:right; font-weight:900; color:#34d399; font-size:14.5px;">
+          ${(s.deliveredRevenue || 0).toLocaleString('vi-VN')} đ
+        </td>
+        <td style="padding:12px 14px; text-align:right; font-weight:700; color:#ffd875; font-size:13.5px;">
           ${s.revenue.toLocaleString('vi-VN')} đ
         </td>
         <td style="padding:12px 14px; text-align:center;">
@@ -4759,7 +4830,10 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
         <td style="padding:14px; text-align:center; font-size:15px; color:#fff; font-weight:900;">
           ${totalQty} SP (${totalOrdersCount} đơn)
         </td>
-        <td style="padding:14px; text-align:right; font-size:16px; color:#ffd875; font-weight:900;">
+        <td style="padding:14px; text-align:right; font-size:16px; color:#34d399; font-weight:900;">
+          ${overallDeliveredRevenue.toLocaleString('vi-VN')} đ
+        </td>
+        <td style="padding:14px; text-align:right; font-size:15px; color:#ffd875; font-weight:900;">
           ${totalRevenue.toLocaleString('vi-VN')} đ
         </td>
         <td style="padding:14px; text-align:center; font-size:13px; color:#6ee7b7; font-weight:800;">
