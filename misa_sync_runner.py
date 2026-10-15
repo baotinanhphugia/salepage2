@@ -647,17 +647,23 @@ def sync_misa_delivery_statuses(from_date=None):
                 continue
 
             for v in vouchers:
+                v_channel = str(v.get("channel_name") or "").strip().lower()
+                # TUYỆT ĐỐI KHÔNG đối soát với đơn hàng từ các sàn khác (TikTok Shop, Shopee...)
+                if "tiktok" in v_channel or "shopee" in v_channel:
+                    continue
+
                 v_no = str(v.get("order_no") or "").strip()
                 c_vno = clean_misa_order_no(v_no)
                 v_note = str(v.get("employee_note") or "")
                 v_tel = str(v.get("recipient_tel") or "").replace(" ", "")
 
+                # Đơn website bắt buộc phải có order_id PGD-VN trong ghi chú, hoặc cùng SĐT, hoặc khớp chính xác mã eShop kênh riêng
                 matched = False
-                if c_eshop and c_vno and c_eshop == c_vno:
+                if order_id and order_id in v_note:
                     matched = True
-                elif order_id and order_id in v_note:
+                elif phone and v_tel and len(v_tel) >= 9 and phone.endswith(v_tel[-9:]):
                     matched = True
-                elif phone and v_tel and phone.endswith(v_tel[-9:]):
+                elif c_eshop and c_vno and c_eshop == c_vno and v_channel in ["", "website", "tự giao", "bán lẻ", "trực tiếp"]:
                     matched = True
 
                 if matched:
