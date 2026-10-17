@@ -584,140 +584,62 @@ def call_apps_script(payload):
     with urllib.request.urlopen(req, timeout=15) as resp:
         return json.loads(resp.read().decode('utf-8'))
 
-# --- VÒNG LẶP QUÉT VÀ ĐỒNG BỘ ĐƠN TỪ GOOGLE SHEET ---
-_last_delivery_sync_time = 0
-DELIVERY_SYNC_INTERVAL_SECONDS = 120  # 2 phút tự động đối soát & đồng bộ trạng thái giao hàng / hủy từ MISA 1 lần
+# ==============================================================================
+# SPX EXPRESS LOGISTICS & TRACKING MODULE (Shopee Express)
+# Quản lý vận chuyển, tra cứu mã vận đơn SPX VN và cập nhật Doanh Thu Thực Thu
+# ==============================================================================
 
-def clean_misa_order_no(code_str):
-    if not code_str:
-        return ""
-    import re
-    digits = re.sub(r'\D', '', str(code_str))
-    return digits.lstrip('0')
+def build_spx_tracking_url(tracking_number):
+    clean_tn = str(tracking_number or "").strip()
+    if not clean_tn:
+        return "https://spx.vn/"
+    return f"https://spx.vn/track?{clean_tn}"
 
-def fetch_misa_vouchers(from_date=None, max_pages=25):
-    try:
-        token = get_misa_token()
-        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
-        all_vouchers = []
-        for page in range(1, max_pages + 1):
-            payload = {"page": page, "page_size": 100}
-            if from_date:
-                payload["from_date"] = from_date
-            req = urllib.request.Request(
-                "https://eshopapp.misa.vn/api/platform/openpartnervouchers/orders",
-                data=json.dumps(payload).encode("utf-8"),
-                headers=headers,
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                res = json.loads(resp.read().decode("utf-8"))
-                vdata = res.get("Data", {}).get("VoucherData", []) or []
-                if not vdata:
-                    break
-                all_vouchers.extend(vdata)
-        return all_vouchers
-    except Exception as e:
-        print(f"[MISA VOUCHERS ERROR] {e}")
-        return []
-
-def sync_misa_delivery_statuses(from_date=None):
+def check_spx_order_tracking(tracking_number):
     """
-    Đồng bộ trạng thái giao hàng thực tế từ MISA eShop Open API về Google Sheets.
-    Phân loại chuẩn: 80 -> Giao thành công (Thực thu), 90 -> Đã hủy, 60/70 -> Đang giao, 100/130/140 -> Hoàn trả.
+    Tra cứu trạng thái vận đơn SPX Express Việt Nam.
+    Trả về link tra cứu trực tiếp và kết quả hành trình (nếu có).
     """
+    clean_tn = str(tracking_number or "").strip()
+    if not clean_tn:
+        return {"ok": False, "error": "Thiếu mã vận đơn SPX"}
+
+    track_url = build_spx_tracking_url(clean_tn)
+
     try:
-        vouchers = fetch_misa_vouchers(from_date=from_date)
-        print(f"[MISA SYNC] Đang đối soát với {len(vouchers)} đơn từ MISA eShop...")
-        if not vouchers:
-            return {"ok": True, "count": 0, "message": "Không có chứng từ MISA nào."}
+        api_url = "https://spx.vn/shipment/order/open/order/get_order_info"
+        headers = {
+            "accept": "application/json, text/plain, */*",
+            "referer": track_url,
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        }
+        req = urllib.request.Request(f"{api_url}?spx_tn={clean_tn}", headers=headers)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if data.get("retcode") == 0:
+                order_info = data.get("data", {}).get("order_info", {})
+                status_name = order_info.get("tracking_code_subgroup_name") or order_info.get("tracking_code_group_name") or "Đang giao hàng"
+                return {
+                    "ok": True,
+                    "tracking_number": clean_tn,
+                    "status": status_name,
+                    "tracking_url": track_url,
+                    "carrier": "SPX Express",
+                    "data": data.get("data", {})
+                }
+    except Exception:
+        pass
 
-        sheet_res = call_apps_script({"action": "orders", "key": ADMIN_KEY})
-        sheet_orders = sheet_res.get("orders", []) if sheet_res.get("ok") else []
-
-        updates = []
-        for o in sheet_orders:
-            order_id = str(o.get("orderId") or "").strip()
-            eshop_code = str(o.get("eshopCode") or "").strip()
-            c_eshop = clean_misa_order_no(eshop_code)
-            phone = str(o.get("phone") or "").replace(" ", "").replace("+84", "0")
-            curr_status = str(o.get("status") or "")
-
-            if not c_eshop and not order_id and not phone:
-                continue
-
-            for v in vouchers:
-                v_channel = str(v.get("channel_name") or "").strip().lower()
-                # TUYỆT ĐỐI KHÔNG đối soát với đơn hàng từ các sàn khác (TikTok Shop, Shopee...)
-                if "tiktok" in v_channel or "shopee" in v_channel:
-                    continue
-
-                v_no = str(v.get("order_no") or "").strip()
-                c_vno = clean_misa_order_no(v_no)
-                v_note = str(v.get("employee_note") or "")
-                v_tel = str(v.get("recipient_tel") or "").replace(" ", "")
-
-                # Đơn website bắt buộc phải có order_id PGD-VN trong ghi chú, hoặc cùng SĐT, hoặc khớp chính xác mã eShop kênh riêng
-                matched = False
-                if order_id and order_id in v_note:
-                    matched = True
-                elif phone and v_tel and len(v_tel) >= 9 and phone.endswith(v_tel[-9:]):
-                    matched = True
-                elif c_eshop and c_vno and c_eshop == c_vno and v_channel in ["", "website", "tự giao", "bán lẻ", "trực tiếp"]:
-                    matched = True
-
-                if matched:
-                    ostatus = v.get("order_status")
-                    sname = v.get("status_name", "")
-                    dcode = v.get("delivery_code", "")
-                    spartner = v.get("shipping_partner_name", "")
-
-                    new_status = curr_status
-                    if ostatus == 90:
-                        new_status = "Đã hủy"
-                    elif ostatus == 80:
-                        new_status = "Giao thành công"
-                    elif ostatus in [60, 70]:
-                        new_status = "Đang giao hàng"
-                    elif ostatus == 100:
-                        new_status = "Giao thất bại"
-                    elif ostatus in [130, 140]:
-                        new_status = "Chuyển hoàn"
-                    elif ostatus in [20, 30]:
-                        new_status = "Đang xử lý (MISA)"
-
-                    cancel_reason = str(v.get("cancel_reason") or v.get("reason_cancel") or "")
-                    updates.append({
-                        "orderId": order_id,
-                        "eshopCode": v_no,
-                        "orderStatus": ostatus,
-                        "statusName": sname,
-                        "status": new_status,
-                        "deliveryCode": dcode,
-                        "shippingPartner": spartner,
-                        "cancelReason": cancel_reason if ostatus == 90 else "",
-                        "totalAmount": v.get("total_amount")
-                    })
-                    break
-
-        if updates:
-            sync_res = call_apps_script({
-                "action": "syncMisaDeliveryStatuses",
-                "key": ADMIN_KEY,
-                "updates": updates
-            })
-            print(f"[MISA SYNC SUCCESS] Đã đồng bộ trạng thái giao hàng {len(updates)} đơn sang Google Sheet!")
-            return {"ok": True, "count": len(updates), "updates": updates, "total_vouchers": len(vouchers)}
-        else:
-            print(f"[MISA SYNC] Không có thay đổi trạng thái giao hàng mới.")
-            return {"ok": True, "count": 0, "updates": [], "total_vouchers": len(vouchers)}
-    except Exception as e:
-        print(f"[MISA SYNC ERROR] {e}")
-        return {"ok": False, "error": str(e)}
+    return {
+        "ok": True,
+        "tracking_number": clean_tn,
+        "tracking_url": track_url,
+        "carrier": "SPX Express",
+        "message": f"Tra cứu trực tiếp trên SPX.vn tại: {track_url}"
+    }
 
 def sync_loop():
-    global _last_delivery_sync_time
-    print(f"[DAEMON] MISA Sync Runner đã kích hoạt! Đang quét hàng đợi mỗi {POLL_INTERVAL_SECONDS}s...")
+    print(f"[DAEMON] Order Sync Runner đã kích hoạt! Đang quét hàng đợi mỗi {POLL_INTERVAL_SECONDS}s...")
     while True:
         try:
             # 1. Lấy danh sách đơn hàng đang chờ đẩy
@@ -753,15 +675,6 @@ def sync_loop():
                             "orderId": order_id,
                             "error": push_res.get("error", "Lỗi tạo đơn")
                         })
-
-            # Định kỳ 10 phút tự động đồng bộ trạng thái giao hàng MISA
-            now = time.time()
-            if now - _last_delivery_sync_time >= DELIVERY_SYNC_INTERVAL_SECONDS:
-                _last_delivery_sync_time = now
-                try:
-                    sync_misa_delivery_statuses()
-                except Exception as ex_sync:
-                    print(f"[AUTO SYNC NOTICE] {ex_sync}")
 
         except Exception as e:
             # Ghi nhận lỗi kết nối mạng / timeout
@@ -941,8 +854,10 @@ class LocalServerHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"ok": True, "items": items, "total": len(items)}, ensure_ascii=False).encode('utf-8'))
             return
-        if parsed.path in ["/sync-delivery", "/sync-status", "/misa/sync"]:
-            res = sync_misa_delivery_statuses()
+        if parsed.path in ["/spx/track", "/spx/tracking"]:
+            qs = parse_qs(parsed.query)
+            tn = (qs.get("tracking_no") or qs.get("tn") or [""])[0]
+            res = check_spx_order_tracking(tn)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
@@ -962,8 +877,29 @@ class LocalServerHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
-        if parsed.path in ["/sync-delivery", "/sync-status", "/misa/sync"]:
-            res = sync_misa_delivery_statuses()
+        if parsed.path in ["/spx/update"]:
+            content_len = int(self.headers.get('Content-Length', 0))
+            body = {}
+            if content_len > 0:
+                try:
+                    body = json.loads(self.rfile.read(content_len).decode('utf-8'))
+                except Exception:
+                    pass
+            order_id = body.get("orderId", "")
+            spx_code = body.get("spxCode", "")
+            status = body.get("status", "")
+            if not order_id:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"ok": False, "error": "Thiếu orderId"}).encode())
+                return
+            update_payload = {"action": "updateStatus", "key": ADMIN_KEY, "orderId": order_id}
+            if status:
+                update_payload["status"] = status
+            if spx_code:
+                update_payload["spxCode"] = spx_code
+            res = call_apps_script(update_payload)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()

@@ -1513,8 +1513,8 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           <option value="Đã hủy">❌ Đã hủy (Xem riêng)</option>
           <option value="Chuyển hoàn">↩️ Chuyển hoàn</option>
         </select>
-        <button type="button" class="btn2" onclick="syncMisaDeliveryStatusNow()" style="background:linear-gradient(135deg, #10b981, #059669); border-color:#34d399; color:#fff; font-size:12.5px; font-weight:700; padding:7px 12px; display:inline-flex; align-items:center; gap:5px; border-radius:8px; cursor:pointer;" title="Đồng bộ trạng thái đơn thực tế từ MISA eShop">
-          <span>🔄</span> Đồng bộ MISA
+        <button type="button" class="btn2" onclick="openSpxTrackingDialog()" style="background:linear-gradient(135deg, #ea580c, #c2410c); border-color:#f97316; color:#fff; font-size:12.5px; font-weight:700; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(234,88,12,0.3);" title="Tra cứu nhanh vận đơn bưu kiện trên SPX Express (Shopee Express)">
+          <span>🚚</span> Tra Cứu SPX
         </button>
         <span id="orderSearchCount" style="font-size:13px; color:#d6ad45; font-weight:700; white-space:nowrap; margin-left:6px;"></span>
       </div>
@@ -1677,6 +1677,24 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
               <input type="checkbox" id="editIncludeCard" checked style="width:17px; height:17px; accent-color:var(--gold-primary);">
               📑 Kèm Thẻ Kiểm Định GRA (<code>CARD</code>)
             </label>
+          </div>
+        </div>
+
+        <!-- THÔNG TIN VẬN ĐƠN SPX EXPRESS -->
+        <div style="margin-top:14px; background:rgba(249, 115, 22, 0.08); border:1px solid rgba(249, 115, 22, 0.35); border-radius:12px; padding:12px 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <label style="margin:0; font-weight:700; color:#fb923c; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+              <span>🚚</span> Mã Vận Đơn SPX Express (Shopee Express)
+            </label>
+            <a id="btnTrackSpxLink" href="#" target="_blank" style="background:#ea580c; color:#fff; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:6px; text-decoration:none; display:none;" title="Tra cứu trực tiếp hành trình trên SPX.vn">
+              🔍 Mở SPX.vn Tra Cứu
+            </a>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="editSpxTrackingCode" placeholder="Nhập mã vận đơn SPX (Ví dụ: SPXVN...)" style="flex:1; font-family:'JetBrains Mono',monospace; font-weight:700; color:#fed7aa; background:#0e0e16; border:1px solid #4a2d1d;">
+            <button type="button" onclick="openSpxFromModalInput()" style="background:#ea580c; color:#fff; font-size:12px; font-weight:700; border:none; padding:0 12px; border-radius:8px; cursor:pointer; white-space:nowrap;">
+              🔍 Tra cứu
+            </button>
           </div>
         </div>
 
@@ -3804,12 +3822,18 @@ function renderOrdersTable(orders, searchQuery = "") {
         </div>
       `;
     } else if (isLocked && !isSessionUnlocked) {
+      const spxCode = extractSpxCode(o);
+      const spxBadge = spxCode 
+        ? `<a href="https://spx.vn/track?${encodeURIComponent(spxCode)}" target="_blank" style="display:inline-flex; align-items:center; gap:3px; background:rgba(234,88,12,0.18); border:1px solid #ea580c; color:#fdba74; font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; text-decoration:none;" title="Bấm tra cứu hành trình trực tiếp trên SPX.vn">🚚 SPX: <b>${escapeHtml(spxCode)}</b> ↗</a>`
+        : `<button type="button" onclick="quickAddSpxCode('${o.orderId}')" style="background:none; border:1px dashed #f97316; color:#fb923c; font-size:9.5px; font-weight:600; padding:1px 5px; border-radius:4px; cursor:pointer;" title="Gắn mã vận đơn SPX Express">+ Mã SPX</button>`;
+
       actionsHtml = `
-        <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:130px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; min-width:130px;">
           <div style="display:inline-flex; align-items:center; justify-content:center; gap:5px; width:100%; background:rgba(30,41,59,0.85); border:1px solid rgba(59,130,246,0.5); padding:3px 8px; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.3);">
             <span style="color:#93c5fd; font-size:10.5px; font-weight:700; white-space:nowrap;">MISA: <b>${escapeHtml(o.eshopCode || '#Đã tạo')}</b></span>
             ${isAdmin ? `<button type="button" onclick="unlockOrderAction('${o.orderId}')" style="background:none; border:none; color:#fbbf24; cursor:pointer; font-size:10px; font-weight:700; padding:0 2px; text-decoration:underline;" title="Mở khoá thao tác toàn diện cho Admin">[Mở]</button>` : ''}
           </div>
+          <div>${spxBadge}</div>
           <div style="display:flex; gap:3px; justify-content:center; flex-wrap:wrap;">
             <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${displayPhone}')" title="Gọi khách">📞 Gọi</button>
             <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Nhắn Zalo">💬 Zalo</button>
@@ -3829,9 +3853,15 @@ function renderOrdersTable(orders, searchQuery = "") {
           </div>
         `;
       }
+      const spxCode = extractSpxCode(o);
+      const spxBadge = spxCode 
+        ? `<a href="https://spx.vn/track?${encodeURIComponent(spxCode)}" target="_blank" style="display:inline-flex; align-items:center; gap:3px; background:rgba(234,88,12,0.18); border:1px solid #ea580c; color:#fdba74; font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; text-decoration:none; margin-bottom:3px;" title="Bấm tra cứu hành trình trực tiếp trên SPX.vn">🚚 SPX: <b>${escapeHtml(spxCode)}</b> ↗</a>`
+        : `<button type="button" onclick="quickAddSpxCode('${o.orderId}')" style="background:none; border:1px dashed #f97316; color:#fb923c; font-size:9.5px; font-weight:600; padding:1px 5px; border-radius:4px; cursor:pointer; margin-bottom:3px;" title="Gắn mã vận đơn SPX Express">+ Mã SPX</button>`;
+
       actionsHtml = `
         <div style="display:flex; flex-direction:column; align-items:center;">
           ${unlockBanner}
+          <div>${spxBadge}</div>
           <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
             <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${displayPhone}')" title="Gọi điện & cập nhật trạng thái">📞 Gọi</button>
             <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Mở Zalo & cập nhật trạng thái">💬 Zalo</button>
@@ -3866,6 +3896,91 @@ function renderOrdersTable(orders, searchQuery = "") {
     });
     tbody.appendChild(tr);
   });
+}
+
+// ==============================================================================
+// SPX EXPRESS TRACKING & GIAO VẬN (Shopee Express)
+// ==============================================================================
+function extractSpxCode(order) {
+  if (!order) return "";
+  const eshop = String(order.eshopCode || "");
+  const note = String(order.note || "");
+  let m = note.match(/\[SPX:\s*([^\]|]+)\]/i);
+  if (m) return m[1].trim();
+  m = eshop.match(/SPX[A-Z0-9]+/i);
+  if (m) return m[0].trim();
+  m = note.match(/SPX[A-Z0-9]+/i);
+  if (m) return m[0].trim();
+  return "";
+}
+
+function openSpxTrackingDialog(defaultCode = "") {
+  const code = prompt("Nhập mã vận đơn SPX Express (Shopee Express) cần tra cứu:\n(Ví dụ: SPXVN...)", defaultCode);
+  if (code && code.trim()) {
+    const cleanCode = code.trim().toUpperCase();
+    window.open(`https://spx.vn/track?${encodeURIComponent(cleanCode)}`, "_blank");
+  }
+}
+
+function openSpxFromModalInput() {
+  const code = $("#editSpxTrackingCode") ? $("#editSpxTrackingCode").value.trim() : "";
+  if (!code) {
+    alert("Vui lòng nhập mã vận đơn SPX trước khi tra cứu!");
+    return;
+  }
+  window.open(`https://spx.vn/track?${encodeURIComponent(code)}`, "_blank");
+}
+
+async function quickAddSpxCode(orderId) {
+  const code = prompt(`Nhập mã vận đơn SPX Express cho đơn ${orderId}:\n(Ví dụ: SPXVN04918237192)`);
+  if (!code || !code.trim()) return;
+  const spxCode = code.trim().toUpperCase();
+
+  showStatus(`⏳ Đang gắn mã vận đơn SPX ${spxCode} cho đơn ${orderId}...`, true);
+  try {
+    const order = currentOrdersList.find(o => o.orderId === orderId);
+    let note = order ? String(order.note || "") : "";
+    note = note.replace(/\[SPX:[^\]]+\]/gi, "").trim();
+    const updatedNote = note ? `${note} [SPX: ${spxCode}]` : `[SPX: ${spxCode}]`;
+
+    let newStatus = order ? order.status : "Đang giao hàng";
+    if (newStatus === "Đã đẩy eShop" || newStatus === "Chờ xác nhận" || !newStatus) {
+      newStatus = "Đang giao hàng";
+    }
+
+    const payload = authPayload({
+      action: "updateOrder",
+      orderId: orderId,
+      name: order ? order.name : "",
+      phone: order ? order.phone : "",
+      address: order ? order.address : "",
+      province: order ? order.province : "",
+      district: order ? order.district : "",
+      ward: order ? order.ward : "",
+      variant: order ? order.variant : "1 Đôi",
+      size: order ? order.size : "5mm",
+      quantity: order ? order.quantity : "1",
+      price: order ? order.price : "",
+      note: updatedNote,
+      status: newStatus
+    });
+
+    const res = await requestApi(payload);
+    if (!res.ok) throw new Error(res.error || "Không thể cập nhật mã SPX");
+
+    if (order) {
+      order.note = updatedNote;
+      order.status = newStatus;
+      const master = (allOrders || []).find(o => o.orderId === orderId);
+      if (master) { master.note = updatedNote; master.status = newStatus; }
+    }
+
+    showStatus(`✅ Đã gắn mã SPX ${spxCode} và chuyển sang "${newStatus}" thành công!`, true);
+    renderDashboardReport();
+    filterAndRenderOrders();
+  } catch (err) {
+    showStatus("❌ Lỗi: " + err.message, false);
+  }
 }
 
 async function quickChangeDeliveryStatus(orderId, newStatus) {
@@ -3939,6 +4054,19 @@ function openOrderModal(orderId) {
   const hasCardNo = noteStr.includes("[Thẻ: Không]") || noteStr.includes("[Thẻ: 0]");
   $("#editIncludeBox").checked = (order.includeBox !== false && order.includeBox !== "false" && !hasBoxNo);
   $("#editIncludeCard").checked = (order.includeCard !== false && order.includeCard !== "false" && !hasCardNo);
+
+  // Tự động nạp mã vận đơn SPX Express
+  const spxCode = extractSpxCode(order);
+  if ($("#editSpxTrackingCode")) $("#editSpxTrackingCode").value = spxCode;
+  const spxLinkBtn = $("#btnTrackSpxLink");
+  if (spxLinkBtn) {
+    if (spxCode) {
+      spxLinkBtn.href = `https://spx.vn/track?${encodeURIComponent(spxCode)}`;
+      spxLinkBtn.style.display = "inline-flex";
+    } else {
+      spxLinkBtn.style.display = "none";
+    }
+  }
 
   // Hiển thị thông tin Nguồn Facebook Ads nếu có
   const adsBox = $("#editOrderAdsBox");
@@ -4091,12 +4219,14 @@ async function submitSaveOrder() {
     const includeBox = $("#editIncludeBox").checked;
     const includeCard = $("#editIncludeCard").checked;
 
+    const spxCode = $("#editSpxTrackingCode") ? $("#editSpxTrackingCode").value.trim().toUpperCase() : "";
     let cleanNote = $("#editOrderNote").value
       .replace(/\[MISA:[^\]]+\]/g, "")
       .replace(/\[Hộp:[^\]]+\]/g, "")
       .replace(/\[Thẻ:[^\]]+\]/g, "")
+      .replace(/\[SPX:[^\]]+\]/gi, "")
       .trim();
-    const tags = `[MISA: ${misaSku}] [Hộp: ${includeBox ? 'Có' : 'Không'}] [Thẻ: ${includeCard ? 'Có' : 'Không'}]`;
+    const tags = `[MISA: ${misaSku}] [Hộp: ${includeBox ? 'Có' : 'Không'}] [Thẻ: ${includeCard ? 'Có' : 'Không'}]${spxCode ? ` [SPX: ${spxCode}]` : ''}`;
     const fullNote = cleanNote ? `${cleanNote} ${tags}` : tags;
 
     const payload = authPayload({
@@ -4947,40 +5077,7 @@ function renderDashboardSizeTable(sizes, totalRevenue, totalQty, totalOrdersCoun
 }
 
 async function syncMisaDeliveryStatusNow() {
-  showStatus("⏳ Đang kết nối MISA eShop Open API để đồng bộ trạng thái giao hàng...", true);
-  try {
-    let syncSuccess = false;
-    let syncData = null;
-
-    // 1. Thử gọi trực tiếp Local Runner trên máy Mac (port 8899)
-    try {
-      const resp = await fetch("http://127.0.0.1:8899/sync-delivery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      syncData = await resp.json();
-      if (syncData && syncData.ok) {
-        syncSuccess = true;
-      }
-    } catch (e) {
-      console.log("Local runner fetch error:", e);
-    }
-
-    if (syncSuccess) {
-      if (syncData && syncData.count > 0) {
-        showStatus(`✅ Đã đồng bộ thành công ${syncData.count} đơn hàng từ MISA eShop!`, true);
-      } else {
-        showStatus(`✅ Kết nối MISA eShop OK! Mẹo: Đơn website bạn có thể chọn nhanh trạng thái "Đang giao" hoặc "Giao thành công" ngay tại cột Trạng thái.`, true);
-      }
-    } else {
-      showStatus("ℹ️ MISA Runner đang kiểm tra ngầm. Đang tải lại dữ liệu đơn hàng mới nhất...", true);
-    }
-
-    await loadOrders(false);
-    renderDashboardReport();
-  } catch (err) {
-    showStatus("Lỗi khi đồng bộ MISA: " + (err.message || err.toString()), false);
-  }
+  openSpxTrackingDialog();
 }
 
 function refreshDashboardReport() {
