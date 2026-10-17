@@ -139,11 +139,11 @@ function doPost(e) {
       return handleCancelOrderVN_(data);
     }
 
-    // 7. Cập nhật trạng thái nhanh (Admin & CSKH - Gọi điện / Zalo...)
+    // 7. Cập nhật trạng thái nhanh (Admin & CSKH - Gọi điện / Zalo / Đang giao / Giao TC...)
     if (data.action === "updateStatus") {
       checkStaffAuth_(data.username, data.password || data.key);
-      const result = updateOrderStatus_(data.orderId, data.status);
-      return json_({ ok: true, orderId: data.orderId, status: data.status });
+      const result = updateOrderStatus_(data.orderId, data.status, data.eshopCode);
+      return json_({ ok: true, orderId: data.orderId, status: data.status, eshopCode: data.eshopCode });
     }
 
     // 8. Lead rơi rớt từ Landing Page (khách nhập SĐT nhưng chưa hoàn tất đặt hàng)
@@ -341,10 +341,24 @@ function handleOrderVN_(data) {
       ""  // Cột 20: EShopCode
     ]);
 
-    const lastRow = sheet.getLastRow();
-
     const cleanPhone = cleanText_(data.phone || "");
     const rawPhoneDigits = cleanPhone.replace(/\D/g, "");
+
+    // Tự động dọn dẹp các dòng Lead rơi rớt trùng số điện thoại vì khách đã hoàn tất đặt đơn thật
+    try {
+      const ordersValues = sheet.getDataRange().getValues();
+      for (let r = ordersValues.length - 2; r >= 1; r--) {
+        const rowOrderId = String(ordersValues[r][1] || "").trim();
+        const rowPhone = String(ordersValues[r][4] || "").replace(/\D/g, "");
+        if (rowOrderId.startsWith("LEAD-") && rowPhone === rawPhoneDigits) {
+          sheet.deleteRow(r + 1);
+        }
+      }
+    } catch (cleanLeadErr) {
+      console.warn("Lỗi dọn lead trùng:", cleanLeadErr);
+    }
+
+    const lastRow = sheet.getLastRow();
 
     // Soạn thông tin chi tiết nguồn Facebook Ads cho Telegram
     let adsInfoTelegram = "";
@@ -950,14 +964,15 @@ function handleTelegramCallback_(cb) {
 /**
  * Cập nhật trạng thái đơn hàng theo orderId — trả về { phone } để hiện thị thông báo
  */
-function updateOrderStatus_(orderId, newStatus) {
+function updateOrderStatus_(orderId, newStatus, eshopCode) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = getOrCreateOrdersSheet_(ss);
   const values = sheet.getDataRange().getValues();
 
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][1]).trim() === orderId) {
-      sheet.getRange(i + 1, 18).setValue(newStatus);
+      if (newStatus) sheet.getRange(i + 1, 18).setValue(newStatus);
+      if (eshopCode !== undefined) sheet.getRange(i + 1, 20).setValue(eshopCode);
       return { phone: String(values[i][4] || "") };
     }
   }

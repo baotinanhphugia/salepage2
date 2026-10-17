@@ -1473,6 +1473,14 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
             <div id="ordersMiniCount" style="font-size:16px; font-weight:800; color:#fff;">0 SP</div>
           </div>
         </div>
+        <!-- Lead rơi rớt -->
+        <div style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:4px 10px; border-radius:8px;" onclick="$('#orderStatusFilter').value='Khách rớt Lead'; handleOrderSearch($('#orderSearchInput').value);" title="Xem danh sách khách để lại số điện thoại nhưng chưa hoàn tất đặt hàng">
+          <span style="font-size:17px;">🎯</span>
+          <div>
+            <div style="font-size:10.5px; color:#f59e0b; font-weight:700; text-transform:uppercase;">Lead Chưa Chốt</div>
+            <div id="ordersMiniLeadCount" style="font-size:15px; font-weight:800; color:#fbbf24;">0 Lead</div>
+          </div>
+        </div>
       </div>
       <button type="button" onclick="showTab('dashboardReport')" style="background:var(--gold-gradient); color:#000; font-size:12.5px; font-weight:800; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(0,0,0,0.3);">
         📊 Xem Báo Cáo Doanh Số Chi Tiết Theo Size ➔
@@ -1492,15 +1500,18 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <label style="font-size:12px; color:#888; margin:0; font-weight:600;">Lọc trạng thái:</label>
         <select id="orderStatusFilter" onchange="handleOrderSearch($('#orderSearchInput').value)" style="background:#0a0a0f; border:1px solid #36364a; color:#fff; font-size:13px; padding:8px 12px; border-radius:8px; cursor:pointer;">
-          <option value="all">Tất cả trạng thái</option>
+          <option value="active_orders" selected>📦 Đơn đặt hàng (Mới & Đang xử lý)</option>
+          <option value="all">🌟 Tất cả (Gồm cả Lead rớt)</option>
+          <option value="Khách rớt Lead">🎯 Khách rớt Lead (Chưa chốt)</option>
           <option value="Chờ xác nhận">Chờ xác nhận</option>
           <option value="Đang gọi điện">Đang gọi điện</option>
           <option value="Đã nhắn Zalo">Đã nhắn Zalo</option>
           <option value="Đã sửa">Đã sửa</option>
           <option value="Đã đẩy eShop">Đã đẩy eShop</option>
-          <option value="Giao thành công">🟢 Giao thành công (Thực thu)</option>
           <option value="Đang giao hàng">🚚 Đang giao hàng</option>
+          <option value="Giao thành công">🟢 Giao thành công (Thực thu)</option>
           <option value="Đã hủy">❌ Đã hủy (Xem riêng)</option>
+          <option value="Chuyển hoàn">↩️ Chuyển hoàn</option>
         </select>
         <button type="button" class="btn2" onclick="syncMisaDeliveryStatusNow()" style="background:linear-gradient(135deg, #10b981, #059669); border-color:#34d399; color:#fff; font-size:12.5px; font-weight:700; padding:7px 12px; display:inline-flex; align-items:center; gap:5px; border-radius:8px; cursor:pointer;" title="Đồng bộ trạng thái đơn thực tế từ MISA eShop">
           <span>🔄</span> Đồng bộ MISA
@@ -3595,19 +3606,25 @@ function handleOrderSearch(query = "") {
   const btnClear = $("#btnClearOrderSearch");
   if (btnClear) btnClear.style.display = query ? "block" : "none";
 
-  const statusFilter = $("#orderStatusFilter") ? $("#orderStatusFilter").value : "all";
+  const statusFilter = $("#orderStatusFilter") ? $("#orderStatusFilter").value : "active_orders";
   const countEl = $("#orderSearchCount");
 
   const qClean = removeVietnameseTones(query || "").trim();
 
   const filtered = currentOrdersList.filter(o => {
+    const oStatus = String(o.status || "Chờ xác nhận").trim();
+    const isLead = oStatus === "Khách rớt Lead" || oStatus.toLowerCase().includes("rớt lead") || String(o.orderId || "").toUpperCase().startsWith("LEAD-");
+
     // 1. Lọc trạng thái
-    if (statusFilter && statusFilter !== "all") {
-      const oStatus = (o.status || "Chờ xác nhận").trim();
+    if (statusFilter === "active_orders") {
+      if (isLead) return false;
+    } else if (statusFilter === "Khách rớt Lead") {
+      if (!isLead) return false;
+    } else if (statusFilter && statusFilter !== "all") {
       if (oStatus !== statusFilter) return false;
     }
 
-    // 2. Tìm kiếm theo từ khóa (Tên khách, SĐT, Mã đơn, Địa chỉ, Size, Ghi chú, SKU MISA)
+    // 2. Tìm kiếm theo từ khóa (Tên khách, SĐT, Mã đơn, Địa chỉ, Size, Ghi chú, SKU MISA, Mã eShop)
     if (!qClean) return true;
 
     const searchFields = [
@@ -3623,15 +3640,18 @@ function handleOrderSearch(query = "") {
       o.variant || "",
       o.size || "",
       o.note || "",
-      o.misaSku || ""
+      o.misaSku || "",
+      o.eshopCode || ""
     ].map(f => removeVietnameseTones(String(f))).join(" ");
 
     return searchFields.includes(qClean);
   });
 
   if (countEl) {
-    if (query || (statusFilter && statusFilter !== "all")) {
+    if (query || (statusFilter && statusFilter !== "all" && statusFilter !== "active_orders")) {
       countEl.innerText = `(Tìm thấy ${filtered.length} / ${currentOrdersList.length} đơn)`;
+    } else if (statusFilter === "active_orders") {
+      countEl.innerText = `(${filtered.length} đơn đặt hàng)`;
     } else {
       countEl.innerText = `(Tổng: ${currentOrdersList.length} đơn)`;
     }
@@ -3654,29 +3674,42 @@ function renderOrdersTable(orders, searchQuery = "") {
   tbody.innerHTML = "";
   
   if (!orders || orders.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='10' style='text-align:center; padding:24px; color:#888;'>Không tìm thấy đơn hàng nào phù hợp.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='10' style='text-align:center; padding:28px; color:#888;'>Không tìm thấy đơn hàng nào phù hợp với bộ lọc hiện tại.</td></tr>";
     return;
   }
 
   const qClean = removeVietnameseTones(searchQuery || "").trim();
 
   orders.forEach(o => {
-    const isCancelled = String(o.status || "").trim().toLowerCase().includes("hủy");
+    const oStatus = String(o.status || "").trim();
+    const isCancelled = oStatus.toLowerCase().includes("hủy");
+    const isLead = oStatus === "Khách rớt Lead" || oStatus.toLowerCase().includes("rớt lead") || String(o.orderId || "").toUpperCase().startsWith("LEAD-");
+
     const tr = document.createElement("tr");
     tr.id = "order-row-" + o.orderId;
     if (isCancelled) {
       tr.style.background = "rgba(239, 68, 68, 0.05)";
       tr.style.borderLeft = "3px solid #ef4444";
       tr.style.opacity = "0.85";
+    } else if (isLead) {
+      tr.style.background = "rgba(245, 158, 11, 0.04)";
+      tr.style.borderLeft = "3px solid #f59e0b";
     }
+
     const displayPhone = formatPhoneVN(o.phone);
-    let phoneHtml = displayPhone ? `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${displayPhone}</a>` : "";
+    let phoneHtml = displayPhone ? `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:700; text-decoration:underline;" title="Bấm gọi ngay">${displayPhone}</a>` : "";
     const cleanPrice = String(o.price || "").replace(/[^0-9]/g, "");
-    const priceHtml = `<strong style="color:#f87171;">${Number(cleanPrice || 0).toLocaleString("vi-VN")}đ</strong>`;
+
+    let priceHtml = "";
+    if (isLead) {
+      priceHtml = `<span style="color:#f59e0b; font-weight:700; font-size:12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); padding:3px 8px; border-radius:6px; display:inline-block; white-space:nowrap;">🎯 Lead chưa chốt</span>`;
+    } else {
+      priceHtml = `<strong style="color:#ffd875; font-size:14px; font-weight:800;">${Number(cleanPrice || 0).toLocaleString("vi-VN")}đ</strong>`;
+    }
 
     let displayOrderId = escapeHtml(o.orderId || "");
-    let displayName = escapeHtml(o.name || "Khách ẩn danh");
-    let displayAddr = escapeHtml(o.fullAddress || o.address || "Chưa nhập");
+    let displayName = escapeHtml(o.name || (isLead ? "Khách để lại SĐT" : "Khách ẩn danh"));
+    let displayAddr = escapeHtml(o.fullAddress || o.address || (isLead ? "Chưa cung cấp" : "Chưa nhập"));
     let displayVariant = escapeHtml(`${o.variant || "1 Đôi"} (${o.size || "5mm"})`);
 
     if (qClean && searchQuery) {
@@ -3688,41 +3721,9 @@ function renderOrdersTable(orders, searchQuery = "") {
         displayVariant = displayVariant.replace(regex, `<mark class="picker-highlight">$1</mark>`);
         if (displayPhone && regex.test(displayPhone)) {
           const highlightedPhone = displayPhone.replace(regex, `<mark class="picker-highlight">$1</mark>`);
-          phoneHtml = `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:600; text-decoration:underline;" title="Bấm gọi ngay">${highlightedPhone}</a>`;
+          phoneHtml = `<a href="tel:${displayPhone}" style="color:var(--gold-light); font-weight:700; text-decoration:underline;" title="Bấm gọi ngay">${highlightedPhone}</a>`;
         }
       } catch (err) {}
-    }
-
-    let statusBg = "rgba(16,185,129,0.15)";
-    let statusColor = "#6ee7b7";
-    if (o.status === "Đã đẩy eShop") {
-      statusBg = "rgba(59,130,246,0.2)";
-      statusColor = "#60a5fa";
-    } else if (isCancelled) {
-      statusBg = "rgba(239,68,68,0.22)";
-      statusColor = "#fca5a5";
-    } else if (o.status === "Đã sửa") {
-      statusBg = "rgba(245,158,11,0.2)";
-      statusColor = "#fcd34d";
-    } else if (o.status === "Đang gọi điện") {
-      statusBg = "rgba(34,197,94,0.2)";
-      statusColor = "#86efac";
-    } else if (o.status === "Đã nhắn Zalo") {
-      statusBg = "rgba(6,182,212,0.2)";
-      statusColor = "#67e8f9";
-    } else if (o.status === "Chờ đẩy eShop") {
-      statusBg = "rgba(168,85,247,0.2)";
-      statusColor = "#d8b4fe";
-    } else if (o.status === "Lỗi đẩy eShop") {
-      statusBg = "rgba(239,68,68,0.25)";
-      statusColor = "#f87171";
-    }
-
-    let statusHtml = "";
-    if (isCancelled) {
-      statusHtml = `<span style="background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.5); padding:3px 9px; border-radius:6px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">❌ ĐÃ HỦY</span>`;
-    } else {
-      statusHtml = `<span style="background:${statusBg}; color:${statusColor}; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">${o.status || "Chờ xác nhận"}</span>`;
     }
 
     // Nhận diện và hiển thị huy hiệu chiến dịch Facebook Ads
@@ -3738,13 +3739,62 @@ function renderOrdersTable(orders, searchQuery = "") {
       adsBadgeHtml = `<div style="margin-top:4px;"><span class="badge-ads" title="${escapeHtml(tooltip)}">🎯 ${escapeHtml(campName)}</span></div>`;
     }
 
+    // Xử lý cột Trạng thái + Trình cập nhật nhanh (Quick Delivery Status Changer)
+    let statusBadge = "";
+    if (isCancelled) {
+      statusBadge = `<span style="background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.5); padding:3px 9px; border-radius:6px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">❌ ĐÃ HỦY</span>`;
+    } else if (isLead) {
+      statusBadge = `<span style="background:rgba(245,158,11,0.18); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); padding:3px 9px; border-radius:6px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">🎯 Khách rớt Lead</span>`;
+    } else if (o.status === "Giao thành công") {
+      statusBadge = `<span style="background:rgba(16,185,129,0.22); color:#34d399; border:1px solid rgba(16,185,129,0.5); padding:3px 9px; border-radius:6px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">🟢 Giao thành công</span>`;
+    } else if (o.status === "Đang giao hàng") {
+      statusBadge = `<span style="background:rgba(59,130,246,0.22); color:#60a5fa; border:1px solid rgba(59,130,246,0.5); padding:3px 9px; border-radius:6px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">🚚 Đang giao hàng</span>`;
+    } else if (o.status === "Đã đẩy eShop") {
+      statusBadge = `<span style="background:rgba(168,85,247,0.22); color:#c084fc; border:1px solid rgba(168,85,247,0.5); padding:3px 9px; border-radius:6px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;">📦 Đã đẩy eShop</span>`;
+    } else if (o.status === "Đang gọi điện") {
+      statusBadge = `<span style="background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.4); padding:3px 9px; border-radius:6px; font-weight:700; font-size:11px;">📞 Đang gọi điện</span>`;
+    } else if (o.status === "Đã nhắn Zalo") {
+      statusBadge = `<span style="background:rgba(6,182,212,0.2); color:#67e8f9; border:1px solid rgba(6,182,212,0.4); padding:3px 9px; border-radius:6px; font-weight:700; font-size:11px;">💬 Đã nhắn Zalo</span>`;
+    } else if (o.status === "Đã sửa") {
+      statusBadge = `<span style="background:rgba(245,158,11,0.2); color:#fcd34d; border:1px solid rgba(245,158,11,0.4); padding:3px 9px; border-radius:6px; font-weight:700; font-size:11px;">✏️ Đã sửa</span>`;
+    } else {
+      statusBadge = `<span style="background:rgba(16,185,129,0.15); color:#6ee7b7; padding:3px 9px; border-radius:6px; font-weight:700; font-size:11px;">${escapeHtml(o.status || "Chờ xác nhận")}</span>`;
+    }
+
+    let statusSelectHtml = "";
+    if (!isLead) {
+      statusSelectHtml = `
+        <select onchange="quickChangeDeliveryStatus('${o.orderId}', this.value)" style="margin-top:5px; background:#0d0d14; border:1px solid #3b3b54; color:#d1d5db; font-size:11px; padding:3px 6px; border-radius:6px; cursor:pointer; width:100%; outline:none;" title="Cập nhật nhanh trạng thái giao hàng / dòng tiền">
+          <option value="" disabled selected>⚡ Đổi trạng thái...</option>
+          <option value="Đang giao hàng">🚚 Đang giao hàng</option>
+          <option value="Giao thành công">🟢 Giao thành công (Thực thu)</option>
+          <option value="Đã đẩy eShop">📦 Đã đẩy eShop</option>
+          <option value="Chờ xác nhận">⏳ Chờ xác nhận</option>
+          <option value="Đã hủy">❌ Hủy / Bom đơn</option>
+          <option value="Chuyển hoàn">↩️ Chuyển hoàn</option>
+        </select>
+      `;
+    }
+    const statusHtml = `<div style="display:flex; flex-direction:column; align-items:flex-start; min-width:130px;">${statusBadge}${statusSelectHtml}</div>`;
+
     const cleanPhoneNum = displayPhone;
     const isLocked = isOrderLockedAfterEshop(o);
     const isSessionUnlocked = window.sessionUnlockedOrders && window.sessionUnlockedOrders.has(o.orderId);
     const isAdmin = (currentAuthUser && currentAuthUser.role === "Admin");
 
     let actionsHtml = "";
-    if (isCancelled) {
+    if (isLead) {
+      actionsHtml = `
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; min-width:125px;">
+          <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${displayPhone}')" title="Gọi khách tư vấn chốt đơn">📞 Gọi</button>
+            <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Mở Zalo tư vấn">💬 Zalo</button>
+            <button class="btn-action-edit" onclick="openOrderModal('${o.orderId}')" title="Điền địa chỉ chốt đơn chính thức">✏️ Chốt đơn</button>
+            <button class="btn-action-cancel" onclick="quickCancelOrder('${o.orderId}')" title="Xóa lead này" style="padding:2px 6px;">🗑️</button>
+          </div>
+        </div>
+      `;
+    } else if (isCancelled) {
       actionsHtml = `
         <div style="display:flex; flex-direction:column; align-items:center; gap:4px; min-width:115px;">
           <div style="display:inline-flex; align-items:center; justify-content:center; gap:4px; width:100%; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.45); padding:3px 8px; border-radius:6px;">
@@ -3757,15 +3807,15 @@ function renderOrdersTable(orders, searchQuery = "") {
       actionsHtml = `
         <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:130px;">
           <div style="display:inline-flex; align-items:center; justify-content:center; gap:5px; width:100%; background:rgba(30,41,59,0.85); border:1px solid rgba(59,130,246,0.5); padding:3px 8px; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.3);">
-            <span style="color:#93c5fd; font-size:11px; font-weight:700; white-space:nowrap;">🔒 ĐÃ KHOÁ ESHOP</span>
-            ${isAdmin ? `<button type="button" onclick="unlockOrderAction('${o.orderId}')" style="background:none; border:none; color:#fbbf24; cursor:pointer; font-size:10.5px; font-weight:700; padding:0 2px; text-decoration:underline;" title="Mở khoá thao tác dành riêng cho Quản trị viên (Admin)">[Mở]</button>` : ''}
+            <span style="color:#93c5fd; font-size:10.5px; font-weight:700; white-space:nowrap;">MISA: <b>${escapeHtml(o.eshopCode || '#Đã tạo')}</b></span>
+            ${isAdmin ? `<button type="button" onclick="unlockOrderAction('${o.orderId}')" style="background:none; border:none; color:#fbbf24; cursor:pointer; font-size:10px; font-weight:700; padding:0 2px; text-decoration:underline;" title="Mở khoá thao tác toàn diện cho Admin">[Mở]</button>` : ''}
           </div>
-          <div style="display:flex; gap:3px; justify-content:center; flex-wrap:wrap; opacity:0.35; filter:grayscale(1); pointer-events:none;" title="Đơn hàng đã đẩy sang MISA eShop. Các nút thao tác đã được khoá an toàn.">
-            <button class="btn-action-call" disabled style="cursor:not-allowed;">📞 Gọi</button>
-            <button class="btn-action-zalo" disabled style="cursor:not-allowed;">💬 Zalo</button>
-            <button class="btn-action-edit" disabled style="cursor:not-allowed;">✏️ Sửa</button>
-            <button class="btn-action-eshop" disabled style="cursor:not-allowed;">🚀 eShop</button>
-            <button class="btn-action-cancel" disabled style="cursor:not-allowed;">🗑️ Xóa đơn</button>
+          <div style="display:flex; gap:3px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn-action-call" onclick="quickCallOrder('${o.orderId}', '${displayPhone}')" title="Gọi khách">📞 Gọi</button>
+            <button class="btn-action-zalo" onclick="quickZaloOrder('${o.orderId}', '${cleanPhoneNum}')" title="Nhắn Zalo">💬 Zalo</button>
+            <button class="btn-action-edit" onclick="openOrderModal('${o.orderId}')" title="Xem chi tiết đơn">👁️ Xem</button>
+            <button class="btn-action-eshop" disabled style="cursor:not-allowed; opacity:0.35; filter:grayscale(1);" title="Đơn đã được đẩy sang MISA eShop">🚀 eShop</button>
+            <button class="btn-action-cancel" disabled style="cursor:not-allowed; opacity:0.35; filter:grayscale(1);" title="Đơn đã lên eShop. Bấm [Mở] để xóa nếu cần">🗑️ Xóa</button>
           </div>
         </div>
       `;
@@ -3793,10 +3843,14 @@ function renderOrdersTable(orders, searchQuery = "") {
       `;
     }
 
+    const orderIdCell = isLead
+      ? `<span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; color:#fbbf24;">🎯 ${displayOrderId}</span>`
+      : `<span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600;">${displayOrderId}</span>`;
+
     const cols = [
       o.createdAt,
-      `<span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600;">${displayOrderId}</span>`,
-      `<div><strong style="color:#fff;">${displayName}</strong>${adsBadgeHtml}</div>`,
+      orderIdCell,
+      `<div><strong style="color:#fff;">${displayName}</strong>${isLead ? `<span style="font-size:10.5px; color:#f59e0b; margin-left:4px; font-weight:600;">[Lead rớt]</span>` : ''}${adsBadgeHtml}</div>`,
       phoneHtml,
       displayAddr,
       displayVariant,
@@ -3812,6 +3866,44 @@ function renderOrdersTable(orders, searchQuery = "") {
     });
     tbody.appendChild(tr);
   });
+}
+
+async function quickChangeDeliveryStatus(orderId, newStatus) {
+  if (!newStatus) return;
+  const order = currentOrdersList.find(o => o.orderId === orderId);
+  if (!order) return;
+
+  if (newStatus === "Đã hủy") {
+    if (!confirm(`⚠️ Bạn có chắc chắn muốn chuyển đơn ${orderId} (${order.name || ''}) sang trạng thái ĐÃ HỦY không?`)) {
+      filterAndRenderOrders();
+      return;
+    }
+  }
+
+  showStatus(`⏳ Đang cập nhật trạng thái đơn ${orderId} sang "${newStatus}"...`, true);
+
+  try {
+    const payload = authPayload({
+      action: "updateStatus",
+      orderId: orderId,
+      status: newStatus
+    });
+
+    const res = await requestApi(payload);
+    if (!res.ok) throw new Error(res.error || "Không thể cập nhật trạng thái đơn!");
+
+    const masterOrder = (allOrders || []).find(o => o.orderId === orderId);
+    if (masterOrder) masterOrder.status = newStatus;
+    order.status = newStatus;
+    showStatus(`✅ Đã cập nhật đơn ${orderId} sang "${newStatus}" thành công!`, true);
+
+    // Cập nhật lại Báo cáo Doanh số Thực thu ngay tức thì
+    renderDashboardReport();
+    filterAndRenderOrders();
+  } catch (err) {
+    showStatus("❌ Lỗi: " + err.message, false);
+    filterAndRenderOrders();
+  }
 }
 
 function openOrderModal(orderId) {
@@ -4662,6 +4754,13 @@ function renderDashboardReport() {
   if ($("#ordersMiniTopSize")) $("#ordersMiniTopSize").innerText = topSize ? `${topSize.size} (${topSize.variant})` : "---";
   if ($("#ordersMiniCount")) $("#ordersMiniCount").innerText = `${totalQty} SP (${totalOrdersCount} đơn)`;
 
+  const leadCount = (allOrders || []).filter(o => {
+    const st = String(o.status || "").trim().toLowerCase();
+    const oid = String(o.orderId || "").toUpperCase();
+    return st === "khách rớt lead" || st.includes("rớt lead") || oid.startsWith("LEAD-");
+  }).length;
+  if ($("#ordersMiniLeadCount")) $("#ordersMiniLeadCount").innerText = `${leadCount} Lead`;
+
   // Render Visual Progress Bars
   renderDashboardSizeBars(sizes, totalRevenue);
 
@@ -4868,7 +4967,11 @@ async function syncMisaDeliveryStatusNow() {
     }
 
     if (syncSuccess) {
-      showStatus(`✅ Đã đồng bộ thành công trạng thái giao hàng từ MISA eShop! (${syncData.count || 0} đơn cập nhật)`, true);
+      if (syncData && syncData.count > 0) {
+        showStatus(`✅ Đã đồng bộ thành công ${syncData.count} đơn hàng từ MISA eShop!`, true);
+      } else {
+        showStatus(`✅ Kết nối MISA eShop OK! Mẹo: Đơn website bạn có thể chọn nhanh trạng thái "Đang giao" hoặc "Giao thành công" ngay tại cột Trạng thái.`, true);
+      }
     } else {
       showStatus("ℹ️ MISA Runner đang kiểm tra ngầm. Đang tải lại dữ liệu đơn hàng mới nhất...", true);
     }
