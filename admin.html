@@ -1512,9 +1512,13 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
           <option value="Giao thành công">🟢 Giao thành công (Thực thu)</option>
           <option value="Đã hủy">❌ Đã hủy (Xem riêng)</option>
           <option value="Chuyển hoàn">↩️ Chuyển hoàn</option>
+          <option value="Giao thất bại">🚨 Giao thất bại / Hoàn hàng</option>
         </select>
         <button type="button" class="btn2" onclick="openSpxTrackingDialog()" style="background:linear-gradient(135deg, #ea580c, #c2410c); border-color:#f97316; color:#fff; font-size:12.5px; font-weight:700; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(234,88,12,0.3);" title="Tra cứu nhanh vận đơn bưu kiện trên SPX Express (Shopee Express)">
           <span>🚚</span> Tra Cứu SPX
+        </button>
+        <button type="button" id="btnAutoScanSpx" class="btn2" onclick="triggerAutoScanSpx()" style="background:linear-gradient(135deg, #dc2626, #b91c1c); border-color:#ef4444; color:#fff; font-size:12.5px; font-weight:700; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(220,38,38,0.3);" title="Quét tự động tất cả các đơn Đang giao hàng trên SPX Express để phát hiện ngay đơn hoàn hoặc giao thành công">
+          <span>⚡</span> Quét SPX Tự Động
         </button>
         <span id="orderSearchCount" style="font-size:13px; color:#d6ad45; font-weight:700; white-space:nowrap; margin-left:6px;"></span>
       </div>
@@ -3639,7 +3643,12 @@ function handleOrderSearch(query = "") {
     } else if (statusFilter === "Khách rớt Lead") {
       if (!isLead) return false;
     } else if (statusFilter && statusFilter !== "all") {
-      if (oStatus !== statusFilter) return false;
+      if (statusFilter === "Giao thất bại") {
+        const lower = oStatus.toLowerCase();
+        if (!lower.includes("thất bại") && !lower.includes("hoàn") && !lower.includes("trả")) return false;
+      } else if (oStatus !== statusFilter) {
+        return false;
+      }
     }
 
     // 2. Tìm kiếm theo từ khóa (Tên khách, SĐT, Mã đơn, Địa chỉ, Size, Ghi chú, SKU MISA, Mã eShop)
@@ -3919,6 +3928,36 @@ function openSpxTrackingDialog(defaultCode = "") {
   if (code && code.trim()) {
     const cleanCode = code.trim().toUpperCase();
     window.open(`https://spx.vn/track?${encodeURIComponent(cleanCode)}`, "_blank");
+  }
+}
+
+async function triggerAutoScanSpx() {
+  const btn = $("#btnAutoScanSpx");
+  const origHtml = btn ? btn.innerHTML : "<span>⚡</span> Quét SPX Tự Động";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = "<span>⏳</span> Đang quét SPX...";
+  }
+  showStatus("⏳ Đang rà soát tự động tất cả các đơn hàng trên SPX Express...", true);
+
+  try {
+    const res = await fetch("http://127.0.0.1:8899/spx/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Lỗi quét SPX");
+
+    showStatus(`✅ Đã rà soát ${data.scanned} đơn SPX: ${data.updated_delivered} đơn Giao TC, ${data.updated_failed} đơn Giao thất bại/Hoàn!`, true);
+    await loadOrders(false);
+  } catch (err) {
+    console.warn("Lỗi runner SPX:", err);
+    showStatus("⚠️ Không kết nối được MISA Sync Runner trên Mac (port 8899). Vui lòng đảm bảo runner đang chạy!", false);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
   }
 }
 

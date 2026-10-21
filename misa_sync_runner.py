@@ -9,6 +9,7 @@ Chạy trực tiếp trên máy Mac (IP 123.26.190.185 được cấp phép Open
 import os
 import time
 import json
+import re
 import hmac
 import hashlib
 import uuid
@@ -28,9 +29,11 @@ MISA_DEFAULT_CUSTOMER = "bf4e7242-a3d4-4ae8-aae5-258b110dbcf6"
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOi8Tt24hjx2iaJyGRD0tQhx4hYK3KRjYlFdWnQUyM1uf-TrGiGZwfyzEyY83_33LU/exec"
 ADMIN_KEY = "123456"
 TELEGRAM_BOT_TOKEN = "8658895620:AAE06m6t4C2PWSKILT8zAD6ElOZ45Lod3Fk"
+TELEGRAM_CHAT_ID = "8861179828"
 
 LOCAL_PORT = 8899
 POLL_INTERVAL_SECONDS = 4
+SPX_SCAN_INTERVAL_SECONDS = 900  # 15 phút quét tự động hành trình SPX 1 lần
 
 # Danh mục hàng hóa mapping chuẩn trên MISA eShop
 MISA_INVENTORY = {
@@ -586,8 +589,10 @@ def call_apps_script(payload):
 
 # ==============================================================================
 # SPX EXPRESS LOGISTICS & TRACKING MODULE (Shopee Express)
-# Quản lý vận chuyển, tra cứu mã vận đơn SPX VN và cập nhật Doanh Thu Thực Thu
+# Quản lý vận chuyển, tra cứu mã vận đơn SPX VN, tự động cảnh báo Đơn Hoàn & cập nhật Doanh Thu Thực Thu
 # ==============================================================================
+
+alerted_spx_cache = set()
 
 def build_spx_tracking_url(tracking_number):
     clean_tn = str(tracking_number or "").strip()
@@ -598,45 +603,265 @@ def build_spx_tracking_url(tracking_number):
 def check_spx_order_tracking(tracking_number):
     """
     Tra cứu trạng thái vận đơn SPX Express Việt Nam.
-    Trả về link tra cứu trực tiếp và kết quả hành trình (nếu có).
+    Sử dụng endpoint public fleet_order của SPX (200 OK từ SGW SPX-TrackService).
+    Phân loại chính xác:
+    - SUCCESS: Giao hàng thành công (Delivered)
+    - FAILED: Giao thất bại / Bị chuyển hoàn / Trả hàng (Returned / Delivery Failed)
+    - SHIPPING: Đang giao hàng / Đang luân chuyển (In transit)
+    - PENDING: Đang xử lý / Chưa có lịch sử
     """
-    clean_tn = str(tracking_number or "").strip()
+    clean_tn = str(tracking_number or "").strip().upper()
     if not clean_tn:
         return {"ok": False, "error": "Thiếu mã vận đơn SPX"}
 
     track_url = build_spx_tracking_url(clean_tn)
 
     try:
-        api_url = "https://spx.vn/shipment/order/open/order/get_order_info"
+        api_url = f"https://spx.vn/api/v2/fleet_order/tracking/search?sls_tracking_number={clean_tn}"
         headers = {
-            "accept": "application/json, text/plain, */*",
-            "referer": track_url,
-            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            "Accept": "application/json, text/plain, */*",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Referer": track_url
         }
-        req = urllib.request.Request(f"{api_url}?spx_tn={clean_tn}", headers=headers)
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        req = urllib.request.Request(api_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            if data.get("retcode") == 0:
-                order_info = data.get("data", {}).get("order_info", {})
-                status_name = order_info.get("tracking_code_subgroup_name") or order_info.get("tracking_code_group_name") or "Đang giao hàng"
-                return {
-                    "ok": True,
-                    "tracking_number": clean_tn,
-                    "status": status_name,
-                    "tracking_url": track_url,
-                    "carrier": "SPX Express",
-                    "data": data.get("data", {})
-                }
-    except Exception:
-        pass
+            if data.get("retcode") == 0 and data.get("data"):
+                tr_data = data.get("data", {})
+                tracking_list = tr_data.get("tracking_list", [])
+                if tracking_list:
+                    # Sắp xếp lấy sự kiện mới nhất theo timestamp
+                    sorted_events = sorted(tracking_list, key=lambda x: x.get("timestamp", 0), reverse=True)
+                    latest = sorted_events[0]
+                    raw_status = str(latest.get("status") or "").strip()
+                    raw_msg = str(latest.get("message") or "").strip()
+                    combined_lower = f"{raw_status} {raw_msg}".lower()
+
+                    success_keywords = ["giao hàng thành công", "đã giao", "giao thành công", "delivered", "delivery_successful", "completed"]
+                    fail_keywords = ["không thành công", "thất bại", "chuyển hoàn", "trả hàng", "hoàn hàng", "hoàn về", "delivery_failed", "returned", "returning", "failed", "hủy giao"]
+
+                    if any(kw in combined_lower for kw in success_keywords):
+                        status_type = "SUCCESS"
+                        mapped_status = "Giao thành công"
+                    elif any(kw in combined_lower for kw in fail_keywords):
+                        status_type = "FAILED"
+                        mapped_status = "Giao thất bại"
+                    else:
+                        status_type = "SHIPPING"
+                        mapped_status = "Đang giao hàng"
+
+                    return {
+                        "ok": True,
+                        "tracking_number": clean_tn,
+                        "status_type": status_type,
+                        "status": mapped_status,
+                        "detail": raw_msg or raw_status,
+                        "tracking_url": track_url,
+                        "carrier": "SPX Express",
+                        "events": sorted_events
+                    }
+    except Exception as e:
+        print(f"[SPX TRACK ERR] {clean_tn}: {e}")
 
     return {
         "ok": True,
         "tracking_number": clean_tn,
+        "status_type": "PENDING",
+        "status": "Đang giao hàng",
+        "detail": "Đang cập nhật hành trình SPX",
         "tracking_url": track_url,
-        "carrier": "SPX Express",
-        "message": f"Tra cứu trực tiếp trên SPX.vn tại: {track_url}"
+        "carrier": "SPX Express"
     }
+
+def send_telegram_spx_alert(order, spx_code, status_type, latest_status, reason_msg):
+    """Bắn thông báo cảnh báo đơn hoàn hoặc chúc mừng giao thành công lên nhóm Telegram CSKH"""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return False
+    try:
+        now_vn = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())
+        order_id = order.get("orderId", "")
+        name = order.get("name", "Khách hàng")
+        phone = str(order.get("phone", "")).strip()
+        clean_phone = re.sub(r"\D", "", phone)
+        addr = order.get("fullAddress") or order.get("address") or "N/A"
+        track_url = build_spx_tracking_url(spx_code)
+
+        if status_type == "FAILED":
+            text = (
+                f"🚨 <b>[CẢNH BÁO ĐƠN HOÀN - SPX EXPRESS] - PHÚ GIA DIAMOND</b>\n\n"
+                f"🧾 Mã đơn: <code>{order_id}</code>\n"
+                f"🚚 Mã vận đơn SPX: <code>{spx_code}</code> (<a href='{track_url}'>Xem SPX</a>)\n"
+                f"👤 Khách hàng: <b>{name}</b>\n"
+                f"📞 Số điện thoại: <code>{phone}</code> <i>(Chạm số để sao chép)</i>\n"
+                f"💬 Link Zalo: <a href='https://zalo.me/{clean_phone}'>https://zalo.me/{clean_phone}</a>\n"
+                f"📍 Địa chỉ: {addr}\n"
+                f"⚠️ Trạng thái SPX: <b>{latest_status}</b>\n"
+                f"📝 Lý do từ bưu tá: <i>{reason_msg or 'Bưu tá báo giao thất bại / chuyển hoàn'}</i>\n"
+                f"🕒 Thời gian ghi nhận: {now_vn}\n\n"
+                f"👉 <b>CSKH hãy liên hệ ngay cho khách để xử lý / cứu đơn trước khi hàng bị hoàn về Shop!</b>"
+            )
+            keyboard = [
+                [
+                    {"text": "📞 Gọi khách ngay", "url": f"tel:{clean_phone}"},
+                    {"text": "💬 Nhắn Zalo", "url": f"https://zalo.me/{clean_phone}"}
+                ],
+                [
+                    {"text": "🚚 Xem hành trình SPX", "url": track_url}
+                ]
+            ]
+        elif status_type == "SUCCESS":
+            price_val = order.get("price", "")
+            text = (
+                f"🎉 <b>[SPX - GIAO THÀNH CÔNG] - PHÚ GIA DIAMOND</b>\n\n"
+                f"🧾 Mã đơn: <code>{order_id}</code>\n"
+                f"🚚 Mã vận đơn SPX: <code>{spx_code}</code>\n"
+                f"👤 Khách hàng: <b>{name}</b> (<code>{phone}</code>)\n"
+                f"💰 Doanh thu thực thu: <b>{price_val}</b>\n"
+                f"✅ Tình trạng: Bưu tá SPX đã phát hàng thành công!\n"
+                f"🕒 Thời gian: {now_vn}"
+            )
+            keyboard = [
+                [
+                    {"text": "🚚 Xem hành trình SPX", "url": track_url}
+                ]
+            ]
+        else:
+            return False
+
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": text,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+            "reply_markup": {"inline_keyboard": keyboard}
+        }
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            return res.get("ok", False)
+    except Exception as e:
+        print(f"[SPX TELEGRAM ALERT ERR] {e}")
+        return False
+
+def scan_and_sync_all_spx_orders():
+    """
+    Quét tự động toàn bộ đơn hàng có mã SPX Express để phát hiện ngay:
+    1. Đơn giao thành công -> Cập nhật Giao thành công (Thực thu)
+    2. Đơn giao thất bại / Hoàn hàng -> Cập nhật Giao thất bại & Bắn CẢNH BÁO TELEGRAM để cứu đơn!
+    """
+    print("[SPX MONITOR] Bắt đầu chu kỳ quét tự động hành trình SPX Express...")
+    scanned = 0
+    updated_delivered = 0
+    updated_failed = 0
+
+    try:
+        res = call_apps_script({
+            "action": "orders",
+            "username": "admin",
+            "password": ADMIN_KEY,
+            "limit": 250
+        })
+        if not res.get("ok"):
+            print("[SPX MONITOR] Không tải được danh sách đơn hàng:", res.get("error"))
+            return {"ok": False, "error": res.get("error")}
+
+        orders = res.get("orders", [])
+        for o in orders:
+            order_id = o.get("orderId", "")
+            current_status = str(o.get("status") or "").strip()
+            note = str(o.get("note") or "")
+            eshop = str(o.get("eshopCode") or "")
+
+            # Bỏ qua những đơn đã kết thúc hoàn toàn
+            if current_status in ["Giao thành công", "Đã hủy"]:
+                continue
+
+            # Trích xuất mã vận đơn SPX
+            spx_code = ""
+            m = re.search(r"\[SPX:\s*([^\]|]+)\]", note, re.I)
+            if m:
+                spx_code = m.group(1).strip().upper()
+            if not spx_code:
+                m = re.search(r"SPX[A-Z0-9]+", eshop, re.I)
+                if m:
+                    spx_code = m.group(0).strip().upper()
+            if not spx_code:
+                m = re.search(r"SPX[A-Z0-9]+", note, re.I)
+                if m:
+                    spx_code = m.group(0).strip().upper()
+
+            if not spx_code:
+                continue
+
+            scanned += 1
+            print(f"[SPX TRACKING] Kiểm tra đơn {order_id} (Mã SPX: {spx_code})...")
+            track_res = check_spx_order_tracking(spx_code)
+            status_type = track_res.get("status_type")
+            latest_detail = track_res.get("detail", "")
+            latest_status = track_res.get("status", "")
+
+            # 1. Phát hiện ĐƠN HOÀN / GIAO THẤT BẠI
+            if status_type == "FAILED":
+                if current_status not in ["Giao thất bại", "Chuyển hoàn", "Đơn hoàn"]:
+                    print(f"🚨 [SPX DETECTED RETURN] Đơn {order_id} ({spx_code}) bị giao thất bại/hoàn về!")
+                    call_apps_script({
+                        "action": "updateStatus",
+                        "username": "admin",
+                        "password": ADMIN_KEY,
+                        "orderId": order_id,
+                        "status": "Giao thất bại"
+                    })
+                    updated_failed += 1
+
+                alert_key = f"{order_id}_{latest_detail}"
+                if alert_key not in alerted_spx_cache:
+                    alerted_spx_cache.add(alert_key)
+                    send_telegram_spx_alert(o, spx_code, "FAILED", latest_status, latest_detail)
+                    print(f"[SPX ALERT TELEGRAM] Đã gửi cảnh báo cứu đơn {order_id} lên Telegram!")
+
+            # 2. Phát hiện GIAO THÀNH CÔNG (CỘNG DOANH THU THỰC THU)
+            elif status_type == "SUCCESS":
+                if current_status != "Giao thành công":
+                    print(f"🎉 [SPX DETECTED SUCCESS] Đơn {order_id} ({spx_code}) giao thành công!")
+                    call_apps_script({
+                        "action": "updateStatus",
+                        "username": "admin",
+                        "password": ADMIN_KEY,
+                        "orderId": order_id,
+                        "status": "Giao thành công"
+                    })
+                    updated_delivered += 1
+                    send_telegram_spx_alert(o, spx_code, "SUCCESS", latest_status, latest_detail)
+
+            time.sleep(1.5)
+
+        print(f"[SPX MONITOR DONE] Đã rà soát {scanned} đơn SPX: {updated_delivered} đơn Giao TC, {updated_failed} đơn Giao thất bại.")
+        return {
+            "ok": True,
+            "scanned": scanned,
+            "updated_delivered": updated_delivered,
+            "updated_failed": updated_failed
+        }
+    except Exception as ex:
+        print(f"[SPX MONITOR EXCEPTION] {ex}")
+        return {"ok": False, "error": str(ex)}
+
+def spx_auto_scan_loop():
+    """Vòng lặp ngầm tự động quét hành trình SPX mỗi 15 phút"""
+    print(f"[SPX DAEMON] Bộ giám sát hành trình SPX Express đã kích hoạt! Chu kỳ quét: mỗi {SPX_SCAN_INTERVAL_SECONDS // 60} phút.")
+    time.sleep(30)
+    while True:
+        try:
+            scan_and_sync_all_spx_orders()
+        except Exception as e:
+            print(f"[SPX DAEMON ERROR] {e}")
+        time.sleep(SPX_SCAN_INTERVAL_SECONDS)
 
 def sync_loop():
     print(f"[DAEMON] Order Sync Runner đã kích hoạt! Đang quét hàng đợi mỗi {POLL_INTERVAL_SECONDS}s...")
@@ -863,6 +1088,13 @@ class LocalServerHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
             return
+        if parsed.path in ["/spx/scan", "/spx/sync_all"]:
+            res = scan_and_sync_all_spx_orders()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
+            return
         if parsed.path in ["/code", "/Code.gs"]:
             code_path = os.path.join(os.path.dirname(__file__), "Code.gs")
             with open(code_path, "r", encoding="utf-8") as f:
@@ -900,6 +1132,13 @@ class LocalServerHandler(BaseHTTPRequestHandler):
             if spx_code:
                 update_payload["spxCode"] = spx_code
             res = call_apps_script(update_payload)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
+            return
+        if parsed.path in ["/spx/scan", "/spx/sync_all"]:
+            res = scan_and_sync_all_spx_orders()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
@@ -998,5 +1237,9 @@ if __name__ == "__main__":
     t_tele = threading.Thread(target=telegram_bot_loop, daemon=True)
     t_tele.start()
 
-    # 3. Chạy vòng lặp đồng bộ hàng đợi chính từ Google Sheet
+    # 3. Khởi chạy luồng giám sát tự động hành trình SPX Express (15 phút/lần)
+    t_spx = threading.Thread(target=spx_auto_scan_loop, daemon=True)
+    t_spx.start()
+
+    # 4. Chạy vòng lặp đồng bộ hàng đợi chính từ Google Sheet
     sync_loop()
