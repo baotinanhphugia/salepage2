@@ -41,9 +41,18 @@ function formatMetaPhone(phoneStr){
   return digits;
 }
 
+function removeVietnameseDiacritics(str){
+  if(!str) return "";
+  return String(str).trim().toLowerCase()
+    .replace(/đ/g, "d")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "");
+}
+
 function parseMetaName(fullName){
   if(!fullName) return { fn: "", ln: "" };
-  const parts = String(fullName).trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const clean = removeVietnameseDiacritics(fullName);
+  const parts = clean.split(/\s+/).filter(Boolean);
   if(parts.length === 0) return { fn: "", ln: "" };
   if(parts.length === 1) return { fn: parts[0], ln: parts[0] };
   const fn = parts[parts.length - 1]; // Tên
@@ -53,9 +62,7 @@ function parseMetaName(fullName){
 
 function normalizeMetaProvince(provStr){
   if(!provStr) return "";
-  return String(provStr).trim().toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+  return removeVietnameseDiacritics(provStr).replace(/\s+/g, "");
 }
 
 function buildMetaAdvancedMatching(userData){
@@ -71,10 +78,10 @@ function buildMetaAdvancedMatching(userData){
   if(formattedPhone) matchObj.ph = formattedPhone;
 
   const nameParts = parseMetaName(merged.name || merged.fullName);
-  if(merged.fn) matchObj.fn = String(merged.fn).trim().toLowerCase();
+  if(merged.fn) matchObj.fn = removeVietnameseDiacritics(merged.fn);
   else if(nameParts.fn) matchObj.fn = nameParts.fn;
 
-  if(merged.ln) matchObj.ln = String(merged.ln).trim().toLowerCase();
+  if(merged.ln) matchObj.ln = removeVietnameseDiacritics(merged.ln);
   else if(nameParts.ln) matchObj.ln = nameParts.ln;
 
   const normProv = normalizeMetaProvince(merged.province || merged.city || merged.ct || merged.address);
@@ -108,6 +115,24 @@ function isValidMetaPixelId(pixelId){
   return /^\d{10,20}$/.test(String(pixelId || "").trim());
 }
 
+let hasTrackedViewContent = false;
+function trackViewContent(){
+  if(hasTrackedViewContent || !window.fbq || !currentPixelId) return;
+  try {
+    const curPrice = Number(String(document.querySelector('[name="price"]')?.value || "459999").replace(/\D/g,"")) || 459999;
+    const curTitle = document.querySelector('.title')?.innerText || "Bông nụ bạc S925 kim cương Moissanite cao cấp full kiểm định GRA";
+    hasTrackedViewContent = true;
+    fbq('track', 'ViewContent', {
+      content_name: curTitle,
+      content_category: 'Trang sức Moissanite',
+      content_type: 'product',
+      value: curPrice,
+      currency: 'VND'
+    });
+    console.log("🎯 Meta Pixel Event: ViewContent (" + curPrice + " VND - " + curTitle + ")");
+  } catch(_) {}
+}
+
 function initMetaPixel(pixelId, customUserData){
   const cleanId = String(pixelId || "").trim();
   if(!isValidMetaPixelId(cleanId) || cleanId === "YOUR_PIXEL_ID") return;
@@ -126,18 +151,12 @@ function initMetaPixel(pixelId, customUserData){
   fbq('init', cleanId, advancedMatching);
   fbq('track', 'PageView');
 
-  // Tự động kích hoạt ViewContent cho sản phẩm
-  try {
-    const curPrice = Number(String(document.querySelector('[name="price"]')?.value || "459999").replace(/\D/g,"")) || 459999;
-    const curTitle = document.querySelector('.title')?.innerText || "Bông nụ bạc S925 kim cương Moissanite cao cấp full kiểm định GRA";
-    fbq('track', 'ViewContent', {
-      content_name: curTitle,
-      content_category: 'Trang sức Moissanite',
-      content_type: 'product',
-      value: curPrice,
-      currency: 'VND'
-    });
-  } catch(_) {}
+  // Kích hoạt ViewContent khi DOM sẵn sàng
+  if(document.readyState !== "loading"){
+    trackViewContent();
+  } else {
+    document.addEventListener("DOMContentLoaded", trackViewContent, { once: true });
+  }
 
   console.log("🎯 Meta Pixel Initialized with Advanced Matching:", cleanId, advancedMatching);
 
@@ -2210,7 +2229,7 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
       let alreadyTracked = false;
       try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
       if(window.fbq && currentPixelId && !alreadyTracked){
-        try { sessionStorage.setItem(dedupeKey) === "1"; } catch(_) {}
+        try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
         const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
         const currentTitle = data.product || document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
         
@@ -2533,6 +2552,7 @@ function applyConfigData(c){
   if(c.facebookPixelId){
     initMetaPixel(c.facebookPixelId);
   }
+  trackViewContent();
 
   // 10. Hotline & Hỗ trợ
   if(c.hotline){
