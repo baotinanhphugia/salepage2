@@ -35,6 +35,11 @@ LOCAL_PORT = 8899
 POLL_INTERVAL_SECONDS = 4
 SPX_SCAN_INTERVAL_SECONDS = 900  # 15 phút quét tự động hành trình SPX 1 lần
 
+# Cấu hình tài khoản đối tác vận chuyển SPX Express (Shopee Express)
+SPX_USER_ID = "102384205900430"
+SPX_SECRET_KEY = "8d1aefec-ba63-4a34-984b-26fc1d5054ea"
+SPX_ACCOUNT_ID = "15093594984"
+
 # Danh mục hàng hóa mapping chuẩn trên MISA eShop
 MISA_INVENTORY = {
     # Dòng 4 chấu bạc mạ rhodium Moissanite thực tế theo bảng giá Shop
@@ -616,12 +621,21 @@ def check_spx_order_tracking(tracking_number):
 
     track_url = build_spx_tracking_url(clean_tn)
 
+    SPX_SALT = b"MGViZmZmZTYzZDJhNDgxY2Y1N2ZlN2Q1ZWJkYzlmZDY="
+
     try:
-        api_url = f"https://spx.vn/api/v2/fleet_order/tracking/search?sls_tracking_number={clean_tn}"
+        ts_now = int(time.time())
+        checksum = hashlib.sha256(clean_tn.encode("utf-8") + str(ts_now).encode("utf-8") + SPX_SALT).hexdigest()
+        signed_param = f"{clean_tn}|{ts_now}{checksum}"
+        api_url = f"https://spx.vn/api/v2/fleet_order/tracking/search?sls_tracking_number={signed_param}"
         headers = {
             "Accept": "application/json, text/plain, */*",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Referer": track_url
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+            "Referer": track_url,
+            "x-language": "vi",
+            "Cookie": "fms_language=vi; language=vi",
+            "X-SPX-User-Id": SPX_USER_ID,
+            "X-SPX-Account-Id": SPX_ACCOUNT_ID
         }
         req = urllib.request.Request(api_url, headers=headers)
         with urllib.request.urlopen(req, timeout=8) as resp:
@@ -629,21 +643,22 @@ def check_spx_order_tracking(tracking_number):
             if data.get("retcode") == 0 and data.get("data"):
                 tr_data = data.get("data", {})
                 tracking_list = tr_data.get("tracking_list", [])
-                if tracking_list:
+                current_status_code = str(tr_data.get("current_status") or "").strip()
+                if tracking_list or current_status_code:
                     # Sắp xếp lấy sự kiện mới nhất theo timestamp
-                    sorted_events = sorted(tracking_list, key=lambda x: x.get("timestamp", 0), reverse=True)
-                    latest = sorted_events[0]
-                    raw_status = str(latest.get("status") or "").strip()
+                    sorted_events = sorted(tracking_list, key=lambda x: x.get("timestamp", 0), reverse=True) if tracking_list else []
+                    latest = sorted_events[0] if sorted_events else {}
+                    raw_status = str(latest.get("status") or current_status_code).strip()
                     raw_msg = str(latest.get("message") or "").strip()
-                    combined_lower = f"{raw_status} {raw_msg}".lower()
+                    combined_lower = f"{current_status_code} {raw_status} {raw_msg}".lower()
 
                     success_keywords = ["giao hàng thành công", "đã giao", "giao thành công", "delivered", "delivery_successful", "completed"]
-                    fail_keywords = ["không thành công", "thất bại", "chuyển hoàn", "trả hàng", "hoàn hàng", "hoàn về", "delivery_failed", "returned", "returning", "failed", "hủy giao"]
+                    fail_keywords = ["không thành công", "thất bại", "chuyển hoàn", "trả hàng", "hoàn hàng", "hoàn về", "delivery_failed", "returned", "returning", "failed", "hủy giao", "cancel"]
 
-                    if any(kw in combined_lower for kw in success_keywords):
+                    if any(kw in combined_lower for kw in success_keywords) or current_status_code.lower() == "delivered":
                         status_type = "SUCCESS"
                         mapped_status = "Giao thành công"
-                    elif any(kw in combined_lower for kw in fail_keywords):
+                    elif any(kw in combined_lower for kw in fail_keywords) or "return" in current_status_code.lower():
                         status_type = "FAILED"
                         mapped_status = "Giao thất bại"
                     else:
