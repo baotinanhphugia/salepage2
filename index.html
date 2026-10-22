@@ -483,7 +483,10 @@ button#btnSubmit {
   transform:translateX(-120%);
   opacity:0;
   transition:.45s ease;
+  cursor: pointer;
+  user-select: none;
 }
+.live-toast:active{transform:translateX(0) scale(0.98);}
 .live-toast.show{transform:translateX(0);opacity:1}
 .live-toast img{
   width:42px;
@@ -927,6 +930,285 @@ button#btnSubmit {
   border-color:#86efac;
 }
 
+/* ===== POPUP ƯU ĐÃI CHỐT NHANH (FLASH SALE OFFER POPUP) ===== */
+.offer-popup-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99998;
+  padding: 10px;
+  box-sizing: border-box;
+}
+.offer-popup-modal.show {
+  display: flex;
+}
+.opm-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: osmFadeIn .25s ease-out;
+}
+.opm-card, .opm-card * {
+  box-sizing: border-box;
+}
+.opm-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  width: min(420px, calc(100vw - 20px));
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 18px 12px 14px;
+  text-align: center;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.45);
+  animation: osmScaleUp .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 2;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 2px solid #fecaca;
+}
+.opm-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  z-index: 10;
+}
+.opm-close:hover {
+  background: #e5e7eb;
+  color: #111;
+}
+.opm-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #fee2e2, #fef3c7);
+  color: #b91c1c;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #fca5a5;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.opm-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #111827;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  line-height: 1.35;
+}
+.opm-sub {
+  font-size: 11.5px;
+  color: #6b7280;
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+.opm-gifts {
+  background: #fff8f8;
+  border: 1.5px dashed #f87171;
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.opm-gift-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #374151;
+  line-height: 1.3;
+}
+.opm-gift-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.opm-gift-txt b {
+  color: #b91c1c;
+}
+.opm-urgency {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: #fef2f2;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  color: #991b1b;
+  font-weight: 600;
+}
+.opm-urgency-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.opm-timer-wrap b {
+  color: #e60000;
+  font-weight: 800;
+}
+.opm-field {
+  margin-bottom: 7px;
+  text-align: left;
+}
+.opm-input {
+  width: 100%;
+  height: 40px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 13px;
+  transition: all .2s;
+  outline: none;
+  background: #fff;
+}
+.opm-input:focus {
+  border-color: #e60000;
+  box-shadow: 0 0 0 3px rgba(230,0,0,0.12);
+}
+.opm-grid2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.opm-grid2 .opm-field {
+  min-width: 0;
+  margin-bottom: 0;
+}
+.opm-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #4b5563;
+  margin-bottom: 2px;
+}
+.opm-select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 38px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fff;
+  outline: none;
+  color: #111;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+.opm-select:focus {
+  border-color: #e60000;
+}
+.opm-price-box {
+  background: #fdf2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.opm-price-info {
+  text-align: left;
+}
+.opm-price-lbl {
+  font-size: 10.5px;
+  color: #6b7280;
+  display: block;
+}
+.opm-price-sale {
+  font-size: 17px;
+  font-weight: 900;
+  color: #e60000;
+  margin-right: 4px;
+}
+.opm-price-old {
+  font-size: 11.5px;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+.opm-save-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 4px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.opm-btn-submit {
+  width: 100%;
+  border: none;
+  background: linear-gradient(135deg, #e60000, #b91c1c);
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(230,0,0,0.38);
+  transition: transform .15s, box-shadow .15s;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  white-space: normal;
+  line-height: 1.35;
+}
+.opm-btn-submit:active {
+  transform: scale(0.98);
+}
+.opm-msg {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 5px;
+  text-align: center;
+  min-height: 15px;
+}
+.opm-security-note {
+  font-size: 10.5px;
+  color: #6b7280;
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
 /* --- SHOPEE / TIKTOK STYLE PRODUCT GALLERY SLIDER --- */
 .product-gallery {
   position: relative;
@@ -1353,7 +1635,7 @@ button#btnSubmit {
 
 <div class="floating-viewers">👀 <b id="viewerCount">38</b> người đang xem</div>
 
-<div class="live-toast" id="liveToast">
+<div class="live-toast" id="liveToast" onclick="handleToastClick()" title="Nhấn để nhận ưu đãi ngay">
   <img id="toastAvatar" src="images/avatar1.png" alt="">
   <div>
     <b id="toastName">Nguyễn Hồng Anh</b>
@@ -1836,6 +2118,119 @@ button#btnSubmit {
   <a href="https://zalo.me/0398138678" target="_blank" rel="noopener" class="bottom-zalo">💬<br>Chat Zalo</a>
   <a class="cart" href="#order">Thêm vào<br>Giỏ hàng</a>
   <a class="buy shake-buy" href="#order">Mua Ngay</a>
+</div>
+
+<!-- POPUP ƯU ĐÃI CHỐT NHANH (FLASH SALE OFFER POPUP) -->
+<div id="offerPopupModal" class="offer-popup-modal">
+  <div class="opm-backdrop" onclick="closeOfferPopup(true)"></div>
+  <div class="opm-card">
+    <button type="button" class="opm-close" onclick="closeOfferPopup(true)" aria-label="Đóng popup">✕</button>
+    
+    <!-- HEADER ƯU ĐÃI GIỜ VÀNG -->
+    <div class="opm-header">
+      <div class="opm-badge">⚡ FLASH SALE GIỜ VÀNG • DUY NHẤT HÔM NAY</div>
+      <h3 class="opm-title">BÔNG TAI KIM CƯƠNG MOISSANITE S925</h3>
+      <p class="opm-sub">Tỏa sáng như kim cương tự nhiên • Thử bút soi đá tít tít 100%</p>
+    </div>
+
+    <!-- KHỐI QUÀ TẶNG ĐẶC BIỆT -->
+    <div class="opm-gifts">
+      <div class="opm-gift-row">
+        <span class="opm-gift-icon">🎁</span>
+        <span class="opm-gift-txt">Tặng <b>Hộp Nhung Đèn LED Cao Cấp</b> (Trị giá 150.000đ)</span>
+      </div>
+      <div class="opm-gift-row">
+        <span class="opm-gift-icon">📜</span>
+        <span class="opm-gift-txt">Tặng <b>Thẻ & Giấy Kiểm Định GRA Quốc Tế</b> trọn đời</span>
+      </div>
+      <div class="opm-gift-row">
+        <span class="opm-gift-icon">🚚</span>
+        <span class="opm-gift-txt"><b>Freeship Toàn Quốc</b> • Kiểm tra hàng trước khi thanh toán</span>
+      </div>
+    </div>
+
+    <!-- THANH TIẾN ĐỘ & ĐẾM NGƯỢC -->
+    <div class="opm-urgency">
+      <div class="opm-urgency-left">
+        <span class="opm-fire">🔥</span>
+        <span>Chỉ còn <b>3 suất ưu đãi</b> cuối cùng</span>
+      </div>
+      <div class="opm-timer-wrap">
+        <span>Kết thúc sau:</span>
+        <b id="opmCountdown">14:59</b>
+      </div>
+    </div>
+
+    <!-- FORM ĐẶT HÀNG NHANH GỌN -->
+    <form id="offerPopupForm" class="opm-form">
+      <div class="opm-field">
+        <input type="text" name="name" id="opmName" class="opm-input" placeholder="Họ và tên của bạn *" required autocomplete="name">
+      </div>
+      
+      <div class="opm-field">
+        <input type="tel" name="phone" id="opmPhone" class="opm-input" placeholder="Số điện thoại nhận hàng *" required autocomplete="tel">
+      </div>
+      
+      <div class="opm-field">
+        <input type="text" name="address" id="opmAddress" class="opm-input" placeholder="Địa chỉ nhận hàng (Số nhà, đường, xã/phường)... *" required autocomplete="street-address">
+      </div>
+
+      <!-- CHỌN PHÂN LOẠI & SIZE -->
+      <div class="opm-grid2">
+        <div class="opm-field">
+          <label class="opm-label">Phân loại:</label>
+          <select name="variant" id="opmVariant" class="opm-select">
+            <option value="1 Đôi" selected>1 Đôi (2 chiếc)</option>
+            <option value="1 Chiếc">1 Chiếc (Lẻ 1 bên)</option>
+          </select>
+        </div>
+        <div class="opm-field">
+          <label class="opm-label">Kích thước đá:</label>
+          <select name="size" id="opmSize" class="opm-select">
+            <option value="4mm">Size 4mm</option>
+            <option value="4.5mm">Size 4.5mm</option>
+            <option value="5mm" selected>Size 5mm</option>
+            <option value="6mm">Size 6mm</option>
+            <option value="6.8mm">Size 6.8mm</option>
+            <option value="7mm">Size 7mm</option>
+            <option value="7.5mm">Size 7.5mm</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- KHUNG HIỂN THỊ GIÁ ƯU ĐÃI -->
+      <div class="opm-price-box">
+        <div class="opm-price-info">
+          <span class="opm-price-lbl">Tổng thanh toán COD:</span>
+          <div class="opm-price-values">
+            <span class="opm-price-sale" id="opmSalePrice">649.999đ</span>
+            <span class="opm-price-old" id="opmOldPrice">824.000đ</span>
+          </div>
+        </div>
+        <span class="opm-save-badge" id="opmSaveBadge">Tiết kiệm 174.001đ</span>
+      </div>
+
+      <input type="hidden" name="price" id="opmPrice" value="649999">
+      <input type="hidden" name="quantity" value="1">
+      <input type="hidden" name="giftBox" value="Có hộp cao cấp">
+      <input type="hidden" name="gra" value="Có giấy GRA">
+      <input type="hidden" name="warranty" value="Bảo hành sáng bóng">
+      <input type="hidden" name="payment" value="Thanh toán COD">
+      <input type="hidden" name="combo" value="Ưu đãi Flash Sale Popup + Freeship">
+      <input type="hidden" name="call" value="Gọi trước khi giao">
+      <input type="hidden" name="note" value="Đặt nhanh qua Popup Ưu Đãi 15s">
+
+      <button type="submit" id="opmSubmitBtn" class="opm-btn-submit shake-buy">
+        ⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG
+      </button>
+
+      <div id="opmMsg" class="opm-msg"></div>
+    </form>
+
+    <div class="opm-security-note">
+      🔒 <i>Cam kết kim cương Moissanite chuẩn GRA • Thử bút soi đá tít tít mới thanh toán</i>
+    </div>
+  </div>
 </div>
 
 <!-- POPUP XÁC NHẬN ĐẶT HÀNG THÀNH CÔNG -->
@@ -2336,6 +2731,7 @@ function showOrderSuccessModal(orderData){
   }
   modal.classList.add("show");
   document.body.style.overflow = "hidden";
+  try { sessionStorage.setItem("pgd_order_completed", "1"); } catch(_) {}
 }
 
 function closeOrderSuccessModal(){
@@ -2370,6 +2766,394 @@ function showLiveToast(){
 }
 setTimeout(showLiveToast, 1200);
 setInterval(showLiveToast, 9000);
+
+/* ===== FLASH SALE OFFER POPUP LOGIC ===== */
+const OFFER_POPUP_STORAGE_KEY = "pgd_offer_popup_closed_until";
+const OFFER_POPUP_DISMISS_HOURS = 2; // Không hiện lại trong 2 tiếng nếu khách bấm tắt
+let isOfferPopupOpen = false;
+let offerPopupTriggered = false;
+
+function shouldShowOfferPopup() {
+  // 1. Nếu khách đã hoàn tất đặt hàng trong phiên này -> Vĩnh viễn không hiện
+  try {
+    if (sessionStorage.getItem("pgd_order_completed") === "1") return false;
+  } catch(_) {}
+
+  // 2. Nếu khách đã bấm nút tắt trong vòng 2 tiếng -> Không hiện
+  try {
+    const closedUntil = localStorage.getItem(OFFER_POPUP_STORAGE_KEY);
+    if (closedUntil && Number(closedUntil) > Date.now()) return false;
+  } catch(_) {}
+
+  // 3. Nếu popup đang mở rồi thì thôi
+  if (isOfferPopupOpen) return false;
+
+  // 4. Nếu khách đang ở khu vực form đặt hàng chính thì không hiện đè lên
+  const orderSection = document.getElementById("order");
+  if (orderSection) {
+    const rect = orderSection.getBoundingClientRect();
+    if (rect.top <= window.innerHeight && rect.bottom >= 0) return false;
+  }
+
+  return true;
+}
+
+function syncOfferPopupSelects() {
+  const vSel = document.getElementById("opmVariant");
+  const sSel = document.getElementById("opmSize");
+  if (!sSel) return;
+
+  const mainVariant = document.getElementById("variantSelect")?.value || "1 Đôi";
+  const mainSize = document.getElementById("sizeSelect")?.value || "5mm";
+
+  if (vSel) vSel.value = mainVariant;
+
+  const rawSizes = [...new Set(priceTable.map(i => String(i.size || "").trim()).filter(Boolean))];
+  rawSizes.sort((a, b) => (parseFloat(a) || 0) - (parseFloat(b) || 0));
+
+  sSel.innerHTML = "";
+  rawSizes.forEach(sz => {
+    const opt = document.createElement("option");
+    opt.value = sz;
+    opt.textContent = "Size " + sz;
+    if (normStr(sz) === normStr(mainSize)) opt.selected = true;
+    sSel.appendChild(opt);
+  });
+  if (!sSel.value && rawSizes.some(s => normStr(s) === "5mm")) sSel.value = "5mm";
+}
+
+function updateOfferPopupPrice() {
+  const vSel = document.getElementById("opmVariant");
+  const sSel = document.getElementById("opmSize");
+  const variant = vSel?.value || "1 Đôi";
+  const size = sSel?.value || "5mm";
+
+  if (sSel) {
+    Array.from(sSel.options).forEach(opt => {
+      const matched = findPriceItem(variant, opt.value);
+      if (matched) {
+        opt.textContent = `Size ${opt.value} — ${money(matched.salePrice || matched.oldPrice)}`;
+      } else {
+        opt.textContent = `Size ${opt.value}`;
+      }
+    });
+  }
+
+  const item = findPriceItem(variant, size) || findPriceItem("1 Đôi", "5mm") || priceTable[0];
+  if (!item) return;
+
+  const saleP = Number(String(item.salePrice || item.oldPrice || 0).replace(/\D/g, "")) || 0;
+  const oldP = Number(String(item.oldPrice || item.salePrice || 0).replace(/\D/g, "")) || saleP;
+  const saveP = Math.max(0, oldP - saleP);
+
+  const saleEl = document.getElementById("opmSalePrice");
+  if (saleEl) saleEl.innerText = money(saleP);
+
+  const oldEl = document.getElementById("opmOldPrice");
+  if (oldEl) {
+    oldEl.innerText = money(oldP);
+    oldEl.style.display = oldP > saleP ? "inline" : "none";
+  }
+
+  const saveEl = document.getElementById("opmSaveBadge");
+  if (saveEl) {
+    saveEl.innerText = saveP > 0 ? `🔥 Tiết kiệm ${money(saveP)}` : "⚡ Giá Flash Sale";
+  }
+
+  const pInput = document.getElementById("opmPrice");
+  if (pInput) pInput.value = String(saleP);
+}
+
+let opmCountdownSecs = 14 * 60 + 59;
+let opmTimerInterval = null;
+
+function startOfferPopupTimer() {
+  if (opmTimerInterval) clearInterval(opmTimerInterval);
+  const cdEl = document.getElementById("opmCountdown");
+  opmTimerInterval = setInterval(() => {
+    opmCountdownSecs = Math.max(0, opmCountdownSecs - 1);
+    const m = Math.floor(opmCountdownSecs / 60);
+    const s = opmCountdownSecs % 60;
+    if (cdEl) cdEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    if (opmCountdownSecs <= 0) clearInterval(opmTimerInterval);
+  }, 1000);
+}
+
+function openOfferPopup(preferredSize) {
+  const modal = document.getElementById("offerPopupModal");
+  if (!modal) return;
+
+  syncOfferPopupSelects();
+  if (preferredSize) {
+    const sSel = document.getElementById("opmSize");
+    if (sSel) {
+      Array.from(sSel.options).forEach(opt => {
+        if (normStr(opt.value) === normStr(preferredSize)) opt.selected = true;
+      });
+    }
+  }
+  updateOfferPopupPrice();
+  startOfferPopupTimer();
+
+  modal.style.display = "flex";
+  setTimeout(() => modal.classList.add("show"), 10);
+  document.body.style.overflow = "hidden";
+  isOfferPopupOpen = true;
+
+  const vSel = document.getElementById("opmVariant");
+  const sSel = document.getElementById("opmSize");
+  if (vSel && !vSel._hasBound) {
+    vSel.addEventListener("change", updateOfferPopupPrice);
+    vSel._hasBound = true;
+  }
+  if (sSel && !sSel._hasBound) {
+    sSel.addEventListener("change", updateOfferPopupPrice);
+    sSel._hasBound = true;
+  }
+}
+
+function closeOfferPopup(byUser) {
+  const modal = document.getElementById("offerPopupModal");
+  if (!modal) return;
+  modal.classList.remove("show");
+  setTimeout(() => {
+    modal.style.display = "none";
+  }, 250);
+  document.body.style.overflow = "";
+  isOfferPopupOpen = false;
+
+  if (byUser) {
+    const dismissUntil = Date.now() + (OFFER_POPUP_DISMISS_HOURS * 60 * 60 * 1000);
+    try {
+      localStorage.setItem(OFFER_POPUP_STORAGE_KEY, String(dismissUntil));
+    } catch(_) {}
+  }
+}
+
+function handleToastClick() {
+  const currentToast = toastData[(toastIndex - 1 + toastData.length) % toastData.length];
+  let sizeMatch = "5mm";
+  if (currentToast && currentToast.text) {
+    const m = currentToast.text.match(/(\d+(\.\d+)?mm)/i);
+    if (m) sizeMatch = m[1];
+  }
+  openOfferPopup(sizeMatch);
+}
+
+function triggerOfferPopup() {
+  if (offerPopupTriggered) return;
+  if (!shouldShowOfferPopup()) return;
+  offerPopupTriggered = true;
+  openOfferPopup();
+}
+
+// 1. Hẹn giờ 12 giây sau khi vào trang (nằm chuẩn trong khoảng 10 - 15 giây)
+setTimeout(() => {
+  if (!offerPopupTriggered) {
+    triggerOfferPopup();
+  }
+}, 12000);
+
+// 2. Kích hoạt khi cuộn qua 35% trang (đã xem xong ảnh / video)
+window.addEventListener("scroll", function onOfferScroll() {
+  if (offerPopupTriggered) {
+    window.removeEventListener("scroll", onOfferScroll);
+    return;
+  }
+  const scrollY = window.scrollY || window.pageYOffset;
+  const docH = document.documentElement.scrollHeight - window.innerHeight;
+  if (docH > 0 && (scrollY / docH) >= 0.35) {
+    triggerOfferPopup();
+    window.removeEventListener("scroll", onOfferScroll);
+  }
+}, { passive: true });
+
+window.openOfferPopup = openOfferPopup;
+window.closeOfferPopup = closeOfferPopup;
+window.handleToastClick = handleToastClick;
+
+function initOfferPopupForm() {
+  const opmForm = document.getElementById("offerPopupForm");
+  if (!opmForm || opmForm._hasBound) return;
+  opmForm._hasBound = true;
+
+  opmForm.addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById("opmSubmitBtn");
+    const msg = document.getElementById("opmMsg");
+    btn.disabled = true;
+    btn.innerText = "⏳ ĐANG XÁC NHẬN ĐƠN HÀNG...";
+    msg.innerText = "";
+
+    updateOfferPopupPrice();
+
+    const fd = new FormData(opmForm);
+    const data = Object.fromEntries(fd.entries());
+
+    data.name = (data.name || "").trim();
+    data.phone = (data.phone || "").trim();
+    data.address = (data.address || "").trim();
+
+    data.province = "";
+    if (data.address) {
+      const rawLower = data.address.toLowerCase();
+      for (const prov of VN_PROVINCES) {
+        const cleanProv = prov.toLowerCase().replace("tp. ", "").replace("tỉnh ", "").trim();
+        if (rawLower.includes(cleanProv)) {
+          data.province = prov;
+          break;
+        }
+      }
+    }
+
+    if (!data.name || data.name.length < 2) {
+      msg.style.color = "#dc2626";
+      msg.innerText = "⚠️ Vui lòng nhập họ và tên người nhận.";
+      btn.disabled = false;
+      btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
+      document.getElementById("opmName")?.focus();
+      return;
+    }
+
+    const cleanPhone = data.phone.replace(/[\s\-\.]/g, "");
+    const vnPhoneRegex = /^(0[3|5|7|8|9]|84[3|5|7|8|9])[0-9]{8}$/;
+    if (!vnPhoneRegex.test(cleanPhone)) {
+      msg.style.color = "#dc2626";
+      msg.innerText = "⚠️ Số điện thoại không hợp lệ (10 số, bắt đầu 03, 05, 07, 08, 09).";
+      btn.disabled = false;
+      btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
+      document.getElementById("opmPhone")?.focus();
+      return;
+    }
+    data.phone = cleanPhone;
+
+    if (!data.address || data.address.length < 3) {
+      msg.style.color = "#dc2626";
+      msg.innerText = "⚠️ Vui lòng nhập địa chỉ nhận hàng chi tiết.";
+      btn.disabled = false;
+      btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
+      document.getElementById("opmAddress")?.focus();
+      return;
+    }
+
+    data.variant = data.variant || "1 Đôi";
+    data.size = data.size || "5mm";
+    data.quantity = data.quantity || "1";
+    data.payment = data.payment || "Thanh toán COD";
+    data.combo = data.combo || "Ưu đãi Flash Sale Popup + Freeship";
+    data.giftBox = "Có hộp cao cấp";
+    data.gra = "Có giấy GRA";
+    data.warranty = "Bảo hành sáng bóng";
+    data.call = "Gọi trước khi giao";
+    data.note = "Đặt qua Popup Ưu Đãi 15s";
+
+    const currentTitle = document.querySelector('.title')?.innerText || "Bông nụ bạc S925 4 chấu kim cương Moissanite cao cấp full kiểm định GRA";
+    data.product = currentTitle;
+
+    const matchedItem = findPriceItem(data.variant, data.size);
+    if (matchedItem) {
+      if (matchedItem.code) data.misaSku = matchedItem.code;
+      const unitP = Number(String(matchedItem.salePrice || matchedItem.oldPrice || 0).replace(/\D/g,"")) || 0;
+      if (unitP > 0) data.price = String(unitP);
+    }
+    data.price = data.price || "649999";
+    data.source = location.href;
+
+    const utm = getSavedUtmParams();
+    data.utm_source = utm.utm_source || "";
+    data.utm_medium = utm.utm_medium || "";
+    data.utm_campaign = utm.utm_campaign || "";
+    data.utm_content = utm.utm_content || "";
+    data.utm_term = utm.utm_term || "";
+    data.fbclid = utm.fbclid || "";
+
+    try {
+      let orderSuccess = false;
+      let serverErr = "";
+      let serverOrderId = "";
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(data)
+        });
+        const raw = await res.text();
+        try {
+          const j = JSON.parse(raw);
+          if (j && j.ok === true) {
+            orderSuccess = true;
+            serverOrderId = String(j.orderId || j.leadId || "").trim();
+          } else if (j && j.error) {
+            serverErr = j.error;
+          } else {
+            serverErr = "Máy chủ chưa xác nhận đơn hàng. Vui lòng thử lại.";
+          }
+        } catch(_) {
+          serverErr = "Không đọc được xác nhận từ máy chủ. Vui lòng thử lại.";
+        }
+      } catch(netErr) {
+        serverErr = "Không kết nối được máy chủ. Vui lòng kiểm tra mạng.";
+      }
+
+      if (serverErr) {
+        msg.style.color = "#dc2626";
+        msg.innerText = "❌ " + serverErr;
+        btn.disabled = false;
+        btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
+        return;
+      }
+
+      if (orderSuccess) {
+        try { sessionStorage.setItem("pgd_order_completed", "1"); } catch(_) {}
+        closeOfferPopup(false);
+
+        showOrderSuccessModal(data);
+
+        const eventId = serverOrderId || ("PGD-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
+        const dedupeKey = "PGD_META_EVENTS_" + eventId;
+        let alreadyTracked = false;
+        try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
+        if (window.fbq && currentPixelId && !alreadyTracked) {
+          try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
+          const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
+          updateMetaAdvancedMatching({
+            name: data.name,
+            phone: data.phone,
+            province: data.province || data.address,
+            orderId: eventId
+          });
+          const eventData = {
+            content_name: currentTitle,
+            content_category: `${data.variant} - Size ${data.size}`,
+            content_type: 'product',
+            value: orderVal,
+            currency: 'VND',
+            num_items: 1
+          };
+          fbq('track', 'Purchase', eventData, {eventID: eventId + '-pur'});
+          fbq('track', 'Lead', eventData, {eventID: eventId + '-lead'});
+          fbq('track', 'CompleteRegistration', Object.assign({}, eventData, { status: true }), {eventID: eventId + '-reg'});
+        }
+
+        opmForm.reset();
+        btn.disabled = false;
+        btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
+      }
+    } catch(err) {
+      msg.style.color = "#dc2626";
+      msg.innerText = "❌ Đã có lỗi xảy ra. Vui lòng thử lại.";
+      btn.disabled = false;
+      btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
+    }
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initOfferPopupForm);
+} else {
+  initOfferPopupForm();
+}
 
 
 /* ===== COD Pro simulated live counters ===== */
