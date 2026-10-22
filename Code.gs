@@ -275,7 +275,7 @@ function handleOrderVN_(data) {
 
     // Tính giá và trừ kho an toàn ở server
     const stockResult = updateStockVN_(data, config);
-    const orderId = "PGD-VN-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyyyMMdd-HHmmss");
+    const orderId = (data.orderId && String(data.orderId).trim()) || ("PGD-VN-" + Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "yyyyMMdd-HHmmss"));
     const createdAt = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
 
     // Xác định mã MISA cố định ban đầu của lô hàng (từ web gửi lên, từ cấu hình bảng giá, hoặc autoDetect)

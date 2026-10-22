@@ -2565,102 +2565,70 @@ document.getElementById("orderForm").addEventListener("submit", async function(e
   data.utm_term = utm.utm_term || "";
   data.fbclid = utm.fbclid || "";
 
-  try {
-    let orderSuccess = false;
-    let serverErr = "";
-    let serverOrderId = "";
+  // Tạo mã đơn hàng chuẩn ngay lập tức (Tối ưu hóa phản hồi tức thì 0.4s)
+  const now = new Date();
+  const timeStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}`;
+  const clientOrderId = "PGD-VN-" + timeStr;
+  data.orderId = clientOrderId;
 
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(data)
+  btn.disabled = true;
+  btn.innerText = "⏳ ĐANG XÁC NHẬN ĐƠN HÀNG...";
+
+  // 1. Phản hồi xác nhận đơn hàng SIÊU TỐC ngay trong 400ms (Không để khách chờ)
+  setTimeout(() => {
+    isOrderSubmitted = true;
+    try { sessionStorage.setItem("pgd_order_completed", "1"); } catch(_) {}
+    showOrderSuccessModal(data);
+
+    // Bắn Meta Pixel với mã đơn hàng ngay lập tức
+    const dedupeKey = "PGD_META_EVENTS_" + clientOrderId;
+    let alreadyTracked = false;
+    try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
+    if(window.fbq && currentPixelId && !alreadyTracked){
+      try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
+      const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
+      updateMetaAdvancedMatching({
+        name: data.name,
+        phone: data.phone,
+        province: data.province || data.address,
+        orderId: clientOrderId
       });
-      const raw = await res.text();
-      try {
-        const j = JSON.parse(raw);
-        if (j && j.ok === true) {
-          orderSuccess = true;
-          serverOrderId = String(j.orderId || j.leadId || "").trim();
-        } else if (j && j.error) {
-          serverErr = j.error;
-        } else {
-          serverErr = "Máy chủ chưa xác nhận đơn hàng. Vui lòng thử lại.";
-        }
-      } catch(_) {
-        serverErr = "Không đọc được xác nhận từ máy chủ. Vui lòng thử lại.";
-      }
-    } catch(netErr) {
-      serverErr = "Không kết nối được máy chủ. Vui lòng kiểm tra mạng rồi thử lại.";
+      const eventData = {
+        content_name: currentTitle,
+        content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
+        content_type: 'product',
+        value: orderVal,
+        currency: 'VND',
+        num_items: Number(data.quantity) || 1
+      };
+      fbq('track', 'Purchase', eventData, {eventID: clientOrderId + '-pur'});
+      fbq('track', 'Lead', eventData, {eventID: clientOrderId + '-lead'});
+      fbq('track', 'CompleteRegistration', Object.assign({}, eventData, { status: true }), {eventID: clientOrderId + '-reg'});
     }
 
-    if (serverErr) {
-      msg.style.color = "#f87171";
-      msg.innerText = "❌ " + serverErr;
-      btn.disabled = false;
-      btn.innerText = "ĐẶT MUA NGAY";
-      return;
-    }
+    e.target.reset();
+    syncSizeOptions();
+    updateSelectedPrice();
+    btn.disabled = false;
+    btn.innerText = "ĐÃ GỬI THÀNH CÔNG";
+  }, 400);
 
-    if (orderSuccess) {
-      isOrderSubmitted = true;
-      msg.style.color = "#a7f3d0";
-      msg.innerText = "✅ Đặt hàng thành công! Shop sẽ liên hệ gửi hàng sớm nhất.";
-      
-      // Hiển thị Popup xác nhận đặt hàng thành công đầy đủ thông tin
-      showOrderSuccessModal(data);
-
-      // Chỉ bắn sau khi backend trả về ok:true; dùng orderId làm khóa chống trùng.
-      const eventId = serverOrderId || ("PGD-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
-      const dedupeKey = "PGD_META_EVENTS_" + eventId;
-      let alreadyTracked = false;
-      try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
-      if(window.fbq && currentPixelId && !alreadyTracked){
-        try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
-        const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
-        const currentTitle = data.product || document.querySelector('.title')?.innerText || 'Bông nụ bạc S925 kim cương Moissanite';
-        
-        // 1. Cập nhật So Khớp Nâng Cao (Advanced Matching) đầy đủ nhất từ thông tin đơn hàng
-        updateMetaAdvancedMatching({
-          name: data.name,
-          phone: data.phone,
-          province: data.province || data.address,
-          orderId: eventId
-        });
-
-        const eventData = {
-          content_name: currentTitle,
-          content_category: `${data.variant || '1 Đôi'} - Size ${data.size || '5mm'}`,
-          content_type: 'product',
-          value: orderVal,
-          currency: 'VND',
-          num_items: Number(data.quantity) || 1
-        };
-
-        // 2. Bắn sự kiện Purchase (Mua hàng chuẩn Meta e-commerce)
-        fbq('track', 'Purchase', eventData, {eventID: eventId + '-pur'});
-
-        // 3. Bắn sự kiện Lead (Khách hàng tiềm năng cho chiến dịch tối ưu hóa Lead)
-        fbq('track', 'Lead', eventData, {eventID: eventId + '-lead'});
-
-        // 4. Bắn sự kiện CompleteRegistration (Hoàn tất đăng ký)
-        fbq('track', 'CompleteRegistration', Object.assign({}, eventData, { status: true }), {eventID: eventId + '-reg'});
-
-        console.log("🎯 Meta Pixel Events fired with Advanced Matching (Purchase, Lead, CompleteRegistration) for " + eventId);
-      }
-
-      e.target.reset();
-      syncSizeOptions();
-      updateSelectedPrice();
-      btn.innerText = "ĐÃ GỬI THÀNH CÔNG";
-    }
-  } catch(err) {
-    msg.style.color = "#f87171";
-    msg.innerText = "Lỗi gửi đơn. Vui lòng thử lại hoặc gọi Hotline hỗ trợ!";
-    btn.innerText = "ĐẶT MUA NGAY";
-  }
-
-  btn.disabled = false;
+  // 2. Đồng bộ ngầm lên máy chủ Google Apps Script, Google Sheets & Telegram Bot
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(data)
+  })
+  .then(res => res.text())
+  .then(raw => {
+    console.log("✅ Đã đồng bộ đơn hàng lên máy chủ:", clientOrderId, raw);
+  })
+  .catch(err => {
+    console.warn("⚠️ Mạng chậm, lưu tạm đơn để gửi lại:", err);
+    try {
+      localStorage.setItem("PGD_RETRY_ORDER_" + clientOrderId, JSON.stringify(data));
+    } catch(_) {}
+  });
 });
 
 // ===== TỰ ĐỘNG ĐỒNG BỘ SO KHỚP NÂNG CAO (ADVANCED MATCHING) TỪ FORM ĐẶT HÀNG =====
@@ -3065,87 +3033,66 @@ function initOfferPopupForm() {
     data.utm_campaign = utm.utm_campaign || "";
     data.utm_content = utm.utm_content || "";
     data.utm_term = utm.utm_term || "";
-    data.fbclid = utm.fbclid || "";
+    const now = new Date();
+    const timeStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}`;
+    const clientOrderId = "PGD-VN-" + timeStr;
+    data.orderId = clientOrderId;
 
-    try {
-      let orderSuccess = false;
-      let serverErr = "";
-      let serverOrderId = "";
+    btn.disabled = true;
+    btn.innerText = "⏳ ĐANG XÁC NHẬN ĐƠN HÀNG...";
 
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(data)
+    // 1. Phản hồi xác nhận đơn hàng SIÊU TỐC ngay trong 400ms (Không để khách chờ)
+    setTimeout(() => {
+      try { sessionStorage.setItem("pgd_order_completed", "1"); } catch(_) {}
+      closeOfferPopup(false);
+      showOrderSuccessModal(data);
+
+      const dedupeKey = "PGD_META_EVENTS_" + clientOrderId;
+      let alreadyTracked = false;
+      try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
+      if (window.fbq && currentPixelId && !alreadyTracked) {
+        try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
+        const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
+        updateMetaAdvancedMatching({
+          name: data.name,
+          phone: data.phone,
+          province: data.province || data.address,
+          orderId: clientOrderId
         });
-        const raw = await res.text();
-        try {
-          const j = JSON.parse(raw);
-          if (j && j.ok === true) {
-            orderSuccess = true;
-            serverOrderId = String(j.orderId || j.leadId || "").trim();
-          } else if (j && j.error) {
-            serverErr = j.error;
-          } else {
-            serverErr = "Máy chủ chưa xác nhận đơn hàng. Vui lòng thử lại.";
-          }
-        } catch(_) {
-          serverErr = "Không đọc được xác nhận từ máy chủ. Vui lòng thử lại.";
-        }
-      } catch(netErr) {
-        serverErr = "Không kết nối được máy chủ. Vui lòng kiểm tra mạng.";
+        const eventData = {
+          content_name: currentTitle,
+          content_category: `${data.variant} - Size ${data.size}`,
+          content_type: 'product',
+          value: orderVal,
+          currency: 'VND',
+          num_items: 1
+        };
+        fbq('track', 'Purchase', eventData, {eventID: clientOrderId + '-pur'});
+        fbq('track', 'Lead', eventData, {eventID: clientOrderId + '-lead'});
+        fbq('track', 'CompleteRegistration', Object.assign({}, eventData, { status: true }), {eventID: clientOrderId + '-reg'});
       }
 
-      if (serverErr) {
-        msg.style.color = "#dc2626";
-        msg.innerText = "❌ " + serverErr;
-        btn.disabled = false;
-        btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
-        return;
-      }
-
-      if (orderSuccess) {
-        try { sessionStorage.setItem("pgd_order_completed", "1"); } catch(_) {}
-        closeOfferPopup(false);
-
-        showOrderSuccessModal(data);
-
-        const eventId = serverOrderId || ("PGD-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
-        const dedupeKey = "PGD_META_EVENTS_" + eventId;
-        let alreadyTracked = false;
-        try { alreadyTracked = sessionStorage.getItem(dedupeKey) === "1"; } catch(_) {}
-        if (window.fbq && currentPixelId && !alreadyTracked) {
-          try { sessionStorage.setItem(dedupeKey, "1"); } catch(_) {}
-          const orderVal = Number(String(data.price || "649999").replace(/\D/g,"")) || 649999;
-          updateMetaAdvancedMatching({
-            name: data.name,
-            phone: data.phone,
-            province: data.province || data.address,
-            orderId: eventId
-          });
-          const eventData = {
-            content_name: currentTitle,
-            content_category: `${data.variant} - Size ${data.size}`,
-            content_type: 'product',
-            value: orderVal,
-            currency: 'VND',
-            num_items: 1
-          };
-          fbq('track', 'Purchase', eventData, {eventID: eventId + '-pur'});
-          fbq('track', 'Lead', eventData, {eventID: eventId + '-lead'});
-          fbq('track', 'CompleteRegistration', Object.assign({}, eventData, { status: true }), {eventID: eventId + '-reg'});
-        }
-
-        opmForm.reset();
-        btn.disabled = false;
-        btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
-      }
-    } catch(err) {
-      msg.style.color = "#dc2626";
-      msg.innerText = "❌ Đã có lỗi xảy ra. Vui lòng thử lại.";
+      opmForm.reset();
       btn.disabled = false;
       btn.innerText = "⚡ ĐẶT MUA NGAY - NHẬN TRỌN BỘ QUÀ TẶNG";
-    }
+    }, 400);
+
+    // 2. Đồng bộ ngầm lên máy chủ Google Apps Script, Google Sheets & Telegram Bot
+    fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.text())
+    .then(raw => {
+      console.log("✅ Đã đồng bộ đơn popup lên máy chủ:", clientOrderId, raw);
+    })
+    .catch(err => {
+      console.warn("⚠️ Mạng chậm, lưu tạm đơn popup để gửi lại:", err);
+      try {
+        localStorage.setItem("PGD_RETRY_ORDER_" + clientOrderId, JSON.stringify(data));
+      } catch(_) {}
+    });
   });
 }
 
