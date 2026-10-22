@@ -1821,19 +1821,11 @@ button#btnSubmit {
     <input type="hidden" name="giftBox" value="Có hộp cao cấp">
     <input type="hidden" name="gra" value="Có giấy GRA">
     <input type="hidden" name="warranty" value="Bảo hành sáng bóng">
-    <div class="options">
-      <label><input type="checkbox" name="call" value="Gọi xác nhận"> Gọi trước khi giao</label>
-    </div>
-    <div class="grid2">
-      <select name="quantity" id="quantitySelect" required><option value="1">Số lượng: 1</option><option value="2">Số lượng: 2</option><option value="3">Số lượng: 3</option></select>
-      <select name="payment"><option>Thanh toán COD</option></select>
-    </div>
-    <div class="radioBox">
-      <label><input type="radio" name="combo" value="Mua theo bảng giá size + Freeship" checked> 💥 Mua theo bảng giá size + Freeship</label>
-      <label><input type="radio" name="combo" value="Cần shop tư vấn thêm"> 🎁 Cần shop tư vấn thêm trước khi giao</label>
-    </div>
-    <textarea name="note" placeholder="Ghi chú thêm"></textarea>
-    <a id="mapLink" class="map-link" href="#" target="_blank">📍 Mở địa chỉ trên Google Maps</a>
+    <input type="hidden" name="call" value="Gọi trước khi giao">
+    <input type="hidden" name="quantity" id="quantitySelect" value="1">
+    <input type="hidden" name="payment" value="Thanh toán COD">
+    <input type="hidden" name="combo" value="Mua theo bảng giá size + Freeship">
+    <input type="hidden" name="note" value="">
     <button id="btnSubmit" class="shake-buy">ĐẶT MUA NGAY</button>
     <div id="msg" class="note"></div>
   </form>
